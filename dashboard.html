@@ -913,24 +913,33 @@ async function loadVoices(){
     const r=await fetch(`${API}/api/voices`,{headers:{Authorization:`Bearer ${token}`}});
     if(r.status===401){logout();return;}
     const d=await r.json();
-    allVoices=d.voices||d||[];
+    allVoices=Array.isArray(d)?d:(d.voices||[]);
     renderVoices(allVoices);
+    renderLibVoices();
     // populate bulk select
     const sel=document.getElementById('bulk-voice-sel');
-    sel.innerHTML=allVoices.map(v=>`<option value="${v.voice_id}">${v.name}</option>`).join('');
+    sel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id)}">${escHtml(v.name)}</option>`).join('');
     document.getElementById('v-count-lbl').textContent=`${allVoices.length} vozes`;
   }catch(e){
-    document.getElementById('voices-grid').innerHTML='<div class="voice-loading">Erro ao carregar vozes.</div>';
+    document.getElementById('voices-grid').innerHTML='<div class="voice-loading">Erro ao carregar vozes. Verifique sua conexão.</div>';
+    document.getElementById('vlib-grid').innerHTML='<div class="vlib-empty"><div class="ve-icon">⚠️</div><p>Erro ao carregar vozes.</p></div>';
   }
 }
+
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 function renderVoices(voices){
   const g=document.getElementById('voices-grid');
   if(!voices.length){g.innerHTML='<div class="voice-loading">Nenhuma voz encontrada.</div>';return;}
-  g.innerHTML=voices.map(v=>`<div class="vc${selectedVoice===v.voice_id?' sel':''}" onclick="selectVoice('${v.voice_id}',this)">
-    <div class="vc-name">${v.name}</div>
-    <div class="vc-lang">${v.labels?.language||v.language||'—'}</div>
-  </div>`).join('');
+  g.innerHTML=voices.map(v=>{
+    const vid=escHtml(v.voice_id);
+    const lang=v.labels?.language||v.language||'—';
+    const isSel=selectedVoice===v.voice_id;
+    return `<div class="vc${isSel?' sel':''}" onclick="selectVoice('${vid}',this)" data-vid="${vid}">
+      <div class="vc-name">${escHtml(v.name)}</div>
+      <div class="vc-lang">${escHtml(lang)}</div>
+    </div>`;
+  }).join('');
   document.getElementById('v-count').textContent=`${voices.length} de ${allVoices.length} vozes`;
 }
 
@@ -1241,7 +1250,8 @@ function filterLibVoices(){renderLibVoices();}
 
 function renderLibVoices(){
   const grid=document.getElementById('vlib-grid');
-  const q=document.getElementById('vlib-search').value.toLowerCase();
+  if(!grid)return;
+  const q=(document.getElementById('vlib-search')||{value:''}).value.toLowerCase();
   let filtered=allVoices.filter(v=>{
     const lang=getLangCode(v);
     if(libFilter!=='all'&&lang!==libFilter)return false;
@@ -1252,7 +1262,8 @@ function renderLibVoices(){
     }
     return true;
   });
-  document.getElementById('vlib-count').textContent=`${filtered.length} vozes`;
+  const countEl=document.getElementById('vlib-count');
+  if(countEl)countEl.textContent=`${filtered.length} vozes`;
   if(!filtered.length){
     grid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">🎭</div><p>Nenhuma voz encontrada para este filtro.</p></div>`;
     return;
@@ -1261,17 +1272,19 @@ function renderLibVoices(){
     const lang=getLangCode(v);
     const gender=getGender(v);
     const emoji=getGenderEmoji(v);
-    const langLabel=(v.labels?.language||v.language||lang||'—');
+    const langLabel=escHtml(v.labels?.language||v.language||lang||'—');
+    const vid=escHtml(v.voice_id);
+    const vname=escHtml(v.name);
     const isSel=selectedVoice===v.voice_id;
-    return `<div class="vlc${isSel?' sel-lib':''}" id="vlc-${v.voice_id}">
+    return `<div class="vlc${isSel?' sel-lib':''}" id="vlc-${vid}">
       <div class="vlc-top">
         <div class="vlc-av ${gender}">${emoji}</div>
         <span class="vlc-badge ${lang}">${lang.toUpperCase()}</span>
       </div>
-      <div class="vlc-name">${v.name}</div>
+      <div class="vlc-name" title="${vname}">${vname}</div>
       <div class="vlc-lang">${langLabel}</div>
       <div class="vlc-actions">
-        <button class="vlc-btn use" onclick="selectVoiceFromLib('${v.voice_id}','${v.name.replace(/'/g,"\\'")}','${langLabel.replace(/'/g,"\\'")}')">
+        <button class="vlc-btn use" onclick="selectVoiceFromLib(${JSON.stringify(v.voice_id)},${JSON.stringify(v.name)},${JSON.stringify(v.labels?.language||v.language||lang)})">
           ${isSel?'✓ Selecionada':'⚡ Usar'}
         </button>
       </div>
