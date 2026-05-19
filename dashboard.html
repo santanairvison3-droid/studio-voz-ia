@@ -908,45 +908,40 @@ async function refreshStats(){
   }catch(e){}
 }
 
+// Tenta cada endpoint em ordem até achar um que responda 200
+const VOICE_ENDPOINTS=['/api/voices-index'];
+
 async function loadVoices(){
   const grid=document.getElementById('voices-grid');
   const libGrid=document.getElementById('vlib-grid');
-  try{
-    const r=await fetch(`${API}/api/voices`,{headers:{Authorization:`Bearer ${token}`}});
-    const raw=await r.text();
-    console.log('[voices] status:',r.status,'body:',raw);
-    if(r.status===401){logout();return;}
-    if(!r.ok){
-      const msg=`API retornou ${r.status}: ${raw.substring(0,120)}`;
-      grid.innerHTML=`<div class="voice-loading" style="color:var(--error)">${msg}</div>`;
-      libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">⚠️</div><p>${msg}</p></div>`;
+  grid.innerHTML='<div class="voice-loading">Carregando vozes...</div>';
+
+  let lastErr='';
+  for(const ep of VOICE_ENDPOINTS){
+    try{
+      const r=await fetch(`${API}${ep}`,{headers:{Authorization:`Bearer ${token}`}});
+      if(r.status===401){logout();return;}
+      if(!r.ok){lastErr=`${ep} → ${r.status}`;continue;}
+      const raw=await r.text();
+      let d;
+      try{d=JSON.parse(raw);}catch(e){lastErr=`${ep} → JSON inválido`;continue;}
+      const voices=Array.isArray(d)?d:(d.voices||d.data||d.items||d.result||[]);
+      if(!voices.length){lastErr=`${ep} → array vazio (chaves: ${Object.keys(d).join(',')})`;continue;}
+      // SUCESSO
+      allVoices=voices;
+      console.log('[voices] OK via',ep,'count:',voices.length,'sample:',voices[0]);
+      renderVoices(allVoices);
+      renderLibVoices();
+      const sel=document.getElementById('bulk-voice-sel');
+      sel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
+      document.getElementById('v-count-lbl').textContent=`${allVoices.length} vozes`;
       return;
-    }
-    let d;
-    try{d=JSON.parse(raw);}catch(e){
-      grid.innerHTML=`<div class="voice-loading" style="color:var(--error)">JSON inválido: ${raw.substring(0,100)}</div>`;
-      libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">⚠️</div><p>Resposta inválida da API.</p></div>`;
-      return;
-    }
-    // Detectar formato: array direto, {voices:[]}, {data:[]}, {items:[]}
-    allVoices=Array.isArray(d)?d:(d.voices||d.data||d.items||[]);
-    console.log('[voices] parsed count:',allVoices.length,'sample:',allVoices[0]);
-    if(!allVoices.length){
-      const keys=Object.keys(d).join(', ');
-      grid.innerHTML=`<div class="voice-loading" style="color:var(--warning)">Array vazio. Chaves recebidas: [${keys}]<br>Raw: ${raw.substring(0,200)}</div>`;
-      libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">🔍</div><p>Nenhuma voz retornada.<br><small style="font-family:monospace;font-size:9px">Chaves: [${keys}]</small></p></div>`;
-      return;
-    }
-    renderVoices(allVoices);
-    renderLibVoices();
-    const sel=document.getElementById('bulk-voice-sel');
-    sel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
-    document.getElementById('v-count-lbl').textContent=`${allVoices.length} vozes`;
-  }catch(e){
-    console.error('[voices] error:',e);
-    grid.innerHTML=`<div class="voice-loading" style="color:var(--error)">Erro: ${e.message}</div>`;
-    libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">⚠️</div><p>Erro de conexão: ${e.message}</p></div>`;
+    }catch(e){lastErr=`${ep} → ${e.message}`;}
   }
+  // Todos falharam — mostra diagnóstico
+  const msg=`Nenhum endpoint respondeu.<br><small style="font-family:monospace;font-size:10px;line-height:1.8">${VOICE_ENDPOINTS.map(ep=>`${ep}`).join('<br>')}</small><br><br>Último erro: ${lastErr}`;
+  grid.innerHTML=`<div class="voice-loading" style="color:var(--error);line-height:1.7">${msg}</div>`;
+  libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">⚠️</div><p>${msg}</p></div>`;
 }
 
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -1053,7 +1048,9 @@ function pollAudio(jobId){
       const r=await fetch(`${API}/api/generate-index?job_id=${jobId}`,{headers:{Authorization:`Bearer ${token}`}});
       const d=await r.json();
       if(d.status==='done'||d.status==='completed'){
-        clearInterval(t);showAudio(d.audio_url,jobId);
+        clearInterval(t);
+        const audioUrl=d.audio_url||`${API}/api/v1/audio/download/${jobId}`;
+        showAudio(audioUrl,jobId);
         saveHistory({url:d.audio_url,jobId,text:document.getElementById('text-input').value.substring(0,80),voice:selectedVoice,ts:new Date().toISOString()});
         refreshStats();
       } else if(d.status==='error'||d.status==='failed'){
@@ -1151,7 +1148,7 @@ function pollQueueItem(item){
       try{
         const r=await fetch(`${API}/api/generate-index?job_id=${item.job_id}`,{headers:{Authorization:`Bearer ${token}`}});
         const d=await r.json();
-        if(d.status==='done'||d.status==='completed'){clearInterval(t);item.status='done';item.audio_url=d.audio_url;saveHistory({url:d.audio_url,jobId:item.job_id,text:item.text.substring(0,80),voice:item.voice_id,ts:new Date().toISOString()});renderQueue();resolve();}
+        if(d.status==='done'||d.status==='completed'){clearInterval(t);item.status='done';item.audio_url=d.audio_url||`${API}/api/v1/audio/download/${item.job_id}`;saveHistory({url:item.audio_url,jobId:item.job_id,text:item.text.substring(0,80),voice:item.voice_id,ts:new Date().toISOString()});renderQueue();resolve();}
         else if(d.status==='error'||d.status==='failed'){clearInterval(t);item.status='error';item.error='Falha';renderQueue();resolve();}
         else renderQueue();
       }catch(e){}
