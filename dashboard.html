@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio Voz IA — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fira+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #07070f;
+  --surface: #0d0d1a;
+  --surface2: #131328;
+  --surface3: #181830;
+  --border: rgba(255,255,255,0.07);
+  --border-accent: rgba(255,40,80,0.2);
+  --accent: #ff2847;
+  --accent2: #ff6b35;
+  --glow: rgba(255,40,80,0.25);
+  --text: #eeeef8;
+  --muted: #55558a;
+  --success: #00d68f;
+  --warning: #ffab00;
+  --error: #ff3d71;
+  --sidebar-w: 250px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Fira Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ──────── SIDEBAR ──────── */
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: transform 0.3s ease;
+}
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sidebar-logo .icon {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 0 20px var(--glow);
+  flex-shrink: 0;
+}
+.sidebar-logo h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 2px;
+  line-height: 1.1;
+}
+.sidebar-logo p {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.nav-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 8px 4px;
+  margin-top: 8px;
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+.nav-link:hover { background: var(--surface2); color: var(--text); }
+.nav-link.active {
+  background: rgba(255,40,80,0.1);
+  border-color: rgba(255,40,80,0.2);
+  color: #ff7090;
+}
+.nav-link .ic { font-size: 16px; width: 20px; text-align: center; }
+
+/* User info at bottom */
+.sidebar-user {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+.user-card {
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-avatar {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role {
+  font-size: 10px; color: var(--muted); letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.btn-logout {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px;
+  padding: 4px;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.btn-logout:hover { color: var(--error); }
+
+/* ──────── MAIN ──────── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topbar {
+  padding: 18px 32px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(7,7,15,0.8);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+}
+.credits-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border-accent);
+  border-radius: 99px;
+  padding: 6px 14px 6px 10px;
+  font-size: 13px;
+}
+.credits-dot {
+  width: 8px; height: 8px;
+  background: var(--success);
+  border-radius: 50%;
+  animation: pulse2 2s infinite;
+}
+@keyframes pulse2 {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.7); }
+}
+
+.content { padding: 32px; flex: 1; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+.tab {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── Generate tab ── */
+.gen-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  align-items: start;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+}
+.card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  color: var(--text);
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 200px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+textarea:focus {
+  border-color: rgba(255,40,80,0.4);
+  box-shadow: 0 0 0 3px rgba(255,40,80,0.1);
+}
+textarea::placeholder { color: var(--muted); }
+
+.char-counter {
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.char-counter.warn { color: var(--warning); }
+.char-counter.over { color: var(--error); }
+
+/* Voice cards */
+.voices-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.voice-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  position: relative;
+}
+.voice-card:hover { background: var(--surface3); border-color: rgba(255,40,80,0.25); }
+.voice-card.selected {
+  border-color: var(--accent);
+  background: rgba(255,40,80,0.08);
+}
+.voice-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 8px; right: 10px;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.voice-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.voice-lang { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.voice-loading { color: var(--muted); font-size: 13px; padding: 12px 0; text-align: center; }
+
+/* Buttons */
+.btn-generate {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
+  box-shadow: 0 4px 24px var(--glow);
+  position: relative;
+  overflow: hidden;
+}
+.btn-generate::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.4s;
+}
+.btn-generate:hover::after { left: 150%; }
+.btn-generate:hover { box-shadow: 0 6px 36px rgba(255,40,80,0.4); }
+.btn-generate:active { transform: scale(0.98); }
+.btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-generate:disabled::after { display: none; }
+
+/* Progress */
+.progress-bar {
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 16px 0 0;
+  display: none;
+}
+.progress-bar.show { display: block; }
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 99px;
+  animation: progressAnim 1.5s ease-in-out infinite;
+  width: 30%;
+}
+@keyframes progressAnim {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(450%); }
+}
+
+/* Status message */
+.status-msg {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  display: none;
+}
+.status-msg.show { display: block; }
+
+/* Audio result */
+.audio-result {
+  margin-top: 20px;
+  background: var(--surface2);
+  border: 1px solid rgba(0,214,143,0.2);
+  border-radius: 12px;
+  padding: 20px;
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.audio-result.show { display: block; }
+.audio-result h4 {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--success);
+  margin-bottom: 12px;
+}
+audio {
+  width: 100%;
+  border-radius: 8px;
+  filter: invert(0);
+}
+.audio-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.btn-sm {
+  flex: 1;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.15s;
+  text-decoration: none;
+  text-align: center;
+  display: inline-block;
+}
+.btn-sm.outline {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--muted);
+}
+.btn-sm.outline:hover { border-color: var(--text); color: var(--text); }
+.btn-sm.primary-sm {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: transparent;
+  color: white;
+}
+.btn-sm.primary-sm:hover { opacity: 0.85; }
+
+/* Stats row */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.stat-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1px; }
+.stat-value.accent { color: var(--accent); }
+.stat-value.success { color: var(--success); }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── History tab ── */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.history-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  animation: fadeIn 0.25s ease;
+}
+.history-icon {
+  width: 40px; height: 40px;
+  background: rgba(255,40,80,0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.history-info { flex: 1; min-width: 0; }
+.history-text {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+.history-meta { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+.btn-play-hist {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.btn-play-hist:hover { border-color: var(--accent); color: var(--accent); }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+.empty-state .ic { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+.empty-state p { font-size: 14px; }
+
+/* Voucher section */
+.voucher-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+input.voucher-input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 16px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input.voucher-input:focus { border-color: rgba(255,40,80,0.4); }
+input.voucher-input::placeholder { text-transform: none; letter-spacing: 0; color: var(--muted); }
+.btn-redeem {
+  padding: 13px 22px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: opacity 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px var(--glow);
+  white-space: nowrap;
+}
+.btn-redeem:hover { opacity: 0.85; }
+.btn-redeem:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.voucher-msg {
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  display: none;
+}
+.voucher-msg.ok  { background: rgba(0,214,143,0.1); border: 1px solid rgba(0,214,143,0.2); color: #2dffb4; display: block; }
+.voucher-msg.err { background: rgba(255,61,113,0.1); border: 1px solid rgba(255,61,113,0.2); color: #ff7096; display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Mobile */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .gen-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .hamburger { display: flex !important; }
+}
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  padding: 4px;
+}
+.hamburger span { width: 20px; height: 2px; background: var(--text); border-radius: 99px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon">🎙️</div>
+    <div>
+      <h1>Studio Voz</h1>
+      <p>Irvison Dark</p>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-label">Geral</div>
+    <div class="nav-link active" onclick="switchTab('generate', this)">
+      <span class="ic">⚡</span> Gerar Áudio
+    </div>
+    <div class="nav-link" onclick="switchTab('history', this)">
+      <span class="ic">📋</span> Histórico
+    </div>
+    <div class="nav-link" onclick="switchTab('voucher', this)">
+      <span class="ic">🎟️</span> Voucher
+    </div>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="user-card">
+      <div class="user-avatar" id="sb-avatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="sb-name">Carregando...</div>
+        <div class="user-role" id="sb-role">user</div>
+      </div>
+      <button class="btn-logout" title="Sair" onclick="logout()">⏻</button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="hamburger" id="hamburger" onclick="toggleSidebar()">
+        <span></span><span></span><span></span>
+      </div>
+      <h2 id="page-title">GERAR ÁUDIO</h2>
+    </div>
+    <div class="credits-badge">
+      <div class="credits-dot"></div>
+      <span id="top-credits">0 créditos</span>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Generate Tab -->
+    <div class="tab-content active" id="tab-generate">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">💰 Créditos</div>
+          <div class="stat-value accent" id="s-credits">0</div>
+          <div class="stat-sub">disponíveis</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">📅 Hoje</div>
+          <div class="stat-value success" id="s-today">0</div>
+          <div class="stat-sub" id="s-limit">de 20 áudios</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">🎵 Total</div>
+          <div class="stat-value" id="s-total">0</div>
+          <div class="stat-sub">gerados</div>
+        </div>
+      </div>
+
+      <div class="gen-grid">
+        <!-- Left: text input -->
+        <div>
+          <div class="card">
+            <div class="card-title">✍️ TEXTO</div>
+            <textarea id="text-input" placeholder="Digite o texto que será convertido em áudio...
+
+Exemplo: Olá, bem-vindo ao Studio Voz IA. Este é um teste de geração de áudio com inteligência artificial." oninput="updateCounter()"></textarea>
+            <div class="char-counter" id="char-count">0 caracteres</div>
+
+            <button class="btn-generate" id="btn-gen" onclick="generateAudio()">
+              🎙️ GERAR ÁUDIO
+            </button>
+            <div class="progress-bar" id="progress"><div class="progress-fill"></div></div>
+            <div class="status-msg" id="status-msg">Processando...</div>
+
+            <div class="audio-result" id="audio-result">
+              <h4>✅ Áudio Gerado!</h4>
+              <audio id="audio-player" controls></audio>
+              <div class="audio-actions">
+                <a id="btn-download" class="btn-sm primary-sm" download="audio.mp3">⬇ Download</a>
+                <button class="btn-sm outline" onclick="copyJobId()">📋 Copiar ID</button>
+              </div>
+              <div style="margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);">
+                Job ID: <span id="job-id-display">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: voice selector -->
+        <div>
+          <div class="card">
+            <div class="card-title">🎤 VOZ</div>
+            <div class="voices-grid" id="voices-grid">
+              <div class="voice-loading">Carregando vozes...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content" id="tab-history">
+      <div class="card" style="margin-bottom:16px;padding:16px 20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="card-title" style="margin:0;">📋 HISTÓRICO DE ÁUDIOS</div>
+          <button class="btn-sm outline" onclick="clearHistory()">🗑 Limpar</button>
+        </div>
+      </div>
+      <div class="history-list" id="history-list"></div>
+    </div>
+
+    <!-- Voucher Tab -->
+    <div class="tab-content" id="tab-voucher">
+      <div class="card">
+        <div class="card-title">🎟️ RESGATAR VOUCHER</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">
+          Insira um código de voucher para adicionar créditos à sua conta.
+        </p>
+        <div class="voucher-form">
+          <input class="voucher-input" type="text" id="voucher-input"
+            placeholder="Ex: BETA2025"
+            onkeydown="if(event.key==='Enter')redeemVoucher()">
+          <button class="btn-redeem" id="btn-redeem" onclick="redeemVoucher()">RESGATAR</button>
+        </div>
+        <div class="voucher-msg" id="voucher-msg"></div>
+
+        <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
+          <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">
+            💡 Conversão de Créditos
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;">
+              <div style="font-size:11px;color:var(--muted);">1 áudio</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);">~30 créditos</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;">
+              <div style="font-size:11px;color:var(--muted);">BETA2025</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--success);">300 créditos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://studio-voz-ia-irvison-s-projects.vercel.app';
+
+/* ── Auth ── */
+function getToken() { return localStorage.getItem('svia_token'); }
+function parseJWT(token) {
+  try { return JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); }
+  catch { return null; }
+}
+function logout() {
+  localStorage.removeItem('svia_token');
+  window.location.href = 'index.html';
+}
+
+const token = getToken();
+if (!token) { window.location.href = 'index.html'; }
+
+let currentUser = parseJWT(token) || {};
+let selectedVoice = null;
+let currentJobId = null;
+let pollingTimer = null;
+
+/* ── Init ── */
+async function init() {
+  // Set user info
+  document.getElementById('sb-name').textContent = currentUser.name || currentUser.username || 'Usuário';
+  document.getElementById('sb-role').textContent = currentUser.role || 'user';
+  document.getElementById('sb-avatar').textContent = (currentUser.name || currentUser.username || 'U')[0].toUpperCase();
+
+  await Promise.all([loadUserStats(), loadVoices()]);
+  renderHistory();
+}
+
+/* ── User stats ── */
+async function loadUserStats() {
+  try {
+    const res = await fetch(`${API}/api/auth`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) { logout(); return; }
+    const data = await res.json();
+    const u = data.user || currentUser;
+
+    const credits = u.credits ?? 0;
+    const today = u.daily?.audios ?? 0;
+    const limDay = u.lim_day ?? 20;
+    const total = u.total_audios ?? 0;
+
+    document.getElementById('s-credits').textContent = credits;
+    document.getElementById('s-today').textContent = today;
+    document.getElementById('s-limit').textContent = `de ${limDay} áudios`;
+    document.getElementById('s-total').textContent = total;
+    document.getElementById('top-credits').textContent = `${credits} créditos`;
+
+    currentUser = { ...currentUser, ...u };
+  } catch (e) {
+    console.error('Erro ao carregar stats:', e);
+  }
+}
+
+/* ── Voices ── */
+async function loadVoices() {
+  const grid = document.getElementById('voices-grid');
+  try {
+    const res = await fetch(`${API}/api/voices-index`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const voices = data.voices || data || [];
+
+    if (!voices.length) {
+      grid.innerHTML = '<div class="voice-loading">Nenhuma voz disponível.</div>'; return;
+    }
+
+    grid.innerHTML = '';
+    voices.forEach((v, i) => {
+      const el = document.createElement('div');
+      el.className = 'voice-card' + (i === 0 ? ' selected' : '');
+      el.dataset.id = v.voice_id || v.id;
+      el.innerHTML = `
+        <div class="voice-name">${v.name || v.voice_name || 'Voz ' + (i+1)}</div>
+        <div class="voice-lang">${v.labels?.language || v.language || 'PT-BR'}</div>
+      `;
+      el.addEventListener('click', () => selectVoice(el, v.voice_id || v.id));
+      grid.appendChild(el);
+      if (i === 0) selectedVoice = v.voice_id || v.id;
+    });
+  } catch (e) {
+    grid.innerHTML = '<div class="voice-loading" style="color:var(--error)">Erro ao carregar vozes.</div>';
+    console.error(e);
+  }
+}
+
+function selectVoice(el, id) {
+  document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedVoice = id;
+}
+
+/* ── Char counter ── */
+function updateCounter() {
+  const len = document.getElementById('text-input').value.length;
+  const el = document.getElementById('char-count');
+  el.textContent = `${len} caracteres`;
+  el.className = 'char-counter' + (len > 4000 ? ' over' : len > 3000 ? ' warn' : '');
+}
+
+/* ── Generate ── */
+async function generateAudio() {
+  const text = document.getElementById('text-input').value.trim();
+  if (!text) { alert('Digite o texto antes de gerar.'); return; }
+  if (!selectedVoice) { alert('Selecione uma voz.'); return; }
+
+  const btn = document.getElementById('btn-gen');
+  btn.disabled = true;
+  btn.textContent = '⏳ GERANDO...';
+  document.getElementById('progress').classList.add('show');
+  document.getElementById('status-msg').classList.add('show');
+  document.getElementById('status-msg').textContent = 'Enviando para o servidor...';
+  document.getElementById('audio-result').classList.remove('show');
+
+  try {
+    const res = await fetch(`${API}/api/generate-index`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ text, voice_id: selectedVoice })
+    });
+
+    if (res.status === 401) { logout(); return; }
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Erro na geração.');
+    }
+
+    // Immediate audio URL
+    if (data.audio_url) {
+      showAudioResult(data.audio_url, data.job_id, text);
+      return;
+    }
+
+    // Async job — start polling
+    if (data.job_id) {
+      currentJobId = data.job_id;
+      document.getElementById('status-msg').textContent = `Job iniciado · ID: ${data.job_id}`;
+      startPolling(data.job_id, text);
+      return;
+    }
+
+    throw new Error('Resposta inesperada do servidor.');
+
+  } catch (e) {
+    document.getElementById('status-msg').textContent = `❌ ${e.message}`;
+    document.getElementById('status-msg').style.color = 'var(--error)';
+    resetGenBtn();
+  }
+}
+
+function startPolling(jobId, text) {
+  let attempts = 0;
+  const maxAttempts = 60; // 3 min max
+
+  document.getElementById('status-msg').textContent = `⏳ Processando áudio... (0s)`;
+
+  pollingTimer = setInterval(async () => {
+    attempts++;
+    document.getElementById('status-msg').textContent = `⏳ Processando áudio... (${attempts * 3}s)`;
+
+    if (attempts >= maxAttempts) {
+      clearInterval(pollingTimer);
+      document.getElementById('status-msg').textContent = `⚠️ Timeout. Job ID: ${jobId}`;
+      resetGenBtn();
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/api/generate-index?job_id=${jobId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (data.status === 'done' || data.status === 'completed') {
+        clearInterval(pollingTimer);
+        showAudioResult(data.audio_url, jobId, text);
+      } else if (data.status === 'error' || data.status === 'failed') {
+        clearInterval(pollingTimer);
+        document.getElementById('status-msg').textContent = `❌ Falha na geração.`;
+        resetGenBtn();
+      }
+    } catch (e) { /* continua polling */ }
+  }, 3000);
+}
+
+function showAudioResult(audioUrl, jobId, text) {
+  const player = document.getElementById('audio-player');
+  player.src = audioUrl;
+  document.getElementById('btn-download').href = audioUrl;
+  document.getElementById('job-id-display').textContent = jobId || '—';
+  document.getElementById('audio-result').classList.add('show');
+  document.getElementById('progress').classList.remove('show');
+  document.getElementById('status-msg').textContent = '✅ Áudio pronto!';
+  document.getElementById('status-msg').style.color = 'var(--success)';
+
+  // Save to history
+  saveHistory({ url: audioUrl, jobId, text: text.substring(0, 80), voice: selectedVoice, ts: new Date().toISOString() });
+
+  resetGenBtn();
+  loadUserStats();
+}
+
+function resetGenBtn() {
+  const btn = document.getElementById('btn-gen');
+  btn.disabled = false;
+  btn.textContent = '🎙️ GERAR ÁUDIO';
+}
+
+function copyJobId() {
+  const id = document.getElementById('job-id-display').textContent;
+  navigator.clipboard.writeText(id).then(() => alert('Job ID copiado!'));
+}
+
+/* ── History (localStorage) ── */
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('svia_history') || '[]'); }
+  catch { return []; }
+}
+function saveHistory(item) {
+  const h = getHistory();
+  h.unshift(item);
+  if (h.length > 50) h.pop();
+  localStorage.setItem('svia_history', JSON.stringify(h));
+}
+function clearHistory() {
+  if (!confirm('Limpar todo o histórico local?')) return;
+  localStorage.removeItem('svia_history');
+  renderHistory();
+}
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const h = getHistory();
+  if (!h.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="ic">🎵</div>
+        <p>Nenhum áudio gerado ainda.</p>
+      </div>`;
+    return;
+  }
+  list.innerHTML = h.map(item => `
+    <div class="history-item">
+      <div class="history-icon">🎵</div>
+      <div class="history-info">
+        <div class="history-text">${item.text || 'Áudio'}...</div>
+        <div class="history-meta">${new Date(item.ts).toLocaleString('pt-BR')} · ${item.voice || '—'}</div>
+      </div>
+      ${item.url ? `<a class="btn-play-hist" href="${item.url}" target="_blank">▶ Ouvir</a>` : `<span style="font-size:11px;color:var(--muted);">ID: ${item.jobId||'—'}</span>`}
+    </div>
+  `).join('');
+}
+
+/* ── Voucher ── */
+async function redeemVoucher() {
+  const code = document.getElementById('voucher-input').value.trim().toUpperCase();
+  if (!code) return;
+
+  const btn = document.getElementById('btn-redeem');
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  const msg = document.getElementById('voucher-msg');
+  msg.className = 'voucher-msg';
+
+  try {
+    const res = await fetch(`${API}/api/voucher-redeem`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ code, username: currentUser.username })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      msg.textContent = `✅ ${data.message || `Voucher resgatado! +${data.credits || ''} créditos.`}`;
+      msg.className = 'voucher-msg ok';
+      document.getElementById('voucher-input').value = '';
+      await loadUserStats();
+    } else {
+      msg.textContent = `❌ ${data.error || 'Voucher inválido ou já utilizado.'}`;
+      msg.className = 'voucher-msg err';
+    }
+  } catch {
+    msg.textContent = '❌ Erro de conexão.';
+    msg.className = 'voucher-msg err';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'RESGATAR';
+  }
+}
+
+/* ── Tabs ── */
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+  const titles = { generate: 'GERAR ÁUDIO', history: 'HISTÓRICO', voucher: 'VOUCHER' };
+  document.getElementById('page-title').textContent = titles[name] || name.toUpperCase();
+  if (name === 'history') renderHistory();
+}
+
+/* ── Mobile sidebar ── */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+init();
+</script>
+</body>
+</html>
