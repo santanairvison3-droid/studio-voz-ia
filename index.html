@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Irvison Darck · Studio de Voz IA v4</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#04080F;--bg1:#07101C;--bg2:#0C1828;--bg3:#112034;--bg4:#162840;
+  --accent:#00D4AA;--accent-dim:rgba(0,212,170,.12);--accent-border:rgba(0,212,170,.22);--accent-glow:0 0 20px rgba(0,212,170,.18);
+  --gold:#F0A500;--gold-dim:rgba(240,165,0,.1);--gold-border:rgba(240,165,0,.22);
+  --red:#FF4555;--red-dim:rgba(255,69,85,.1);--red-border:rgba(255,69,85,.22);
+  --blue:#4B9EFF;--blue-dim:rgba(75,158,255,.1);
+  --text0:#EEF2FF;--text1:#7B90B8;--text2:#354060;
+  --border:rgba(255,255,255,.055);--border2:rgba(255,255,255,.1);
+  --r4:4px;--r8:8px;--r12:12px;--r16:16px;--r20:20px;--r24:24px;
+  --f-head:'Syne',sans-serif;--f-body:'DM Sans',sans-serif;--f-mono:'JetBrains Mono',monospace;
+  --sidebar:252px;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--f-body);background:var(--bg0);color:var(--text0);min-height:100vh;overflow-x:hidden;line-height:1.55;font-size:14px}
+input,select,textarea,button{font-family:var(--f-body);font-size:14px}
+::selection{background:var(--accent);color:#000}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.12)}
+
+/* ── AUTH ─────────────────────────────────────── */
+#authScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:radial-gradient(ellipse 70% 60% at 50% -5%,rgba(0,212,170,.07) 0%,transparent 65%)}
+.auth-wrap{width:100%;max-width:420px;padding:24px}
+.auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px}
+.auth-mark{width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,#00D4AA 0%,#0066FF 100%);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:var(--accent-glow)}
+.auth-mark svg{width:28px;height:28px;fill:none;stroke:#000;stroke-width:2.5;stroke-linecap:round}
+.auth-logo-text{font-family:var(--f-head);font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.auth-logo-sub{font-size:11px;color:var(--accent);font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.auth-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r24);padding:28px}
+.auth-h{font-family:var(--f-head);font-size:22px;font-weight:700;margin-bottom:3px}
+.auth-p{font-size:13px;color:var(--text1);margin-bottom:20px}
+
+/* pending screen */
+#pendingScreen{display:none;align-items:center;justify-content:center;min-height:100vh;
+  background:radial-gradient(ellipse 70% 60% at 50% -5%,rgba(240,165,0,.06) 0%,transparent 65%)}
+.pending-card{background:var(--bg2);border:1px solid var(--gold-border);border-radius:var(--r24);padding:32px;
+  width:100%;max-width:420px;margin:24px;text-align:center}
+.pending-icon{font-size:48px;margin-bottom:16px;display:block}
+.pending-h{font-family:var(--f-head);font-size:20px;font-weight:700;color:var(--gold);margin-bottom:8px}
+.pending-p{font-size:13px;color:var(--text1);line-height:1.7;margin-bottom:20px}
+.pending-user{font-family:var(--f-mono);background:var(--bg3);border:1px solid var(--border2);
+  border-radius:var(--r8);padding:6px 14px;display:inline-block;font-size:13px;color:var(--text0);margin-bottom:16px}
+
+/* ── FORM ELEMENTS ─────────────────────────────── */
+.fl{display:block;font-size:11px;font-weight:700;color:var(--text1);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.fi{width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--r8);color:var(--text0);outline:none;transition:border-color .2s,box-shadow .2s}
+.fi:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,170,.1)}
+.fi::placeholder{color:var(--text2)}
+.fi-mono{font-family:var(--f-mono);letter-spacing:.04em}
+textarea.fi{resize:vertical;min-height:100px;line-height:1.65}
+select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%237B90B8' d='M5 7L1 3h8z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;cursor:pointer}
+.fg{margin-bottom:14px}
+
+/* ── BUTTONS ────────────────────────────────────── */
+.btn-p{width:100%;padding:12px;background:var(--accent);color:#000;border:none;border-radius:var(--r8);
+  font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;font-family:var(--f-head);letter-spacing:.01em}
+.btn-p:hover{opacity:.88}.btn-p:active{transform:scale(.98)}.btn-p:disabled{opacity:.35;cursor:not-allowed}
+.btn-g{padding:9px 16px;background:transparent;border:1px solid var(--border2);border-radius:var(--r8);
+  color:var(--text1);cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-g:hover{background:var(--bg3);color:var(--text0);border-color:rgba(255,255,255,.18)}
+.btn-icon{background:none;border:none;color:var(--text1);cursor:pointer;padding:6px;
+  border-radius:var(--r8);transition:all .15s;display:inline-flex;align-items:center}
+.btn-icon:hover{background:var(--bg3);color:var(--text0)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-danger{background:var(--red-dim);border-color:var(--red-border);color:var(--red)}
+.btn-danger:hover{background:rgba(255,69,85,.2)}
+.link-btn{background:none;border:none;color:var(--accent);cursor:pointer;padding:0;font-family:var(--f-body);font-size:14px}
+.err-msg{font-size:12px;color:var(--red);margin-top:8px;text-align:center}
+
+/* ── LAYOUT ─────────────────────────────────────── */
+#app{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar);background:var(--bg1);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
+.main{flex:1;margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── SIDEBAR ─────────────────────────────────────── */
+.sb-logo{padding:17px 16px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-mark{width:34px;height:34px;border-radius:9px;flex-shrink:0;
+  background:linear-gradient(135deg,#00D4AA,#0066FF);display:flex;align-items:center;justify-content:center}
+.sb-mark svg{width:18px;height:18px;fill:none;stroke:#000;stroke-width:2.5;stroke-linecap:round}
+.sb-name{font-family:var(--f-head);font-size:14px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.sb-tag{font-size:10px;color:var(--accent);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+
+/* API STATUS BAR */
+.api-status-bar{margin:8px 10px 0;padding:8px 12px;border-radius:var(--r8);background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:11px}
+.api-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.api-dot.ok{background:var(--accent)}
+.api-dot.err{background:var(--red)}
+.api-dot.checking{background:var(--gold);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.credits-box{margin:8px 10px 0;padding:13px;border-radius:var(--r12);background:var(--accent-dim);border:1px solid var(--accent-border)}
+.cb-label{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.cb-num{font-family:var(--f-head);font-size:30px;font-weight:800;line-height:1;color:var(--text0)}
+.cb-sub{font-size:11px;color:var(--text1);margin-top:3px}
+.cb-bar{height:3px;background:rgba(0,212,170,.15);border-radius:2px;margin-top:10px;overflow:hidden}
+.cb-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .5s}
+.limits-info{margin:0 10px 8px;padding:10px 12px;border-radius:var(--r8);background:rgba(240,165,0,.06);
+  border:1px solid rgba(240,165,0,.14);font-size:10px;color:var(--gold);font-weight:600;line-height:1.7}
+.limits-info span{display:block}
+.sb-nav{flex:1;padding:8px;overflow-y:auto}
+.sb-sec{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;padding:10px 8px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--r8);
+  cursor:pointer;transition:all .15s;color:var(--text1);font-weight:500;user-select:none;border:1px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--text0)}
+.nav-item.active{background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border)}
+.nav-icon{width:17px;height:17px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav-badge{margin-left:auto;background:var(--gold);color:#000;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;font-family:var(--f-head)}
+.nav-badge-red{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+.sb-foot{padding:10px;border-top:1px solid var(--border)}
+.user-row{display:flex;align-items:center;gap:9px;padding:8px;border-radius:var(--r8);cursor:pointer;transition:background .15s}
+.user-row:hover{background:rgba(255,255,255,.04)}
+.user-av{width:32px;height:32px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#00D4AA,#0066FF);
+  display:flex;align-items:center;justify-content:center;font-family:var(--f-head);font-size:13px;font-weight:800;color:#000}
+.user-nm{font-size:13px;font-weight:600;color:var(--text0);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-rl{font-size:11px;color:var(--text1)}
+
+/* ── PAGE HEADER ─────────────────────────────────── */
+.ph{padding:17px 24px 13px;border-bottom:1px solid var(--border);background:var(--bg1);
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;gap:16px}
+.ph-title{font-family:var(--f-head);font-size:19px;font-weight:700;letter-spacing:-.02em}
+.ph-sub{font-size:12px;color:var(--text1);margin-top:1px}
+
+/* ── CONTENT ─────────────────────────────────────── */
+.pb{padding:20px 24px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r16);padding:18px 20px}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r12);padding:14px 16px}
+.stat-l{font-size:10px;font-weight:700;color:var(--text1);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.stat-v{font-family:var(--f-head);font-size:26px;font-weight:800;line-height:1;color:var(--text0)}
+.stat-s{font-size:11px;color:var(--text1);margin-top:3px}
+
+/* ── TABS ─────────────────────────────────────────── */
+.tabs{display:flex;gap:3px;background:var(--bg3);padding:3px;border-radius:var(--r8);width:fit-content;margin-bottom:18px}
+.tab{padding:7px 16px;border-radius:6px;border:none;background:transparent;color:var(--text1);
+  font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--f-body)}
+.tab.on{background:var(--bg4);color:var(--text0);border:1px solid var(--border2)}
+.tab:hover:not(.on){color:var(--text0)}
+
+/* ── VOICE LIBRARY ───────────────────────────────── */
+.vc-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.vc-tab{padding:6px 14px;border-radius:var(--r8);border:1px solid var(--border);background:var(--bg3);
+  color:var(--text1);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.vc-tab.on{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent)}
+.vc-tab:hover:not(.on){border-color:var(--border2);color:var(--text0)}
+
+/* Language filter pills */
+.lang-filter{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.lang-btn{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);
+  color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--f-head)}
+.lang-btn:hover{border-color:var(--border2);color:var(--text1)}
+.lang-btn.on{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent)}
+
+.letter-filter{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.lf-btn{width:26px;height:26px;border:1px solid var(--border);border-radius:5px;background:var(--bg3);
+  color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;font-family:var(--f-head)}
+.lf-btn:hover{border-color:var(--border2);color:var(--text1)}
+.lf-btn.on{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent)}
+.lf-btn.disabled{opacity:.3;cursor:not-allowed}
+
+.vc-search-row{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.vc-count-badge{font-size:11px;color:var(--text1);white-space:nowrap;padding:6px 12px;background:var(--bg3);
+  border:1px solid var(--border);border-radius:var(--r8)}
+
+.voice-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;max-height:340px;overflow-y:auto;padding-right:4px}
+.vc-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r8);
+  padding:11px 13px;cursor:pointer;transition:all .15s;position:relative}
+.vc-card:hover{border-color:rgba(255,255,255,.14);background:var(--bg4)}
+.vc-card.sel{border-color:var(--accent);background:var(--accent-dim)}
+.vc-card.fav-card{border-color:rgba(240,165,0,.2)}
+.vc-name{font-size:13px;font-weight:600;color:var(--text0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:22px}
+.vc-meta{font-size:11px;color:var(--text1);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.vc-gender-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:.05em}
+.gender-f{background:rgba(255,100,180,.12);color:#FF86D0;border:1px solid rgba(255,100,180,.2)}
+.gender-m{background:rgba(75,158,255,.1);color:#7CB9FF;border:1px solid rgba(75,158,255,.18)}
+.lang-tag{font-size:9px;padding:1px 5px;border-radius:3px;background:var(--bg4);border:1px solid var(--border);color:var(--text2)}
+.fav-btn{position:absolute;top:9px;right:9px;background:none;border:none;cursor:pointer;
+  color:var(--text2);transition:color .15s,transform .15s;padding:0;line-height:1;font-size:15px}
+.fav-btn.on{color:var(--gold);transform:scale(1.15)}
+.fav-btn:hover{color:var(--gold)}
+
+/* ── FILE UPLOAD ─────────────────────────────────── */
+.file-drop{border:2px dashed var(--border2);border-radius:var(--r12);padding:20px;text-align:center;
+  cursor:pointer;transition:all .2s;background:var(--bg3)}
+.file-drop:hover,.file-drop.drag{border-color:var(--accent);background:var(--accent-dim)}
+.file-drop input{display:none}
+.file-drop-icon{font-size:28px;margin-bottom:8px;display:block}
+.file-drop-txt{font-size:13px;color:var(--text1)}
+.file-drop-sub{font-size:11px;color:var(--text2);margin-top:4px}
+.file-loaded{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--accent-dim);
+  border:1px solid var(--accent-border);border-radius:var(--r8);font-size:13px}
+
+/* ── QUEUE ───────────────────────────────────────── */
+.qi{display:grid;grid-template-columns:28px 1fr auto auto;gap:10px;align-items:start;
+  padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r8);margin-bottom:7px;transition:border-color .2s}
+.qi.s-processing{border-color:rgba(240,165,0,.3);animation:qi-pulse 2s infinite}
+.qi.s-completed{border-color:rgba(0,212,170,.3)}
+.qi.s-error{border-color:rgba(255,69,85,.3)}
+@keyframes qi-pulse{0%,100%{opacity:1}50%{opacity:.75}}
+.qi-num{width:24px;height:24px;border-radius:50%;background:var(--bg4);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text2);margin-top:2px}
+.qi-name{font-size:12px;font-weight:600;color:var(--text0);margin-bottom:3px}
+.qi-txt{font-size:12px;color:var(--text1);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4}
+.qi-err{font-size:11px;color:var(--red);margin-top:4px}
+.prog-track{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin:12px 0}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .5s}
+
+/* ── BADGES ─────────────────────────────────────── */
+.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.b-idle,.b-pending{background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
+.b-queued,.b-processing{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
+.b-completed,.b-approved,.b-active{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border)}
+.b-error,.b-rejected,.b-blocked{background:var(--red-dim);color:var(--red);border:1px solid var(--red-border)}
+.b-admin{background:rgba(75,158,255,.12);color:var(--blue);border:1px solid rgba(75,158,255,.22)}
+
+/* ── CHAR COUNTER ────────────────────────────────── */
+.cc{font-family:var(--f-mono);font-size:10px;color:var(--text2);text-align:right;margin-top:4px}
+.cc.warn{color:var(--gold)}.cc.over{color:var(--red)}
+
+/* ── HISTORY TABLE ───────────────────────────────── */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:9px 13px;font-size:10px;font-weight:700;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:11px 13px;border-bottom:1px solid var(--border);color:var(--text1);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+
+/* ── PLANS ───────────────────────────────────────── */
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:14px}
+.plan{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r16);padding:20px;position:relative;transition:transform .2s}
+.plan:hover{transform:translateY(-2px)}
+.plan.featured{border-color:var(--accent);background:linear-gradient(160deg,rgba(0,212,170,.05),var(--bg2))}
+.plan-hot{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);
+  color:#000;font-size:10px;font-weight:800;padding:3px 14px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;font-family:var(--f-head)}
+.plan-nm{font-size:11px;font-weight:700;color:var(--text1);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.plan-pr{font-family:var(--f-head);font-size:30px;font-weight:800;color:var(--text0);line-height:1}
+.plan-cr{font-family:var(--f-head);font-size:20px;font-weight:800;color:var(--accent);margin:10px 0}
+.plan-f{font-size:12px;color:var(--text1);padding:3px 0;display:flex;align-items:center;gap:7px}
+.plan-f::before{content:'✓';color:var(--accent);font-size:11px;font-weight:900}
+
+/* ── VOUCHER ─────────────────────────────────────── */
+.vc-input-row{display:flex;gap:8px}
+.vc-result{margin-top:10px;padding:10px 14px;background:var(--accent-dim);border:1px solid var(--accent-border);
+  border-radius:var(--r8);font-family:var(--f-mono);font-size:15px;font-weight:700;letter-spacing:.12em;text-align:center;color:var(--accent)}
+
+/* ── TOAST ───────────────────────────────────────── */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r12);
+  padding:11px 16px;color:var(--text0);display:flex;align-items:center;gap:9px;
+  min-width:240px;max-width:320px;animation:tin .3s ease;box-shadow:0 8px 30px rgba(0,0,0,.55)}
+.toast.ok{border-color:var(--accent-border)}.toast.er{border-color:var(--red-border)}.toast.nf{border-color:rgba(75,158,255,.3)}
+@keyframes tin{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── MODAL ───────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;
+  justify-content:center;z-index:200;backdrop-filter:blur(6px)}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r20);padding:26px;
+  width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-h{font-family:var(--f-head);font-size:18px;font-weight:700;margin-bottom:4px}
+.modal-p{font-size:13px;color:var(--text1);margin-bottom:20px}
+
+/* ── UTILS ───────────────────────────────────────── */
+.hidden{display:none!important}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.row-sb{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;gap:10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.mb4{margin-bottom:16px}.mb3{margin-bottom:12px}.mb2{margin-bottom:8px}.mb1{margin-bottom:5px}
+.txt-sm{font-size:13px}.txt-xs{font-size:11px}.txt-muted{color:var(--text1)}.txt-accent{color:var(--accent)}.txt-gold{color:var(--gold)}.txt-red{color:var(--red)}
+.w100{width:100%}.spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.c-accent{color:var(--accent)}.c-gold{color:var(--gold)}.c-red{color:var(--red)}
+
+/* ── SECURITY NOTICE ─────────────────────────────── */
+.sec-notice{background:linear-gradient(135deg,rgba(75,158,255,.07),rgba(0,212,170,.05));
+  border:1px solid rgba(75,158,255,.2);border-radius:var(--r12);padding:14px 16px;font-size:12px;color:var(--text1);line-height:1.7}
+.sec-notice strong{color:var(--blue)}
+
+/* ── ADMIN EXTRAS ────────────────────────────────── */
+.user-detail-modal .modal{max-width:520px}
+.admin-action-row{display:flex;gap:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<!-- ═══ AUTH ═══ -->
+<div id="authScreen">
+  <div class="auth-wrap">
+    <div class="auth-logo">
+      <div class="auth-mark">
+        <svg viewBox="0 0 28 28"><path d="M2 14C4 9,6 5,8 14C10 23,12 4,14 14C16 24,18 7,20 14C22 21,24 17,26 14"/></svg>
+      </div>
+      <div>
+        <div class="auth-logo-text">Irvison Darck</div>
+        <div class="auth-logo-sub">Studio de Voz IA</div>
+      </div>
+    </div>
+    <div class="auth-card" id="loginCard">
+      <div class="auth-h">Entrar</div>
+      <div class="auth-p">Acesse seu studio de criação de áudio</div>
+      <div class="fg"><label class="fl">Usuário</label><input class="fi" id="lUser" placeholder="seu_usuario" autocomplete="username"></div>
+      <div class="fg"><label class="fl">Senha</label>
+        <div style="position:relative">
+          <input class="fi" type="password" id="lPass" placeholder="••••••••" autocomplete="current-password" style="padding-right:40px">
+          <button class="btn-icon" style="position:absolute;right:6px;top:50%;transform:translateY(-50%)" onclick="togglePw('lPass',this)">
+            <svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="mb3"><button class="btn-p" onclick="doLogin()" id="btnLogin">Entrar no Studio</button></div>
+      <p class="txt-sm txt-muted" style="text-align:center">Não tem conta? <button class="link-btn" onclick="showReg()">Solicitar acesso</button></p>
+      <p class="err-msg hidden" id="lErr"></p>
+    </div>
+    <div class="auth-card hidden" id="regCard">
+      <div class="auth-h">Solicitar acesso</div>
+      <div class="auth-p">Preencha seus dados · aprovação manual pelo admin</div>
+      <div class="fg"><label class="fl">Nome completo</label><input class="fi" id="rName" placeholder="Seu Nome"></div>
+      <div class="fg"><label class="fl">Usuário</label><input class="fi" id="rUser" placeholder="usuario_sem_espaco"></div>
+      <div class="fg"><label class="fl">E-mail</label><input class="fi" id="rEmail" type="email" placeholder="seu@email.com"></div>
+      <div class="fg"><label class="fl">Senha</label><input class="fi" type="password" id="rPass" placeholder="Mínimo 6 caracteres"></div>
+      <div class="mb3"><button class="btn-p" onclick="doRegister()" id="btnReg">Enviar solicitação</button></div>
+      <p class="txt-sm txt-muted" style="text-align:center">Já tem conta? <button class="link-btn" onclick="showLogin()">Entrar</button></p>
+      <p class="err-msg hidden" id="rErr"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PENDING ═══ -->
+<div id="pendingScreen">
+  <div class="pending-card">
+    <span class="pending-icon">⏳</span>
+    <div class="pending-h">Cadastro aguardando aprovação</div>
+    <p class="pending-p">Sua solicitação foi enviada com sucesso!<br>Aguarde o administrador liberar seu acesso.<br>Você será notificado assim que estiver aprovado.</p>
+    <div class="pending-user" id="pendingUser">—</div>
+    <button class="btn-g w100" onclick="logout()">Voltar ao início</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div id="app" class="hidden">
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-mark"><svg viewBox="0 0 18 18"><path d="M1 9C2.5 6,4 4,5.5 9C7 14,8.5 2,10 9C11.5 16,13 5,14.5 9C16 13,17 11,17 9"/></svg></div>
+      <div><div class="sb-name">Irvison Darck</div><div class="sb-tag">Studio v4</div></div>
+    </div>
+
+    <!-- API STATUS -->
+    <div class="api-status-bar">
+      <div class="api-dot checking" id="apiDot"></div>
+      <span id="apiStatusTxt" style="color:var(--text1);font-size:11px">Verificando API…</span>
+    </div>
+
+    <div class="credits-box" style="margin-top:8px">
+      <div class="cb-label">⚡ Créditos</div>
+      <div class="cb-num" id="sbCredits">—</div>
+      <div class="cb-sub" id="sbSub">carregando…</div>
+      <div class="cb-bar"><div class="cb-fill" id="cbFill" style="width:0%"></div></div>
+    </div>
+    <div class="limits-info" style="margin-top:8px">
+      <span>🎙️ Plano Mensal R$15:</span>
+      <span>• <strong>5</strong> áudios por dia</span>
+      <span>• <strong>150</strong> créditos / mês</span>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-sec">Principal</div>
+      <div class="nav-item active" id="ni-gen" onclick="goPage('gen')">
+        <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        Gerar Áudio
+      </div>
+      <div class="nav-item" id="ni-vox" onclick="goPage('vox')">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Biblioteca de Vozes
+        <span style="margin-left:auto;font-size:10px;color:var(--text2)" id="vcCountBadge"></span>
+      </div>
+      <div class="nav-item" id="ni-hist" onclick="goPage('hist')">
+        <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Histórico
+      </div>
+      <div class="nav-item" id="ni-buy" onclick="goPage('buy')">
+        <svg class="nav-icon" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        Assinar
+        <span class="nav-badge">R$15</span>
+      </div>
+      <div class="sb-sec hidden" id="sb-admin-sec">Admin</div>
+      <div class="nav-item hidden" id="ni-adm" onclick="goPage('adm')">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Painel Admin
+        <span class="nav-badge-red hidden" id="adminBadge">0</span>
+      </div>
+    </nav>
+    <div class="sb-foot">
+      <div class="user-row" onclick="if(confirm('Sair da sessão?'))logout()">
+        <div class="user-av" id="uAv">?</div>
+        <div style="flex:1;min-width:0">
+          <div class="user-nm" id="uNm">—</div>
+          <div class="user-rl" id="uRl">—</div>
+        </div>
+        <svg style="width:14px;height:14px;stroke:var(--text2);fill:none;stroke-width:2;flex-shrink:0" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ══ PAGE: GERAR ÁUDIO ══ -->
+    <div id="pg-gen">
+      <div class="ph">
+        <div>
+          <div class="ph-title">Gerar Áudio</div>
+          <div class="ph-sub">Converta texto em voz de alta qualidade</div>
+        </div>
+        <div class="tabs" style="margin:0">
+          <button class="tab on" id="t-single" onclick="switchTab('single')">Individual</button>
+          <button class="tab" id="t-bulk" onclick="switchTab('bulk')">Em Massa</button>
+        </div>
+      </div>
+      <div class="pb">
+        <div class="stats-grid">
+          <div class="stat"><div class="stat-l">Créditos</div><div class="stat-v c-accent" id="stCredits">—</div><div class="stat-s">disponíveis</div></div>
+          <div class="stat"><div class="stat-l">Hoje</div><div class="stat-v" id="stToday">0</div><div class="stat-s" id="stTodaySub">de 5 áudios</div></div>
+          <div class="stat"><div class="stat-l">Total gerado</div><div class="stat-v" id="stTotal">0</div><div class="stat-s">todos os tempos</div></div>
+          <div class="stat"><div class="stat-l">Limite por áudio</div><div class="stat-v c-gold">150k</div><div class="stat-s">caracteres</div></div>
+        </div>
+
+        <div class="card mb4">
+          <div class="row-sb mb2">
+            <div style="font-size:13px;font-weight:700;font-family:var(--f-head)">Voz selecionada</div>
+            <button class="btn-g btn-sm" onclick="goPage('vox')">↗ Biblioteca de Vozes</button>
+          </div>
+          <div id="selVoiceBox">
+            <div style="font-size:13px;color:var(--text1)">Nenhuma voz selecionada · <button class="link-btn" onclick="goPage('vox')">escolher na biblioteca</button></div>
+          </div>
+        </div>
+
+        <!-- Single -->
+        <div id="tab-single">
+          <div class="card mb4">
+            <div style="font-size:14px;font-weight:700;font-family:var(--f-head);margin-bottom:12px">Texto para converter</div>
+            <div class="fg"><label class="fl">Nome do áudio</label><input class="fi" id="aName" placeholder="ex: intro_ep01"></div>
+            <div class="mb3">
+              <label class="fl">Carregar arquivo .txt</label>
+              <div class="file-drop" id="fileDrop" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)" onclick="document.getElementById('txtFile').click()">
+                <input type="file" id="txtFile" accept=".txt" onchange="loadTxtFile(this)">
+                <span class="file-drop-icon">📄</span>
+                <div class="file-drop-txt">Clique ou arraste um arquivo <strong>.txt</strong></div>
+                <div class="file-drop-sub">O nome do arquivo se tornará o nome do áudio</div>
+              </div>
+              <div class="file-loaded hidden" id="fileLoaded">
+                <span style="font-size:18px">✅</span>
+                <div><div style="font-weight:600;font-size:13px" id="fileLoadedName">—</div><div class="txt-xs txt-muted" id="fileLoadedInfo">—</div></div>
+                <button class="btn-icon" onclick="clearFile()" style="margin-left:auto">✕</button>
+              </div>
+            </div>
+            <div class="fg">
+              <label class="fl">Texto</label>
+              <textarea class="fi" id="aTxt" rows="6" placeholder="Digite ou cole o texto…" oninput="countChars(this,'ccSingle',150000)"></textarea>
+              <div class="cc" id="ccSingle">0 / 150.000</div>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn-p" style="width:auto;padding:11px 28px;font-size:14px" onclick="genSingle()">🎙 Gerar Áudio</button>
+            <button class="btn-g" onclick="clearSingleForm()">Limpar</button>
+          </div>
+        </div>
+
+        <!-- Bulk -->
+        <div id="tab-bulk" class="hidden">
+          <div class="card mb4">
+            <div class="row-sb mb2">
+              <div>
+                <div style="font-size:14px;font-weight:700;font-family:var(--f-head)">Textos em massa</div>
+                <div class="txt-xs txt-muted">Um texto por linha · cada linha = 1 crédito</div>
+              </div>
+              <span class="txt-xs txt-muted" id="blkCount">0 textos</span>
+            </div>
+            <div class="mb3">
+              <label class="fl">Carregar .txt (cada linha = 1 áudio)</label>
+              <div class="file-drop" onclick="document.getElementById('txtFileBulk').click()" style="padding:14px">
+                <input type="file" id="txtFileBulk" accept=".txt" onchange="loadTxtBulk(this)">
+                <div class="file-drop-txt">📄 Clique para carregar arquivo .txt</div>
+              </div>
+            </div>
+            <textarea class="fi" id="blkTxt" rows="10" placeholder="Primeiro áudio…&#10;Segundo áudio…&#10;Terceiro áudio…" oninput="updateBulk()"></textarea>
+            <div class="cc" id="ccBulk">0 chars</div>
+          </div>
+          <div class="row">
+            <button class="btn-p" style="width:auto;padding:11px 28px;font-size:14px" onclick="genBulk()">🚀 Gerar Todos</button>
+            <button class="btn-g" onclick="stopQueue()">⏹ Parar</button>
+          </div>
+        </div>
+
+        <!-- Queue -->
+        <div id="queueWrap" class="hidden" style="margin-top:20px">
+          <div class="row-sb mb2">
+            <div style="font-size:14px;font-weight:700;font-family:var(--f-head)">Fila de Geração</div>
+            <div class="row">
+              <span class="txt-xs txt-muted" id="qProg">0/0</span>
+              <button class="btn-icon" onclick="clearQueue()">
+                <svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="prog-track"><div class="prog-fill" id="qBar" style="width:0%"></div></div>
+          <div id="qList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: BIBLIOTECA DE VOZES ══ -->
+    <div id="pg-vox" class="hidden">
+      <div class="ph">
+        <div>
+          <div class="ph-title">Biblioteca de Vozes</div>
+          <div class="ph-sub" id="vcTotalCount">Carregando vozes…</div>
+        </div>
+        <button class="btn-g" onclick="fetchVoices(true)">↻ Atualizar vozes</button>
+      </div>
+      <div class="pb">
+        <!-- Gender Tabs -->
+        <div class="vc-tabs mb2">
+          <button class="vc-tab on" id="vt-all" onclick="setVoiceGender('all')">Todas</button>
+          <button class="vc-tab" id="vt-f" onclick="setVoiceGender('f')">
+            <span style="color:#FF86D0">♀</span> Femininas
+            <span class="nav-badge" id="vc-f-count" style="background:rgba(255,100,180,.2);color:#FF86D0;font-size:9px">0</span>
+          </button>
+          <button class="vc-tab" id="vt-m" onclick="setVoiceGender('m')">
+            <span style="color:#7CB9FF">♂</span> Masculinas
+            <span class="nav-badge" id="vc-m-count" style="background:rgba(75,158,255,.15);color:#7CB9FF;font-size:9px">0</span>
+          </button>
+          <button class="vc-tab" id="vt-fav" onclick="setVoiceGender('fav')">⭐ Favoritas</button>
+        </div>
+
+        <!-- Language filter -->
+        <div class="lang-filter" id="langFilter"></div>
+
+        <!-- Search + Count -->
+        <div class="vc-search-row">
+          <input class="fi" id="vcSearch" placeholder="🔍 Buscar por nome…" style="flex:1;max-width:300px;padding:9px 13px" oninput="applyVoiceFilters()">
+          <div class="vc-count-badge" id="vcShownCount">0 vozes</div>
+        </div>
+
+        <!-- Letter Filter A-Z -->
+        <div class="letter-filter" id="letterFilter"></div>
+
+        <!-- Selected voice bar -->
+        <div id="vcSelBar" class="hidden" style="margin-bottom:12px;padding:10px 14px;background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:var(--r8);display:flex;align-items:center;gap:10px">
+          <span style="font-size:16px">✅</span>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:var(--text0)">Selecionada: <span id="vcSelName" class="txt-accent" style="font-family:var(--f-mono)"></span></div>
+            <div class="txt-xs txt-muted" id="vcSelMeta"></div>
+          </div>
+          <button class="btn-g btn-sm" onclick="goPage('gen')">← Voltar e usar</button>
+        </div>
+
+        <!-- Voice Grid -->
+        <div class="voice-grid" id="vcGrid">
+          <div class="txt-sm txt-muted">Carregando vozes…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: HISTÓRICO ══ -->
+    <div id="pg-hist" class="hidden">
+      <div class="ph">
+        <div><div class="ph-title">Histórico</div><div class="ph-sub">Todos os seus áudios gerados</div></div>
+        <button class="btn-g" onclick="clearHist()">Limpar histórico</button>
+      </div>
+      <div class="pb">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="tbl">
+            <thead><tr><th>#</th><th>Nome</th><th>Texto</th><th>Voz</th><th>Status</th><th>Data</th><th>Ação</th></tr></thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: ASSINAR ══ -->
+    <div id="pg-buy" class="hidden">
+      <div class="ph"><div><div class="ph-title">Assinar</div><div class="ph-sub">R$15/mês · 5 áudios por dia · 150 créditos mensais</div></div></div>
+      <div class="pb">
+        <div class="card mb4">
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px">Tenho um código</div>
+          <div class="txt-xs txt-muted mb3">Cole abaixo o código recebido após o pagamento</div>
+          <div class="vc-input-row">
+            <input class="fi fi-mono" id="vcodeInput" placeholder="XXXX-XXXX-XXXX" style="max-width:250px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+            <button class="btn-p" style="width:auto;padding:11px 22px" onclick="redeemCode()">Resgatar</button>
+          </div>
+          <p id="vcodeMsg" class="hidden" style="font-size:12px;margin-top:8px"></p>
+        </div>
+        <div class="plan-grid mb4" style="max-width:340px">
+          <div class="plan featured" style="text-align:center">
+            <div class="plan-hot">Único plano</div>
+            <div class="plan-nm">Mensal</div>
+            <div class="plan-pr">R$ 15<span style="font-size:16px;font-weight:500;color:var(--text1)">,00</span></div>
+            <div class="plan-cr" style="margin:8px 0 4px">150 créditos</div>
+            <div class="txt-xs txt-muted mb3">30 dias · 5 áudios por dia</div>
+            <div class="plan-f">515+ vozes multilíngues</div>
+            <div class="plan-f">Geração individual e em massa</div>
+            <div class="plan-f">Histórico completo</div>
+            <div class="plan-f">Sem prazo — use no seu ritmo</div>
+            <button class="btn-p w100" style="margin-top:18px" onclick="showPay()">Quero assinar</button>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px">Como funciona?</div>
+          <div class="col txt-sm txt-muted" style="gap:6px">
+            <span>1. Clique em "Quero assinar" e envie a mensagem pelo WhatsApp.</span>
+            <span>2. Realize o pagamento de R$15,00 via Pix com seu usuário: <span style="font-family:var(--f-mono);color:var(--accent)" id="payUser"></span></span>
+            <span>3. Em até 30 minutos você recebe seu código de ativação.</span>
+            <span>4. Cole o código acima — seus 150 créditos entram na hora.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: ADMIN ══ -->
+    <div id="pg-adm" class="hidden">
+      <div class="ph"><div><div class="ph-title">Painel Administrativo</div><div class="ph-sub">Usuários · aprovações · créditos · vouchers · segurança</div></div></div>
+      <div class="pb">
+
+        <!-- SECURITY NOTICE -->
+        <div class="sec-notice mb4">
+          🔒 <strong>API Key protegida</strong> — a chave de acesso à Dark Planner API está armazenada apenas neste dispositivo admin e nunca é enviada ao navegador dos usuários. Os clientes fazem as requisições autenticadas somente após aprovação.
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid mb4">
+          <div class="stat"><div class="stat-l">Vagas ocupadas</div><div class="stat-v" id="aStU" style="font-size:20px">0<span style="font-size:13px;color:var(--text1)" id="aStUMax">/10</span></div><div class="stat-s" id="aStULbl">vagas livres</div></div>
+          <div class="stat"><div class="stat-l">Aguardando</div><div class="stat-v c-gold" id="aStP">0</div></div>
+          <div class="stat"><div class="stat-l">Gerados hoje</div><div class="stat-v" id="aStT">0</div></div>
+          <div class="stat"><div class="stat-l">Total áudios</div><div class="stat-v" id="aStA">0</div></div>
+          <div class="stat"><div class="stat-l">Vouchers ativos</div><div class="stat-v c-gold" id="aStV">0</div></div>
+          <div class="stat"><div class="stat-l">API restante/dia</div><div class="stat-v" id="aStApi" style="font-size:16px">—<span style="font-size:11px;color:var(--text1)"> áud.</span></div><div class="stat-s">de 50 disponíveis</div></div>
+        </div>
+
+        <!-- PENDING APPROVALS -->
+        <div class="card mb4">
+          <div class="row-sb mb3">
+            <div>
+              <div style="font-size:14px;font-weight:700;font-family:var(--f-head)">Solicitações pendentes</div>
+              <div class="txt-xs txt-muted">Aprove ou rejeite cadastros</div>
+            </div>
+          </div>
+          <div id="pendingList"></div>
+        </div>
+
+        <!-- Credits + Voucher -->
+        <div class="g2 mb4">
+          <div class="card">
+            <div style="font-size:14px;font-weight:700;font-family:var(--f-head);margin-bottom:3px">Adicionar Créditos</div>
+            <div class="txt-xs txt-muted mb3">Credite manualmente após pagamento confirmado</div>
+            <div class="fg"><label class="fl">Usuário</label><select class="fi" id="aUser"></select></div>
+            <div class="fg"><label class="fl">Quantidade</label><input type="number" class="fi" id="aAmt" value="150" min="1" max="9999"></div>
+            <button class="btn-p" onclick="adminAddCreds()">+ Adicionar créditos</button>
+          </div>
+          <div class="card">
+            <div style="font-size:14px;font-weight:700;font-family:var(--f-head);margin-bottom:3px">Gerar Voucher</div>
+            <div class="txt-xs txt-muted mb3">Crie um código de resgate para enviar ao cliente</div>
+            <div class="fg"><label class="fl">Créditos</label><input type="number" class="fi" id="vCreds" value="150" min="1" max="9999"></div>
+            <div class="fg"><label class="fl">Descrição</label><input class="fi" id="vDesc" placeholder="ex: Plano Mensal - Cliente João"></div>
+            <button class="btn-p" onclick="adminGenVoucher()">Gerar código</button>
+            <div class="vc-result hidden" id="vResult"></div>
+          </div>
+        </div>
+
+        <!-- Block / Suspend user -->
+        <div class="card mb4">
+          <div style="font-size:14px;font-weight:700;font-family:var(--f-head);margin-bottom:3px">Ações rápidas</div>
+          <div class="txt-xs txt-muted mb3">Suspender, bloquear ou resetar créditos de um usuário</div>
+          <div class="row">
+            <select class="fi" id="aUserAction" style="flex:1;max-width:220px"></select>
+            <button class="btn-g btn-sm" onclick="suspendUser()">⏸ Suspender</button>
+            <button class="btn-g btn-sm btn-danger" onclick="blockUser()">🚫 Bloquear</button>
+            <button class="btn-g btn-sm" onclick="reactivateUser()">▶ Reativar</button>
+            <button class="btn-g btn-sm btn-danger" onclick="zeroCreditsAction()">Zerar créditos</button>
+          </div>
+        </div>
+
+        <!-- Users table -->
+        <div class="card mb4">
+          <div class="row-sb mb3">
+            <div style="font-size:14px;font-weight:700;font-family:var(--f-head)">Usuários ativos</div>
+            <input class="fi" id="userSearch" placeholder="🔍 Filtrar…" style="max-width:200px;padding:7px 12px" oninput="renderAdmin()">
+          </div>
+          <div style="overflow-x:auto">
+            <table class="tbl"><thead><tr><th>Usuário</th><th>Nome</th><th>E-mail</th><th>Créditos</th><th>Áudios</th><th>Status</th><th>Cadastro</th><th>Ações</th></tr></thead>
+            <tbody id="aUsersTbl"></tbody></table>
+          </div>
+        </div>
+
+        <!-- Vouchers table -->
+        <div class="card mb4">
+          <div style="font-size:14px;font-weight:700;font-family:var(--f-head);margin-bottom:12px">Vouchers</div>
+          <div style="overflow-x:auto">
+            <table class="tbl"><thead><tr><th>Código</th><th>Créditos</th><th>Descrição</th><th>Status</th><th>Usado por</th><th>Data</th></tr></thead>
+            <tbody id="aVouchersTbl"></tbody></table>
+          </div>
+        </div>
+
+        <!-- Config display -->
+        <div class="card">
+          <div style="font-size:14px;font-weight:700;font-family:var(--f-head);margin-bottom:8px">⚙️ Configurações ativas</div>
+          <div class="g2" style="font-size:13px">
+            <div><span class="txt-muted">Max usuários:</span> <strong id="cfgMaxUsers" class="c-accent"></strong></div>
+            <div><span class="txt-muted">Aprovação manual:</span> <strong id="cfgApproval" class="c-accent"></strong></div>
+            <div><span class="txt-muted">Créditos boas-vindas:</span> <strong id="cfgWelcome" class="c-accent"></strong></div>
+            <div><span class="txt-muted">Áudios/dia:</span> <strong id="cfgLimDay" class="c-accent"></strong></div>
+            <div><span class="txt-muted">API conectada:</span> <strong id="cfgApiStatus" class="c-accent"></strong></div>
+            <div><span class="txt-muted">Vozes em cache:</span> <strong id="cfgVoices" class="c-accent"></strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toasts"></div>
+
+<!-- User Detail Modal -->
+<div class="modal-bg hidden" id="userModal">
+  <div class="modal">
+    <div class="modal-h" id="umTitle">Detalhes do usuário</div>
+    <div id="umBody"></div>
+    <div style="margin-top:16px">
+      <button class="btn-g w100" onclick="document.getElementById('userModal').classList.add('hidden')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  CONFIG — EDITE AQUI PARA PERSONALIZAR                      ║
+// ╚══════════════════════════════════════════════════════════════╝
+const CONFIG = {
+  // ── API DARK PLANNER ─────────────────────────────────────────
+  // ⚠️ SEGURANÇA: Esta chave só fica visível no painel ADMIN.
+  // Usuários comuns NUNCA veem esta chave — ela é injetada
+  // nas requisições apenas após o admin aprovar o usuário.
+  apiKey:  'dpk_e330a6d53c75c7a81325ead2acfb723fc1bd1a27502b1c6d',
+  apiBase: 'https://app.darkplanner.com.br/api/v1/audio',
+
+  // ── CORS PROXY (necessário em GitHub Pages / Netlify) ─────────
+  useCorsProxy: true,
+  corsProxy:    'https://api.allorigins.win/get?url=',
+
+  // ── AUTENTICAÇÃO ──────────────────────────────────────────────
+  requireApproval: true,   // true = admin aprova manualmente
+  welcomeCredits: 5,       // créditos ao aprovar
+
+  // ── VAGAS ─────────────────────────────────────────────────────
+  maxUsers: 10,            // 10 usuários × 5 áudios = 50/dia (limite API)
+
+  // ── LIMITES ───────────────────────────────────────────────────
+  pollMs:  4500,
+  maxSim:  2,
+  limDay:  5,
+  limChar: 150000,
+
+  // ── CONTATO (WhatsApp para pagamentos) ────────────────────────
+  whatsapp: '5581995738085',
+
+  // ── MÓDULOS ───────────────────────────────────────────────────
+  modulos: {
+    gerarAudio:      true,
+    bibliotecaVozes: true,
+    geracaoEmMassa:  true,
+    historico:       true,
+    comprarCreditos: true,
+    admin:           true,
+  }
+};
+
+// ── Atalhos internos ─────────────────────────────────────────
+const API_KEY  = CONFIG.apiKey;
+const API_BASE = CONFIG.apiBase;
+const POLL_MS  = CONFIG.pollMs;
+const MAX_SIM  = CONFIG.maxSim;
+const LIM_DAY  = CONFIG.limDay;
+const LIM_CHAR = CONFIG.limChar;
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  VOZES MULTILÍNGUES — FALLBACK EMBUTIDO                     ║
+// ║  Usadas quando a API não retorna vozes (CORS, etc.)         ║
+// ╚══════════════════════════════════════════════════════════════╝
+const BUILTIN_VOICES = [
+  // 🇧🇷 Português Brasil
+  {id:'Vitoria',     name:'Vitoria',     gender:'female', language:'pt-BR', lang_label:'PT-BR'},
+  {id:'Luciana',     name:'Luciana',     gender:'female', language:'pt-BR', lang_label:'PT-BR'},
+  {id:'Camila',      name:'Camila',      gender:'female', language:'pt-BR', lang_label:'PT-BR'},
+  {id:'Fernanda',    name:'Fernanda',    gender:'female', language:'pt-BR', lang_label:'PT-BR'},
+  {id:'Thiago',      name:'Thiago',      gender:'male',   language:'pt-BR', lang_label:'PT-BR'},
+  {id:'Ricardo',     name:'Ricardo',     gender:'male',   language:'pt-BR', lang_label:'PT-BR'},
+  {id:'Daniel',      name:'Daniel',      gender:'male',   language:'pt-BR', lang_label:'PT-BR'},
+  // 🇵🇹 Português Portugal
+  {id:'Cristiano',   name:'Cristiano',   gender:'male',   language:'pt-PT', lang_label:'PT-PT'},
+  {id:'Ines',        name:'Inês',        gender:'female', language:'pt-PT', lang_label:'PT-PT'},
+  // 🇺🇸 English US
+  {id:'Joanna',      name:'Joanna',      gender:'female', language:'en-US', lang_label:'EN-US'},
+  {id:'Matthew',     name:'Matthew',     gender:'male',   language:'en-US', lang_label:'EN-US'},
+  {id:'Salli',       name:'Salli',       gender:'female', language:'en-US', lang_label:'EN-US'},
+  {id:'Joey',        name:'Joey',        gender:'male',   language:'en-US', lang_label:'EN-US'},
+  {id:'Kendra',      name:'Kendra',      gender:'female', language:'en-US', lang_label:'EN-US'},
+  {id:'Kimberly',    name:'Kimberly',    gender:'female', language:'en-US', lang_label:'EN-US'},
+  {id:'Justin',      name:'Justin',      gender:'male',   language:'en-US', lang_label:'EN-US'},
+  // 🇬🇧 English UK
+  {id:'Emma',        name:'Emma',        gender:'female', language:'en-GB', lang_label:'EN-GB'},
+  {id:'Brian',       name:'Brian',       gender:'male',   language:'en-GB', lang_label:'EN-GB'},
+  {id:'Amy',         name:'Amy',         gender:'female', language:'en-GB', lang_label:'EN-GB'},
+  // 🇪🇸 Español
+  {id:'Conchita',    name:'Conchita',    gender:'female', language:'es-ES', lang_label:'ES-ES'},
+  {id:'Enrique',     name:'Enrique',     gender:'male',   language:'es-ES', lang_label:'ES-ES'},
+  {id:'Lucia',       name:'Lucia',       gender:'female', language:'es-ES', lang_label:'ES-ES'},
+  {id:'Lupe',        name:'Lupe',        gender:'female', language:'es-MX', lang_label:'ES-MX'},
+  {id:'Miguel',      name:'Miguel',      gender:'male',   language:'es-MX', lang_label:'ES-MX'},
+  // 🇫🇷 Français
+  {id:'Celine',      name:'Céline',      gender:'female', language:'fr-FR', lang_label:'FR-FR'},
+  {id:'Mathieu',     name:'Mathieu',     gender:'male',   language:'fr-FR', lang_label:'FR-FR'},
+  {id:'Lea',         name:'Léa',         gender:'female', language:'fr-FR', lang_label:'FR-FR'},
+  // 🇩🇪 Deutsch
+  {id:'Marlene',     name:'Marlene',     gender:'female', language:'de-DE', lang_label:'DE-DE'},
+  {id:'Hans',        name:'Hans',        gender:'male',   language:'de-DE', lang_label:'DE-DE'},
+  {id:'Vicki',       name:'Vicki',       gender:'female', language:'de-DE', lang_label:'DE-DE'},
+  // 🇮🇹 Italiano
+  {id:'Carla',       name:'Carla',       gender:'female', language:'it-IT', lang_label:'IT-IT'},
+  {id:'Giorgio',     name:'Giorgio',     gender:'male',   language:'it-IT', lang_label:'IT-IT'},
+  // 🇯🇵 日本語
+  {id:'Mizuki',      name:'Mizuki',      gender:'female', language:'ja-JP', lang_label:'JA-JP'},
+  {id:'Takumi',      name:'Takumi',      gender:'male',   language:'ja-JP', lang_label:'JA-JP'},
+  // 🇰🇷 한국어
+  {id:'Seoyeon',     name:'Seoyeon',     gender:'female', language:'ko-KR', lang_label:'KO-KR'},
+  // 🇨🇳 中文
+  {id:'Zhiyu',       name:'Zhiyu',       gender:'female', language:'zh-CN', lang_label:'ZH-CN'},
+  // 🇸🇦 العربية
+  {id:'Zeina',       name:'Zeina',       gender:'female', language:'ar-AE', lang_label:'AR'},
+  // 🇷🇺 Русский
+  {id:'Tatyana',     name:'Tatyana',     gender:'female', language:'ru-RU', lang_label:'RU-RU'},
+  {id:'Maxim',       name:'Maxim',       gender:'male',   language:'ru-RU', lang_label:'RU-RU'},
+  // 🇳🇱 Nederlands
+  {id:'Lotte',       name:'Lotte',       gender:'female', language:'nl-NL', lang_label:'NL-NL'},
+  {id:'Ruben',       name:'Ruben',       gender:'male',   language:'nl-NL', lang_label:'NL-NL'},
+  // 🇵🇱 Polski
+  {id:'Ewa',         name:'Ewa',         gender:'female', language:'pl-PL', lang_label:'PL-PL'},
+  {id:'Jacek',       name:'Jacek',       gender:'male',   language:'pl-PL', lang_label:'PL-PL'},
+  // 🇸🇪 Svenska
+  {id:'Astrid',      name:'Astrid',      gender:'female', language:'sv-SE', lang_label:'SV-SE'},
+  // 🇹🇷 Türkçe
+  {id:'Filiz',       name:'Filiz',       gender:'female', language:'tr-TR', lang_label:'TR-TR'},
+  // 🇮🇳 Hindi
+  {id:'Aditi',       name:'Aditi',       gender:'female', language:'hi-IN', lang_label:'HI-IN'},
+  // 🇮🇩 Bahasa Indonesia
+  {id:'Marlina',     name:'Marlina',     gender:'female', language:'id-ID', lang_label:'ID-ID'},
+];
+
+// ═══════════════════════════════════════════
+// DB (localStorage)
+// ═══════════════════════════════════════════
+const db = {
+  users()    { return JSON.parse(localStorage.getItem('id_u')  || '[]') },
+  vouchers() { return JSON.parse(localStorage.getItem('id_v')  || '[]') },
+  saveU(u)   { localStorage.setItem('id_u', JSON.stringify(u)) },
+  saveV(v)   { localStorage.setItem('id_v', JSON.stringify(v)) },
+  getUser(username) { return this.users().find(u => u.username === username) },
+  updateUser(username, patch) {
+    this.saveU(this.users().map(u => u.username === username ? {...u,...patch} : u));
+  },
+  getFavs() { return JSON.parse(localStorage.getItem('id_favs') || '[]') },
+  saveFavs(f) { localStorage.setItem('id_favs', JSON.stringify(f)) },
+  getCachedVoices() { return JSON.parse(localStorage.getItem('id_vc') || 'null') },
+  saveCachedVoices(v) { localStorage.setItem('id_vc', JSON.stringify({ts:Date.now(),data:v})) }
+};
+
+let CU = null;
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+async function sha(str) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+const today  = ()=> new Date().toISOString().split('T')[0];
+const nowStr = ()=> new Date().toLocaleString('pt-BR');
+
+function toast(msg, type='nf') {
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${{ok:'✅',er:'❌',nf:'💬'}[type]||'💬'}</span><span>${msg}</span>`;
+  c.appendChild(el); setTimeout(()=>el.remove(), 4200);
+}
+function showErr(id, msg) { const el=document.getElementById(id); if(el){el.textContent=msg; el.classList.remove('hidden')} }
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type==='password' ? 'text' : 'password';
+}
+
+// ═══════════════════════════════════════════
+// API STATUS CHECK
+// ═══════════════════════════════════════════
+async function checkApiStatus() {
+  const dot = document.getElementById('apiDot');
+  const txt = document.getElementById('apiStatusTxt');
+  try {
+    const url = `${API_BASE}/voices`;
+    const r = await fetch(url, { headers:{'X-API-Key': API_KEY}, signal: AbortSignal.timeout(8000) });
+    if (r.ok || r.status === 200 || r.status === 401) {
+      dot.className='api-dot ok'; txt.textContent='API conectada ✓';
+    } else {
+      throw new Error(`${r.status}`);
+    }
+  } catch(e) {
+    // Try proxy
+    try {
+      const r2 = await fetch(CONFIG.corsProxy + encodeURIComponent(`${API_BASE}/voices`), { signal: AbortSignal.timeout(6000) });
+      if (r2.ok) { dot.className='api-dot ok'; txt.textContent='API via proxy ✓'; }
+      else throw new Error('proxy falhou');
+    } catch {
+      dot.className='api-dot err'; txt.textContent='API indisponível';
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+function showReg()   { document.getElementById('loginCard').classList.add('hidden'); document.getElementById('regCard').classList.remove('hidden') }
+function showLogin() { document.getElementById('regCard').classList.add('hidden'); document.getElementById('loginCard').classList.remove('hidden') }
+
+async function doLogin() {
+  const u = document.getElementById('lUser').value.trim().toLowerCase();
+  const p = document.getElementById('lPass').value;
+  if (!u || !p) { showErr('lErr','Preencha todos os campos'); return }
+  const h = await sha(p);
+  const user = db.getUser(u);
+  if (!user || user.pw !== h) { showErr('lErr','Usuário ou senha incorretos'); return }
+  document.getElementById('lErr').classList.add('hidden');
+  CU = u; localStorage.setItem('session', u);
+  if (user.status === 'pending')   { showPending(user); return }
+  if (user.status === 'rejected')  { showErr('lErr','Seu cadastro foi recusado. Entre em contato.'); CU=null; return }
+  if (user.status === 'suspended') { showErr('lErr','Sua conta está suspensa. Entre em contato com o admin.'); CU=null; return }
+  if (user.status === 'blocked')   { showErr('lErr','Sua conta foi bloqueada.'); CU=null; return }
+  launch();
+}
+
+async function doRegister() {
+  const name  = document.getElementById('rName').value.trim();
+  const u     = document.getElementById('rUser').value.trim().toLowerCase().replace(/\s/g,'_');
+  const email = document.getElementById('rEmail').value.trim();
+  const p     = document.getElementById('rPass').value;
+  if (!name || !u || !p) { showErr('rErr','Preencha nome, usuário e senha'); return }
+  if (p.length < 6)       { showErr('rErr','Senha precisa ter pelo menos 6 caracteres'); return }
+  const users = db.users();
+  if (users.find(x=>x.username===u)) { showErr('rErr','Usuário já existe'); return }
+  const isFirst = users.length === 0;
+  if (!isFirst) {
+    const ativos = users.filter(x => x.status === 'active').length;
+    if (ativos >= CONFIG.maxUsers) {
+      showErr('rErr', `⚠️ Todas as ${CONFIG.maxUsers} vagas estão preenchidas. Entre em contato pelo WhatsApp para lista de espera.`);
+      return;
+    }
+  }
+  const autoAprova = isFirst || !CONFIG.requireApproval;
+  users.push({
+    username:u, name, email, pw: await sha(p),
+    role:    isFirst ? 'admin' : 'user',
+    status:  autoAprova ? 'active' : 'pending',
+    credits: isFirst ? 999 : (autoAprova ? CONFIG.welcomeCredits : 0),
+    totalAudios:0, history:[],
+    daily:{ date:today(), audios:0, chars:0 },
+    createdAt: nowStr()
+  });
+  db.saveU(users);
+  document.getElementById('rErr').classList.add('hidden');
+  CU = u; localStorage.setItem('session', u);
+  if (autoAprova) { launch(); }
+  else { showPending(db.getUser(u)); updateAdminBadge(); }
+}
+
+function showPending(user) {
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('pendingScreen').style.display = 'flex';
+  document.getElementById('pendingUser').textContent = user.username;
+}
+
+function logout() {
+  CU = null; localStorage.removeItem('session'); stopQueue();
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('pendingScreen').style.display = 'none';
+  document.getElementById('authScreen').classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════
+// LAUNCH
+// ═══════════════════════════════════════════
+function launch() {
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('pendingScreen').style.display = 'none';
+  document.getElementById('app').classList.remove('hidden');
+  const user = db.getUser(CU);
+  document.getElementById('uAv').textContent = user.name.charAt(0).toUpperCase();
+  document.getElementById('uNm').textContent = user.name;
+  document.getElementById('uRl').textContent = user.role === 'admin' ? '⭐ Administrador' : 'Usuário';
+  document.getElementById('payUser').textContent = CU;
+  if (!CONFIG.modulos.bibliotecaVozes) document.getElementById('ni-vox')?.classList.add('hidden');
+  if (!CONFIG.modulos.historico)       document.getElementById('ni-hist')?.classList.add('hidden');
+  if (!CONFIG.modulos.comprarCreditos) document.getElementById('ni-buy')?.classList.add('hidden');
+  if (!CONFIG.modulos.geracaoEmMassa)  document.getElementById('t-bulk')?.classList.add('hidden');
+  if (user.role === 'admin' && CONFIG.modulos.admin) {
+    document.getElementById('sb-admin-sec').classList.remove('hidden');
+    document.getElementById('ni-adm').classList.remove('hidden');
+    updateAdminBadge();
+    checkApiStatus();
+  }
+  refreshUI(); fetchVoices(false); goPage('gen');
+}
+
+function updateAdminBadge() {
+  const pending = db.users().filter(u=>u.status==='pending').length;
+  const badge = document.getElementById('adminBadge');
+  if (!badge) return;
+  if (pending > 0) { badge.textContent = pending; badge.classList.remove('hidden') }
+  else badge.classList.add('hidden');
+}
+
+function refreshUI() {
+  const user = db.getUser(CU);
+  const du   = user.daily||{ date:today(), audios:0 };
+  const same = du.date === today();
+  const todA = same ? (du.audios||0) : 0;
+  const cr   = user.credits || 0;
+  document.getElementById('sbCredits').textContent = cr;
+  document.getElementById('stCredits').textContent = cr;
+  document.getElementById('stToday').textContent   = todA;
+  document.getElementById('stTotal').textContent   = user.totalAudios || 0;
+  document.getElementById('sbSub').textContent     = `${todA}/${LIM_DAY} usados hoje`;
+  const pct  = Math.min(100,(todA/LIM_DAY)*100);
+  const fill = document.getElementById('cbFill');
+  fill.style.width = pct + '%';
+  fill.style.background = pct>80?'var(--red)':pct>50?'var(--gold)':'var(--accent)';
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+const PAGES = ['gen','vox','hist','buy','adm'];
+function goPage(p) {
+  PAGES.forEach(x => {
+    document.getElementById(`pg-${x}`)?.classList.add('hidden');
+    document.getElementById(`ni-${x}`)?.classList.remove('active');
+  });
+  document.getElementById(`pg-${p}`)?.classList.remove('hidden');
+  document.getElementById(`ni-${p}`)?.classList.add('active');
+  if (p==='hist') renderHist();
+  if (p==='adm')  renderAdmin();
+  if (p==='vox')  { buildLangFilter(); buildLetterFilter(); applyVoiceFilters() }
+}
+
+// ═══════════════════════════════════════════
+// VOICES — multilingual library
+// ═══════════════════════════════════════════
+let voices = [], selVoiceId = '', selVoiceName = '', selVoiceGender = '';
+let vcGender = 'all', vcLetter = '', vcLang = '';
+
+function guessGender(v) {
+  const g = (v.gender||v.genero||v.sexo||'').toLowerCase();
+  if (g.includes('fem')||g==='f'||g==='female') return 'f';
+  if (g.includes('masc')||g.includes('male')||g==='m') return 'm';
+  return '';
+}
+
+function getLang(v) {
+  return v.lang_label || v.language || v.idioma || v.lang || '';
+}
+
+async function fetchVoices(forceRefresh=false) {
+  if (!forceRefresh) {
+    const cache = db.getCachedVoices();
+    if (cache && (Date.now()-cache.ts) < 3600000 && cache.data.length) {
+      voices = cache.data; onVoicesLoaded(); return;
+    }
+  }
+  document.getElementById('vcTotalCount').textContent = '🔄 Baixando vozes da API…';
+  document.getElementById('vcGrid').innerHTML = '<div class="txt-sm txt-muted">Carregando vozes…</div>';
+
+  const url = `${API_BASE}/voices`;
+
+  // Tentativa 1: direta
+  try {
+    const r = await fetch(url, { headers:{'X-API-Key':API_KEY}, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    let list = Array.isArray(d) ? d : (d.vozes||d.data||d.voices||[]);
+    if (!list.length) throw new Error('vazio');
+    // Merge com BUILTIN (adiciona lang_label se não tiver)
+    list = list.map(v => ({...v, lang_label: v.lang_label||v.language||v.lang||''}));
+    voices = list; db.saveCachedVoices(voices); onVoicesLoaded();
+    toast(`${voices.length} vozes carregadas!`,'ok'); return;
+  } catch(e1) { console.warn('[vozes] Direto falhou:', e1.message); }
+
+  // Tentativa 2: proxy
+  if (CONFIG.useCorsProxy) {
+    try {
+      const r2 = await fetch(CONFIG.corsProxy + encodeURIComponent(url));
+      const wrapper = await r2.json();
+      const d = JSON.parse(wrapper.contents||'[]');
+      let list = Array.isArray(d) ? d : (d.vozes||d.data||d.voices||[]);
+      if (list.length) {
+        list = list.map(v => ({...v, lang_label: v.lang_label||v.language||v.lang||''}));
+        voices = list; db.saveCachedVoices(voices); onVoicesLoaded();
+        toast('Vozes carregadas via proxy!','ok'); return;
+      }
+    } catch(e2) { console.warn('[vozes] Proxy falhou:', e2.message); }
+  }
+
+  // Fallback: BUILTIN_VOICES
+  console.warn('[vozes] Usando vozes embutidas como fallback');
+  voices = BUILTIN_VOICES;
+  onVoicesLoaded();
+  toast(`${voices.length} vozes disponíveis (modo offline)`,'nf');
+}
+
+function onVoicesLoaded() {
+  const fm = voices.filter(v=>guessGender(v)==='f').length;
+  const mm = voices.filter(v=>guessGender(v)==='m').length;
+  document.getElementById('vcTotalCount').textContent = `${voices.length} vozes disponíveis`;
+  document.getElementById('vc-f-count').textContent = fm;
+  document.getElementById('vc-m-count').textContent = mm;
+  const badge = document.getElementById('vcCountBadge');
+  if (badge) badge.textContent = voices.length;
+  buildLangFilter();
+  buildLetterFilter();
+  applyVoiceFilters();
+}
+
+function buildLangFilter() {
+  const container = document.getElementById('langFilter');
+  if (!container) return;
+  const currentList = getFilteredByGender();
+  const langs = [...new Set(currentList.map(v=>getLang(v)).filter(Boolean))].sort();
+  let html = `<button class="lang-btn${vcLang===''?' on':''}" onclick="setLang('')">Todos</button>`;
+  langs.forEach(l => {
+    html += `<button class="lang-btn${vcLang===l?' on':''}" onclick="setLang('${l}')">${l}</button>`;
+  });
+  container.innerHTML = html;
+}
+
+function setLang(l) { vcLang = l; vcLetter = ''; buildLangFilter(); buildLetterFilter(); applyVoiceFilters(); }
+
+function buildLetterFilter() {
+  const container = document.getElementById('letterFilter');
+  if (!container) return;
+  const currentList = getFilteredByGender();
+  const available = new Set(currentList.map(v=>{
+    const name = v.name||v.nome||v.slug||'';
+    return name.charAt(0).toUpperCase();
+  }).filter(c=>/[A-Z]/.test(c)));
+  let html = `<button class="lf-btn${vcLetter===''?' on':''}" onclick="setLetter('')">Todos</button>`;
+  for (let i=65;i<=90;i++) {
+    const c = String.fromCharCode(i);
+    const has = available.has(c);
+    html += `<button class="lf-btn${vcLetter===c?' on':''}${!has?' disabled':''}" onclick="${has?`setLetter('${c}')`:'void(0)'}">${c}</button>`;
+  }
+  container.innerHTML = html;
+}
+
+function getFilteredByGender() {
+  const favs = db.getFavs();
+  if (vcGender === 'fav') return voices.filter(v=>{
+    const id = v.id||v.voice_id||v.slug||v.voice_lat||'';
+    return favs.includes(id);
+  });
+  if (vcGender === 'all') return voices;
+  return voices.filter(v => guessGender(v) === vcGender);
+}
+
+function applyVoiceFilters() {
+  let list = getFilteredByGender();
+  if (vcLang)   list = list.filter(v => getLang(v) === vcLang);
+  if (vcLetter) list = list.filter(v=>(v.name||v.nome||v.slug||'').toUpperCase().startsWith(vcLetter));
+  const q = (document.getElementById('vcSearch')?.value||'').toLowerCase();
+  if (q) list = list.filter(v=>(v.name||v.nome||v.slug||'').toLowerCase().includes(q));
+  list = [...list].sort((a,b)=>(a.name||'').localeCompare(b.name||'','pt-BR'));
+  document.getElementById('vcShownCount').textContent = `${list.length} vozes`;
+  renderVoices(list);
+}
+
+function setVoiceGender(g) {
+  vcGender = g; vcLetter = ''; vcLang = '';
+  ['all','f','m','fav'].forEach(x=>{
+    document.getElementById(`vt-${x}`)?.classList.toggle('on', x===g);
+  });
+  buildLangFilter(); buildLetterFilter(); applyVoiceFilters();
+}
+
+function setLetter(l) { vcLetter = l; buildLetterFilter(); applyVoiceFilters(); }
+
+function renderVoices(list) {
+  const favs = db.getFavs();
+  const g = document.getElementById('vcGrid');
+  if (!list.length) {
+    g.innerHTML='<div class="txt-sm txt-muted" style="padding:20px 0">Nenhuma voz encontrada</div>'; return;
+  }
+  g.innerHTML = list.map(v => {
+    const id     = v.id||v.voice_id||v.slug||v.voice_lat||'';
+    const name   = v.name||v.nome||id;
+    const gender = guessGender(v);
+    const lang   = getLang(v);
+    const isFav  = favs.includes(id);
+    const isSel  = id === selVoiceId;
+    return `<div class="vc-card${isSel?' sel':''}${isFav?' fav-card':''}" onclick="pickVoice('${id}','${name.replace(/'/g,"\\'")}','${gender}')">
+      <button class="fav-btn${isFav?' on':''}" onclick="event.stopPropagation();toggleFav('${id}')" title="${isFav?'Remover':'Favoritar'}">⭐</button>
+      <div class="vc-name">${name}</div>
+      <div class="vc-meta">
+        ${gender==='f'?'<span class="vc-gender-badge gender-f">Fem</span>':gender==='m'?'<span class="vc-gender-badge gender-m">Masc</span>':''}
+        ${lang?`<span class="lang-tag">${lang}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function pickVoice(id, name, gender) {
+  selVoiceId=id; selVoiceName=name; selVoiceGender=gender;
+  const bar = document.getElementById('vcSelBar');
+  if (bar) { bar.classList.remove('hidden'); document.getElementById('vcSelName').textContent=name; document.getElementById('vcSelMeta').textContent=gender==='f'?'Feminina':gender==='m'?'Masculino':''; }
+  document.getElementById('selVoiceBox').innerHTML = `<div style="display:flex;align-items:center;gap:10px">
+    <div style="font-size:20px">🎙</div>
+    <div><div style="font-size:14px;font-weight:700;color:var(--text0)">${name}</div>
+    <div class="txt-xs txt-muted">${gender==='f'?'Feminina':gender==='m'?'Masculina':''} · ID: <span style="font-family:var(--f-mono);font-size:11px">${id}</span></div></div>
+    <button class="btn-g btn-sm" style="margin-left:auto" onclick="goPage('vox')">Trocar</button></div>`;
+  applyVoiceFilters();
+  toast(`Voz: ${name}`,'ok');
+}
+
+function toggleFav(id) {
+  const favs = db.getFavs();
+  const idx  = favs.indexOf(id);
+  if (idx>=0) favs.splice(idx,1); else favs.push(id);
+  db.saveFavs(favs);
+  applyVoiceFilters();
+  toast(idx>=0?'Removido dos favoritos':'Adicionado ⭐','nf');
+}
+
+// ═══════════════════════════════════════════
+// TXT FILE UPLOAD
+// ═══════════════════════════════════════════
+function loadTxtFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const content = e.target.result;
+    const nameClean = file.name.replace(/\.txt$/i,'');
+    document.getElementById('aName').value = nameClean;
+    document.getElementById('aTxt').value  = content;
+    countChars(document.getElementById('aTxt'),'ccSingle',LIM_CHAR);
+    document.getElementById('fileDrop').classList.add('hidden');
+    document.getElementById('fileLoaded').classList.remove('hidden');
+    document.getElementById('fileLoadedName').textContent = file.name;
+    document.getElementById('fileLoadedInfo').textContent = `${content.length.toLocaleString('pt-BR')} caracteres · ${content.split('\n').length} linhas`;
+    toast(`"${file.name}" carregado!`,'ok');
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function loadTxtBulk(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => { document.getElementById('blkTxt').value = e.target.result; updateBulk(); toast(`"${file.name}" carregado!`,'ok'); };
+  reader.readAsText(file,'UTF-8');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('fileDrop').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.name.endsWith('.txt')) { toast('Use um arquivo .txt','er'); return }
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const content = ev.target.result;
+    document.getElementById('aName').value = file.name.replace(/\.txt$/i,'');
+    document.getElementById('aTxt').value  = content;
+    countChars(document.getElementById('aTxt'),'ccSingle',LIM_CHAR);
+    document.getElementById('fileDrop').classList.add('hidden');
+    document.getElementById('fileLoaded').classList.remove('hidden');
+    document.getElementById('fileLoadedName').textContent = file.name;
+    document.getElementById('fileLoadedInfo').textContent = `${content.length.toLocaleString('pt-BR')} caracteres`;
+    toast(`"${file.name}" carregado!`,'ok');
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function clearFile() {
+  document.getElementById('txtFile').value='';
+  document.getElementById('fileDrop').classList.remove('hidden');
+  document.getElementById('fileLoaded').classList.add('hidden');
+  document.getElementById('aName').value='';
+  document.getElementById('aTxt').value='';
+  countChars(document.getElementById('aTxt'),'ccSingle',LIM_CHAR);
+}
+
+function clearSingleForm() { clearFile(); }
+
+// ═══════════════════════════════════════════
+// TABS / CHAR COUNTER
+// ═══════════════════════════════════════════
+function switchTab(t) {
+  ['single','bulk'].forEach(x => {
+    document.getElementById(`tab-${x}`).classList.toggle('hidden', x!==t);
+    document.getElementById(`t-${x}`).classList.toggle('on', x===t);
+  });
+}
+
+function countChars(el, cid, max) {
+  const n = el.value.length;
+  const c = document.getElementById(cid);
+  c.textContent = `${n.toLocaleString('pt-BR')} / ${max.toLocaleString('pt-BR')}`;
+  c.className = 'cc' + (n>max?' over':n>max*.8?' warn':'');
+}
+
+function updateBulk() {
+  const lines = document.getElementById('blkTxt').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const chars = lines.reduce((a,l)=>a+l.length,0);
+  document.getElementById('blkCount').textContent = `${lines.length} textos`;
+  document.getElementById('ccBulk').textContent   = `${chars.toLocaleString('pt-BR')} chars`;
+}
+
+// ═══════════════════════════════════════════
+// GENERATION
+// ═══════════════════════════════════════════
+let queue = [], running = false;
+const pollers = {};
+
+function canGen() {
+  const u = db.getUser(CU);
+  if (!selVoiceId)   { toast('Selecione uma voz primeiro!','er'); return false }
+  if (!u.credits)    { toast('Créditos esgotados! Assine para continuar.','er'); return false }
+  const du = u.daily||{}; const same = du.date===today();
+  const todA = same ? (du.audios||0) : 0;
+  if (todA >= LIM_DAY){ toast(`Limite de ${LIM_DAY} áudios/dia atingido.`,'er'); return false }
+  return true;
+}
+
+function useCredit() {
+  const u  = db.getUser(CU);
+  const du = u.daily||{ date:today(), audios:0, chars:0 };
+  const same = du.date===today();
+  db.updateUser(CU, {
+    credits: u.credits-1, totalAudios:(u.totalAudios||0)+1,
+    daily:{ date:today(), audios:(same?du.audios:0)+1, chars:(same?du.chars:0) }
+  });
+  refreshUI();
+}
+
+function genSingle() {
+  const txt  = document.getElementById('aTxt').value.trim();
+  const name = document.getElementById('aName').value.trim() || `audio_${Date.now()}`;
+  if (!txt)     { toast('Digite o texto!','er'); return }
+  if (txt.length > LIM_CHAR) { toast(`Texto excede ${LIM_CHAR.toLocaleString()} caracteres!`,'er'); return }
+  if (!canGen()) return;
+  queue = [{ id:Date.now(), txt, name, status:'idle', jobId:null, voiceId:selVoiceId, voiceName:selVoiceName }];
+  showQ(); runQ();
+}
+
+function genBulk() {
+  if (!canGen()) return;
+  const lines = document.getElementById('blkTxt').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  if (!lines.length) { toast('Adicione textos!','er'); return }
+  const u    = db.getUser(CU);
+  const du   = u.daily||{}; const same = du.date===today();
+  const todA = same ? (du.audios||0) : 0;
+  const slots = Math.min(u.credits, LIM_DAY-todA);
+  if (lines.length > slots) toast(`Apenas ${slots} slots disponíveis.`,'nf');
+  queue = lines.slice(0,slots).map((txt,i)=>({ id:Date.now()+i, txt, name:`audio_${String(i+1).padStart(3,'0')}`, status:'idle', jobId:null, voiceId:selVoiceId, voiceName:selVoiceName }));
+  showQ(); runQ();
+}
+
+function showQ() { document.getElementById('queueWrap').classList.remove('hidden'); renderQ() }
+
+async function runQ() {
+  if (running) return; running=true;
+  const tick = async () => {
+    if (!running) return;
+    const idle   = queue.filter(i=>i.status==='idle');
+    const active = queue.filter(i=>i.status==='queued'||i.status==='processing').length;
+    while (idle.length && active<MAX_SIM) { const item=idle.shift(); item.status='queued'; renderQ(); genItem(item) }
+    const done = queue.every(i=>i.status==='completed'||i.status==='error');
+    if (!done) setTimeout(tick,600); else { running=false; toast('Todos os áudios processados!','ok') }
+  };
+  tick();
+}
+
+async function genItem(item) {
+  item.status='processing'; renderQ();
+  try {
+    const body = { text:item.txt, voice_id:item.voiceId, voice_lat:item.voiceId, nome:item.name };
+    const r  = await fetch(`${API_BASE}/generate`,{ method:'POST', headers:{'Content-Type':'application/json','X-API-Key':API_KEY}, body:JSON.stringify(body) });
+    const d  = await r.json();
+    useCredit();
+    const jid = d.job_id||d.id||d.audio_id||d.jobId;
+    if (!jid) {
+      if (d.status==='completed'||d.url||d.download_url) {
+        item.status='completed'; item.jobId=d.id||'direct'; item.dlUrl=d.url||d.download_url;
+        saveHist(item,'completed'); renderQ();
+      } else { throw new Error(d.message||d.error||'Resposta inesperada') }
+    } else { item.jobId=jid; item.status='processing'; renderQ(); pollers[item.id]=setTimeout(()=>poll(item),POLL_MS) }
+  } catch(e) { item.status='error'; item.err=e.message; saveHist(item,'error'); renderQ(); toast(`Erro: ${e.message}`,'er') }
+}
+
+async function poll(item) {
+  try {
+    const r  = await fetch(`${API_BASE}/status/${item.jobId}`,{ headers:{'X-API-Key':API_KEY} });
+    const d  = await r.json();
+    const st = (d.status||d.state||'').toLowerCase();
+    if (st==='completed'||st==='done'||st==='success'||d.completed||d.done) {
+      item.status='completed'; item.dlUrl=d.url||d.download_url;
+      saveHist(item,'completed'); renderQ(); toast(`✅ "${item.name}" pronto!`,'ok');
+    } else if (st==='error'||st==='failed'||st==='fail') {
+      item.status='error'; item.err=d.message||'Falha'; saveHist(item,'error'); renderQ();
+    } else { pollers[item.id]=setTimeout(()=>poll(item),POLL_MS) }
+  } catch { pollers[item.id]=setTimeout(()=>poll(item),POLL_MS) }
+}
+
+function stopQueue() {
+  running=false; Object.values(pollers).forEach(clearTimeout);
+  queue.forEach(i=>{ if(i.status==='queued')i.status='idle' });
+  renderQ(); toast('Fila pausada','nf');
+}
+
+function clearQueue() {
+  stopQueue(); queue=[];
+  document.getElementById('queueWrap').classList.add('hidden');
+  document.getElementById('qList').innerHTML='';
+}
+
+function renderQ() {
+  const done  = queue.filter(i=>i.status==='completed').length;
+  const total = queue.length;
+  document.getElementById('qProg').textContent = `${done}/${total} concluídos`;
+  document.getElementById('qBar').style.width  = total ? Math.round(done/total*100)+'%' : '0%';
+  const SL = {idle:'Aguardando',queued:'Na fila',processing:'Gerando…',completed:'Concluído',error:'Erro'};
+  document.getElementById('qList').innerHTML = queue.map((item,i)=>`
+    <div class="qi s-${item.status}">
+      <div class="qi-num">${i+1}</div>
+      <div><div class="qi-name">${item.name}</div><div class="qi-txt">${item.txt}</div>${item.err?`<div class="qi-err">⚠ ${item.err}</div>`:''}</div>
+      <div><span class="badge b-${item.status}">${SL[item.status]||item.status}</span></div>
+      <div>${item.status==='completed'?`<button class="btn-g btn-sm" onclick="dlAudio('${item.jobId}','${item.dlUrl||''}')">⬇ Baixar</button>`:'—'}</div>
+    </div>`).join('');
+}
+
+function dlAudio(jobId, directUrl) {
+  const url = directUrl || `${API_BASE}/download/${jobId}?X-API-Key=${API_KEY}`;
+  window.open(url,'_blank');
+}
+
+function saveHist(item, status) {
+  const u = db.getUser(CU);
+  const entry = { id:item.id, name:item.name, txt:item.txt.substring(0,80), voiceName:item.voiceName, jobId:item.jobId, dlUrl:item.dlUrl||'', status, date:nowStr() };
+  db.updateUser(CU, { history:[entry,...(u.history||[])].slice(0,300) });
+}
+
+// ═══════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════
+function renderHist() {
+  const u = db.getUser(CU);
+  const h = u.history||[];
+  const SL = {idle:'Aguardando',queued:'Na fila',processing:'Gerando…',completed:'Concluído',error:'Erro'};
+  document.getElementById('histBody').innerHTML = !h.length
+    ? '<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:32px">Nenhum áudio ainda</td></tr>'
+    : h.map((e,i)=>`<tr>
+        <td style="font-family:var(--f-mono);color:var(--text2)">${i+1}</td>
+        <td style="font-weight:600;color:var(--text0)">${e.name}</td>
+        <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.txt}…</td>
+        <td>${e.voiceName||'—'}</td>
+        <td><span class="badge b-${e.status}">${SL[e.status]||e.status}</span></td>
+        <td style="font-size:11px;white-space:nowrap">${e.date}</td>
+        <td>${e.status==='completed'&&e.jobId?`<button class="btn-g btn-sm" onclick="dlAudio('${e.jobId}','${e.dlUrl||''}')">⬇</button>`:'—'}</td>
+      </tr>`).join('');
+}
+
+function clearHist() {
+  if (!confirm('Limpar todo o histórico?')) return;
+  db.updateUser(CU,{history:[]}); renderHist(); toast('Histórico limpo','nf');
+}
+
+// ═══════════════════════════════════════════
+// CREDITS / VOUCHER
+// ═══════════════════════════════════════════
+function showPay() {
+  const msg = encodeURIComponent(
+    `Olá! Quero assinar o Irvison Darck Studio de Voz IA.\n\nPlano: Mensal — R$15,00\nMeu usuário no app: ${CU}\n\nAguardo a chave Pix para realizar o pagamento. 🎙️`
+  );
+  window.open(`https://wa.me/${CONFIG.whatsapp}?text=${msg}`, '_blank');
+}
+
+function redeemCode() {
+  const code = document.getElementById('vcodeInput').value.trim().toUpperCase();
+  const msg  = document.getElementById('vcodeMsg');
+  if (!code) { msg.textContent='Digite um código'; msg.style.color='var(--red)'; msg.classList.remove('hidden'); return }
+  const vs = db.vouchers();
+  const v  = vs.find(x=>x.code===code&&!x.used);
+  if (!v) { msg.textContent='Código inválido ou já utilizado'; msg.style.color='var(--red)'; msg.classList.remove('hidden'); return }
+  const u = db.getUser(CU);
+  db.updateUser(CU,{credits:u.credits+v.credits});
+  db.saveV(vs.map(x=>x.code===code?{...x,used:true,usedBy:CU,usedAt:nowStr()}:x));
+  msg.textContent=`✅ +${v.credits} créditos adicionados!`; msg.style.color='var(--accent)'; msg.classList.remove('hidden');
+  document.getElementById('vcodeInput').value='';
+  refreshUI(); toast(`+${v.credits} créditos resgatados!`,'ok');
+}
+
+// ═══════════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════════
+function renderAdmin() {
+  const users   = db.users();
+  const vouchs  = db.vouchers();
+  const active  = users.filter(u=>u.status==='active');
+  const pending = users.filter(u=>u.status==='pending');
+  const allH    = users.flatMap(u=>u.history||[]);
+  const todStr  = new Date().toLocaleDateString('pt-BR');
+  const todH    = allH.filter(h=>h.date&&h.date.includes(todStr));
+
+  // Stats
+  const el = (id) => document.getElementById(id);
+  el('aStU').innerHTML = `${active.length}<span style="font-size:13px;color:var(--text1)">/${CONFIG.maxUsers}</span>`;
+  el('aStULbl').textContent = active.length >= CONFIG.maxUsers ? '🔴 Sem vagas' : `${CONFIG.maxUsers - active.length} vaga(s) livre(s)`;
+  el('aStU').style.color = active.length >= CONFIG.maxUsers ? 'var(--red)' : 'var(--accent)';
+  el('aStP').textContent = pending.length;
+  el('aStT').textContent = todH.length;
+  el('aStA').textContent = allH.length;
+  el('aStV').textContent = vouchs.filter(v=>!v.used).length;
+  const apiUsado    = active.length * LIM_DAY;
+  const apiRestante = 50 - apiUsado;
+  const apiEl = el('aStApi');
+  if (apiEl) { apiEl.textContent = apiRestante; apiEl.style.color = apiRestante<=10?'var(--red)':apiRestante<=25?'var(--gold)':'var(--text0)'; }
+
+  // Config display
+  el('cfgMaxUsers').textContent = CONFIG.maxUsers;
+  el('cfgApproval').textContent = CONFIG.requireApproval ? 'Sim' : 'Não';
+  el('cfgWelcome').textContent  = CONFIG.welcomeCredits;
+  el('cfgLimDay').textContent   = LIM_DAY;
+  el('cfgApiStatus').textContent = CONFIG.apiKey ? '✓ configurada' : '✗ ausente';
+  el('cfgVoices').textContent    = `${voices.length} vozes`;
+
+  // Pending list
+  el('pendingList').innerHTML = !pending.length
+    ? '<div class="txt-sm txt-muted" style="padding:12px 0">Nenhuma solicitação pendente ✅</div>'
+    : pending.map(u=>`
+      <div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-weight:600;font-size:13px;color:var(--text0)">${u.name} <span style="font-family:var(--f-mono);font-size:11px;color:var(--text1)">@${u.username}</span></div>
+          <div class="txt-xs txt-muted">${u.email||'—'} · ${u.createdAt||'—'}</div>
+        </div>
+        <button class="btn-p btn-sm" style="width:auto;background:var(--accent);padding:7px 14px" onclick="approveUser('${u.username}')">✓ Aprovar</button>
+        <button class="btn-g btn-sm btn-danger" onclick="rejectUser('${u.username}')">✕ Rejeitar</button>
+      </div>`).join('');
+
+  // User selects
+  const activeOpts = active.map(u=>`<option value="${u.username}">${u.username} · ${u.name}</option>`).join('');
+  el('aUser').innerHTML = activeOpts;
+  el('aUserAction').innerHTML = activeOpts;
+
+  // Users table with filter
+  const query = (el('userSearch')?.value||'').toLowerCase();
+  const allUsers = users.filter(u => !query || u.username.includes(query) || u.name.toLowerCase().includes(query) || (u.email||'').toLowerCase().includes(query));
+
+  const statusBadge = (s) => {
+    const map = {active:'b-active',admin:'b-admin',pending:'b-pending',rejected:'b-rejected',suspended:'b-processing',blocked:'b-error'};
+    const label = {active:'Ativo',admin:'Admin',pending:'Pendente',rejected:'Rejeitado',suspended:'Suspenso',blocked:'Bloqueado'};
+    return `<span class="badge ${map[s]||'b-idle'}">${label[s]||s}</span>`;
+  };
+
+  el('aUsersTbl').innerHTML = !allUsers.length
+    ? '<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:20px">Nenhum usuário</td></tr>'
+    : allUsers.map(u=>`<tr>
+        <td style="font-family:var(--f-mono);font-size:12px">${u.username}</td>
+        <td style="font-weight:600;color:var(--text0)">${u.name}</td>
+        <td style="font-size:11px;color:var(--text1)">${u.email||'—'}</td>
+        <td><strong class="c-accent">${u.credits}</strong></td>
+        <td>${u.totalAudios||0}</td>
+        <td>${statusBadge(u.role==='admin'?'admin':u.status)}</td>
+        <td style="font-size:11px;white-space:nowrap;color:var(--text2)">${(u.createdAt||'').split(',')[0]||'—'}</td>
+        <td>
+          <div class="admin-action-row">
+            <button class="btn-g btn-sm" onclick="openUserDetail('${u.username}')">Ver</button>
+            ${u.role!=='admin'?`<button class="btn-g btn-sm btn-danger" onclick="zeroCredits('${u.username}')">Zerar</button>`:''}
+          </div>
+        </td>
+      </tr>`).join('');
+
+  // Vouchers
+  el('aVouchersTbl').innerHTML = vouchs.length
+    ? vouchs.map(v=>`<tr>
+        <td style="font-family:var(--f-mono);letter-spacing:.08em;color:var(--accent)">${v.code}</td>
+        <td><strong class="c-accent">${v.credits}</strong></td>
+        <td style="font-size:12px">${v.desc||'—'}</td>
+        <td><span class="badge ${v.used?'b-idle':'b-completed'}">${v.used?'Usado':'Ativo'}</span></td>
+        <td style="font-size:12px">${v.usedBy||'—'}</td>
+        <td style="font-size:11px;white-space:nowrap;color:var(--text2)">${v.created||'—'}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:20px">Nenhum voucher ainda</td></tr>';
+}
+
+function openUserDetail(username) {
+  const u = db.getUser(username);
+  if (!u) return;
+  document.getElementById('umTitle').textContent = `@${u.username}`;
+  document.getElementById('umBody').innerHTML = `
+    <div class="col" style="gap:8px;font-size:13px">
+      <div class="row-sb"><span class="txt-muted">Nome:</span> <strong>${u.name}</strong></div>
+      <div class="row-sb"><span class="txt-muted">E-mail:</span> <span>${u.email||'—'}</span></div>
+      <div class="row-sb"><span class="txt-muted">Créditos:</span> <strong class="c-accent">${u.credits}</strong></div>
+      <div class="row-sb"><span class="txt-muted">Total áudios:</span> <strong>${u.totalAudios||0}</strong></div>
+      <div class="row-sb"><span class="txt-muted">Status:</span> <strong>${u.status}</strong></div>
+      <div class="row-sb"><span class="txt-muted">Papel:</span> <strong>${u.role}</strong></div>
+      <div class="row-sb"><span class="txt-muted">Cadastro:</span> <span style="font-size:12px">${u.createdAt||'—'}</span></div>
+      <div class="row-sb"><span class="txt-muted">Histórico:</span> <span>${(u.history||[]).length} áudios</span></div>
+    </div>
+    <div class="divider"></div>
+    <div class="col" style="gap:6px">
+      <div class="txt-xs txt-muted" style="margin-bottom:4px">Ações administrativas</div>
+      <div class="admin-action-row">
+        ${u.status!=='active'?`<button class="btn-p btn-sm" style="width:auto" onclick="approveUser('${u.username}');document.getElementById('userModal').classList.add('hidden')">▶ Ativar</button>`:''}
+        ${u.status!=='suspended'?`<button class="btn-g btn-sm" onclick="suspendUserDirect('${u.username}')">⏸ Suspender</button>`:''}
+        ${u.status!=='blocked'?`<button class="btn-g btn-sm btn-danger" onclick="blockUserDirect('${u.username}')">🚫 Bloquear</button>`:''}
+        ${u.role!=='admin'?`<button class="btn-g btn-sm" onclick="toggleRole('${u.username}','admin');document.getElementById('userModal').classList.add('hidden')">→ Admin</button>`:`<button class="btn-g btn-sm" onclick="toggleRole('${u.username}','user');document.getElementById('userModal').classList.add('hidden')">→ User</button>`}
+      </div>
+    </div>`;
+  document.getElementById('userModal').classList.remove('hidden');
+}
+
+function approveUser(username) {
+  const ativos = db.users().filter(u => u.status === 'active').length;
+  if (ativos >= CONFIG.maxUsers) { toast(`⚠️ Limite de ${CONFIG.maxUsers} vagas atingido!`,'er'); return; }
+  db.updateUser(username, { status:'active', credits: CONFIG.welcomeCredits });
+  renderAdmin(); updateAdminBadge();
+  toast(`✅ ${username} aprovado! (+${CONFIG.welcomeCredits} créditos)`,'ok');
+}
+
+function rejectUser(username) {
+  if (!confirm(`Rejeitar cadastro de ${username}?`)) return;
+  db.updateUser(username, { status:'rejected' });
+  renderAdmin(); updateAdminBadge();
+  toast(`${username} rejeitado`,'nf');
+}
+
+function suspendUser() {
+  const uname = document.getElementById('aUserAction').value;
+  if (!uname || !confirm(`Suspender ${uname}?`)) return;
+  db.updateUser(uname, { status:'suspended' });
+  renderAdmin(); toast(`${uname} suspenso`,'nf');
+}
+
+function suspendUserDirect(username) {
+  if (!confirm(`Suspender ${username}?`)) return;
+  db.updateUser(username, { status:'suspended' });
+  document.getElementById('userModal').classList.add('hidden');
+  renderAdmin(); toast(`${username} suspenso`,'nf');
+}
+
+function blockUser() {
+  const uname = document.getElementById('aUserAction').value;
+  if (!uname || !confirm(`Bloquear permanentemente ${uname}?`)) return;
+  db.updateUser(uname, { status:'blocked', credits:0 });
+  renderAdmin(); toast(`${uname} bloqueado`,'er');
+}
+
+function blockUserDirect(username) {
+  if (!confirm(`Bloquear ${username}?`)) return;
+  db.updateUser(username, { status:'blocked', credits:0 });
+  document.getElementById('userModal').classList.add('hidden');
+  renderAdmin(); toast(`${username} bloqueado`,'er');
+}
+
+function reactivateUser() {
+  const uname = document.getElementById('aUserAction').value;
+  if (!uname) return;
+  const ativos = db.users().filter(u => u.status === 'active').length;
+  if (ativos >= CONFIG.maxUsers) { toast('Sem vagas disponíveis!','er'); return; }
+  db.updateUser(uname, { status:'active' });
+  renderAdmin(); toast(`${uname} reativado ✅`,'ok');
+}
+
+function adminAddCreds() {
+  const uname = document.getElementById('aUser').value;
+  const amt   = parseInt(document.getElementById('aAmt').value)||0;
+  if (!uname || !amt) return;
+  const u = db.getUser(uname);
+  db.updateUser(uname, { credits:u.credits+amt });
+  if (uname===CU) refreshUI();
+  toast(`+${amt} créditos → ${uname}`,'ok'); renderAdmin();
+}
+
+function adminGenVoucher() {
+  const creds = parseInt(document.getElementById('vCreds').value)||150;
+  const desc  = document.getElementById('vDesc').value.trim();
+  const code  = [4,4,4].map(()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'.split('').sort(()=>Math.random()-.5).slice(0,4).join('')).join('-');
+  const vs = db.vouchers(); vs.push({ code, credits:creds, desc, used:false, created:nowStr() });
+  db.saveV(vs);
+  const el = document.getElementById('vResult'); el.textContent=code; el.classList.remove('hidden');
+  navigator.clipboard?.writeText(code).then(()=>toast('Código copiado!','ok')).catch(()=>{});
+  renderAdmin();
+}
+
+function toggleRole(username, role) {
+  db.updateUser(username, {role}); renderAdmin();
+  toast(`${username} → ${role}`,'nf');
+  if (username===CU) document.getElementById('uRl').textContent = role==='admin'?'⭐ Administrador':'Usuário';
+}
+
+function zeroCredits(username) {
+  if (!confirm(`Zerar créditos de ${username}?`)) return;
+  db.updateUser(username,{credits:0}); if(username===CU)refreshUI(); renderAdmin();
+}
+
+function zeroCreditsAction() {
+  const uname = document.getElementById('aUserAction').value;
+  if (!uname) return;
+  zeroCredits(uname);
+}
+
+// ═══════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const s = localStorage.getItem('session');
+  if (s) {
+    const user = db.getUser(s);
+    if (user) {
+      CU = s;
+      if (user.status==='pending')  { showPending(user); return }
+      if (user.status==='rejected') { localStorage.removeItem('session'); return }
+      if (user.status==='blocked')  { localStorage.removeItem('session'); return }
+      launch(); return;
+    }
+  }
+  document.getElementById('lPass').addEventListener('keydown',e=>{ if(e.key==='Enter')doLogin() });
+  document.getElementById('rPass').addEventListener('keydown',e=>{ if(e.key==='Enter')doRegister() });
+});
+</script>
+</body>
+</html>
