@@ -466,6 +466,129 @@ select option{background:var(--surface2)}
 .conv-value{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700}
 .conv-value.t{color:var(--accent)}.conv-value.g{color:var(--success)}
 
+/* ═══ VOICE LIBRARY ═══ */
+.vlib-toolbar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.vlib-search-wrap{position:relative;flex:1;min-width:200px}
+.vlib-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);pointer-events:none}
+.vlib-search{
+  width:100%;background:var(--surface2);
+  border:1px solid var(--border);border-radius:10px;
+  padding:11px 12px 11px 38px;
+  color:var(--text);font-family:'Space Grotesk',sans-serif;
+  font-size:13px;outline:none;transition:border-color .2s;
+}
+.vlib-search:focus{border-color:rgba(0,229,212,.4)}
+.vlib-search::placeholder{color:var(--muted)}
+.vlib-filters{display:flex;gap:6px;flex-wrap:wrap}
+.vf-btn{
+  padding:8px 14px;border-radius:8px;border:1px solid var(--border);
+  font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);
+  background:transparent;transition:all .15s;
+  font-family:'Space Grotesk',sans-serif;white-space:nowrap;
+}
+.vf-btn:hover{border-color:var(--border-a);color:var(--text)}
+.vf-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.vlib-count{font-size:10px;color:var(--muted);margin-left:auto;font-family:'JetBrains Mono',monospace;white-space:nowrap;align-self:center}
+.vlib-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:10px;
+}
+.vlc{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:13px;
+  padding:16px;
+  cursor:pointer;
+  transition:all .2s;
+  position:relative;
+  overflow:hidden;
+}
+.vlc::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  opacity:0;transition:opacity .2s;
+}
+.vlc:hover{border-color:var(--border-a);background:var(--surface2);transform:translateY(-1px);}
+.vlc:hover::before{opacity:1}
+.vlc.sel-lib{border-color:var(--accent);background:rgba(0,229,212,.06)}
+.vlc.sel-lib::before{opacity:1}
+.vlc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.vlc-av{
+  width:40px;height:40px;
+  border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+  border:1px solid var(--border);
+}
+.vlc-av.m{background:rgba(0,150,255,.12)}
+.vlc-av.f{background:rgba(220,60,220,.12)}
+.vlc-av.n{background:rgba(0,229,212,.1)}
+.vlc-badge{
+  font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:3px 8px;border-radius:99px;
+  border:1px solid;
+}
+.vlc-badge.pt{background:rgba(0,229,212,.1);border-color:rgba(0,229,212,.3);color:var(--accent)}
+.vlc-badge.en{background:rgba(0,100,255,.1);border-color:rgba(0,100,255,.3);color:#5599ff}
+.vlc-badge.es{background:rgba(255,165,0,.1);border-color:rgba(255,165,0,.3);color:#ffaa33}
+.vlc-badge.fr{background:rgba(220,60,220,.1);border-color:rgba(220,60,220,.3);color:#dd66dd}
+.vlc-badge.de{background:rgba(255,80,80,.1);border-color:rgba(255,80,80,.3);color:#ff7070}
+.vlc-badge.other{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:var(--muted)}
+.vlc-name{font-size:13px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vlc-lang{font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px}
+.vlc-actions{display:flex;gap:6px}
+.vlc-btn{
+  flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);
+  font-size:10px;font-weight:600;cursor:pointer;color:var(--muted);
+  background:transparent;transition:all .15s;
+  font-family:'Space Grotesk',sans-serif;text-align:center;
+}
+.vlc-btn:hover{border-color:var(--border-a);color:var(--text)}
+.vlc-btn.use{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-color:transparent;color:#040709;
+}
+.vlc-btn.use:hover{opacity:.85}
+.vlib-empty{
+  grid-column:1/-1;text-align:center;padding:56px 20px;
+  color:var(--muted);font-size:13px;
+}
+.vlib-empty .ve-icon{font-size:36px;margin-bottom:12px;opacity:.25}
+.vlib-loading{
+  grid-column:1/-1;text-align:center;padding:40px;
+  color:var(--muted);font-size:12px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.vlib-spinner{
+  width:18px;height:18px;
+  border:2px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+.preview-bar{
+  margin-top:8px;padding:10px 12px;
+  background:var(--surface2);border-radius:8px;
+  border:1px solid var(--border-a);
+  display:none;align-items:center;gap:10px;
+}
+.preview-bar.show{display:flex}
+.preview-bar audio{flex:1;height:28px}
+.pb-name{font-size:11px;font-weight:600;color:var(--accent);white-space:nowrap}
+.selected-voice-banner{
+  margin-bottom:14px;
+  background:rgba(0,229,212,.07);
+  border:1px solid rgba(0,229,212,.2);
+  border-radius:10px;
+  padding:12px 16px;
+  display:none;align-items:center;gap:10px;
+  font-size:13px;
+}
+.selected-voice-banner.show{display:flex}
+.svb-label{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-right:4px}
+
 @media(max-width:860px){
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
@@ -474,6 +597,7 @@ select option{background:var(--surface2)}
   .stats-row{grid-template-columns:1fr 1fr}
   .hamburger{display:flex!important}
   .tb-pills .pill:last-child{display:none}
+  .vlib-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
 }
 </style>
 </head>
@@ -486,10 +610,10 @@ select option{background:var(--surface2)}
   </div>
 
   <div class="sb-credits">
-    <div class="cr-icon">💎</div>
+    <div class="cr-icon">🎙️</div>
     <div>
-      <div class="cr-label">Créditos</div>
-      <div class="cr-val" id="sb-credits">0</div>
+      <div class="cr-label">Restam Hoje</div>
+      <div class="cr-val" id="sb-credits">5/5</div>
     </div>
   </div>
 
@@ -497,6 +621,9 @@ select option{background:var(--surface2)}
     <div class="nav-section">Produção</div>
     <div class="nav-item active" onclick="goTab('generate',this)">
       <span class="nav-ic">⚡</span>Gerar Áudio
+    </div>
+    <div class="nav-item" onclick="goTab('voices',this)">
+      <span class="nav-ic">🎭</span>Biblioteca de Vozes
     </div>
     <div class="nav-item" onclick="goTab('massa',this)">
       <span class="nav-ic">📦</span>Em Massa
@@ -534,11 +661,11 @@ select option{background:var(--surface2)}
     <div class="tb-pills">
       <div class="pill">
         <div class="pill-dot" style="background:var(--accent)"></div>
-        <span id="top-credits">0 créditos</span>
+        <span id="top-credits">5 restantes hoje</span>
       </div>
       <div class="pill">
         <div class="pill-dot" style="background:var(--success)"></div>
-        <span id="top-today">0 hoje</span>
+        <span id="top-today">0 de 5 hoje</span>
       </div>
     </div>
   </header>
@@ -549,14 +676,14 @@ select option{background:var(--surface2)}
     <div class="tab-pane active" id="tab-generate">
       <div class="stats-row">
         <div class="sc">
-          <div class="sc-label">Créditos</div>
-          <div class="sc-value t" id="s-cr">0</div>
-          <div class="sc-sub">disponíveis</div>
+          <div class="sc-label">Áudios Hoje</div>
+          <div class="sc-value t" id="s-td">0</div>
+          <div class="sc-sub" id="s-lim">de 5 áudios</div>
         </div>
         <div class="sc">
-          <div class="sc-label">Hoje</div>
-          <div class="sc-value g" id="s-td">0</div>
-          <div class="sc-sub" id="s-lim">de 20 áudios</div>
+          <div class="sc-label">Restam Hoje</div>
+          <div class="sc-value g" id="s-rem">5</div>
+          <div class="sc-sub">áudios disponíveis</div>
         </div>
         <div class="sc">
           <div class="sc-label">Total Gerado</div>
@@ -573,7 +700,7 @@ select option{background:var(--surface2)}
       <div class="gen-layout">
         <div>
           <div class="card">
-            <div class="card-title">✍️ Texto <span>~30 créditos por áudio</span></div>
+            <div class="card-title">✍️ Texto <span id="char-limit-lbl">máx 150.000 caracteres</span></div>
             <textarea id="text-input" placeholder="Digite o texto que será convertido em áudio...
 
 Exemplo:
@@ -712,6 +839,35 @@ Texto do áudio 3" oninput="parseBulkTexts()"></textarea>
       </div>
     </div>
 
+    <!-- BIBLIOTECA DE VOZES -->
+    <div class="tab-pane" id="tab-voices">
+      <div class="selected-voice-banner" id="svb">
+        <span>🎤</span>
+        <span class="svb-label">Voz Selecionada:</span>
+        <span id="svb-name" style="font-weight:700;color:var(--accent)">—</span>
+        <span id="svb-lang" style="font-size:10px;color:var(--muted);margin-left:4px"></span>
+        <button onclick="goTab('generate',document.querySelector('.nav-item'))" style="margin-left:auto;padding:5px 12px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-size:11px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">⚡ Gerar Agora</button>
+      </div>
+      <div class="vlib-toolbar">
+        <div class="vlib-search-wrap">
+          <span class="vlib-search-icon">🔍</span>
+          <input class="vlib-search" id="vlib-search" type="text" placeholder="Buscar por nome, idioma..." oninput="filterLibVoices()">
+        </div>
+        <div class="vlib-filters">
+          <button class="vf-btn active" data-filter="all" onclick="setLibFilter('all',this)">Todas</button>
+          <button class="vf-btn" data-filter="pt" onclick="setLibFilter('pt',this)">🇧🇷 PT</button>
+          <button class="vf-btn" data-filter="en" onclick="setLibFilter('en',this)">🇺🇸 EN</button>
+          <button class="vf-btn" data-filter="es" onclick="setLibFilter('es',this)">🇪🇸 ES</button>
+          <button class="vf-btn" data-filter="fr" onclick="setLibFilter('fr',this)">🇫🇷 FR</button>
+          <button class="vf-btn" data-filter="de" onclick="setLibFilter('de',this)">🇩🇪 DE</button>
+        </div>
+        <span class="vlib-count" id="vlib-count">— vozes</span>
+      </div>
+      <div class="vlib-grid" id="vlib-grid">
+        <div class="vlib-loading"><div class="vlib-spinner"></div>Carregando biblioteca...</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -738,14 +894,16 @@ async function refreshStats(){
     const r=await fetch(`${API}/api/auth`,{headers:{Authorization:`Bearer ${token}`}});
     if(!r.ok){if(r.status===401)logout();return;}
     const d=await r.json();const u=d.user||{};
-    const cr=u.credits??0,td=u.daily?.audios??0,lim=u.lim_day??20,tot=u.total_audios??0;
-    ['s-cr'].forEach(id=>document.getElementById(id).textContent=cr);
-    document.getElementById('top-credits').textContent=`${cr} créditos`;
-    document.getElementById('sb-credits').textContent=cr;
+    const cr=u.credits??0,td=u.daily?.audios??0,lim=u.lim_day??5,tot=u.total_audios??0;
+    const rem=Math.max(0,lim-td);
+    document.getElementById('s-cr') && (document.getElementById('s-cr').textContent=cr);
+    document.getElementById('top-credits').textContent=`${rem} restantes hoje`;
+    document.getElementById('sb-credits').textContent=`${rem}/5`;
     document.getElementById('s-td').textContent=td;
     document.getElementById('s-lim').textContent=`de ${lim} áudios`;
+    document.getElementById('s-rem').textContent=rem;
     document.getElementById('s-tot').textContent=tot;
-    document.getElementById('top-today').textContent=`${td} hoje`;
+    document.getElementById('top-today').textContent=`${td} de ${lim} hoje`;
     me={...me,...u};
   }catch(e){}
 }
@@ -792,8 +950,11 @@ function updateCounter(){
   const l=t.length;
   const el=document.getElementById('char-ct');
   el.textContent=`${l} caracteres`;
-  el.className='char-ct'+(l>4500?' over':l>3500?' warn':'');
+  el.className='char-ct'+(l>150000?' over':l>130000?' warn':'');
   document.getElementById('char-est').textContent=l?`~${Math.ceil(l/150)} seg estimados`:'';
+  // update limit label
+  const remaining=150000-l;
+  document.getElementById('char-limit-lbl').textContent=`${l.toLocaleString('pt-BR')} / 150.000 chars`;
 }
 
 let lastJobId='';
@@ -1030,7 +1191,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',massa:'Em Massa',history:'Histórico',voucher:'Voucher'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Em Massa',history:'Histórico',voucher:'Voucher'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -1038,8 +1199,108 @@ function goTab(name,el){
   el.classList.add('active');
   document.getElementById('pg-title').textContent=TAB_TITLES[name]||name;
   if(name==='history')renderHistory();
+  if(name==='voices')renderLibVoices();
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
+}
+
+/* ── BIBLIOTECA DE VOZES ── */
+let libFilter='all';
+
+function getLangCode(voice){
+  const lang=(voice.labels?.language||voice.language||'').toLowerCase();
+  const name=(voice.name||'').toLowerCase();
+  if(lang.includes('port')||lang.includes('brazi')||lang.startsWith('pt')||name.includes('brasil'))return 'pt';
+  if(lang.includes('engl')||lang.startsWith('en'))return 'en';
+  if(lang.includes('span')||lang.startsWith('es'))return 'es';
+  if(lang.includes('fren')||lang.startsWith('fr'))return 'fr';
+  if(lang.includes('germ')||lang.startsWith('de'))return 'de';
+  return 'other';
+}
+
+function getGender(voice){
+  const g=(voice.labels?.gender||voice.gender||'').toLowerCase();
+  if(g.includes('male')&&!g.includes('female'))return 'm';
+  if(g.includes('female'))return 'f';
+  return 'n';
+}
+
+function getGenderEmoji(voice){
+  const g=getGender(voice);
+  return g==='m'?'👨':g==='f'?'👩':'🎙️';
+}
+
+function setLibFilter(f,btn){
+  libFilter=f;
+  document.querySelectorAll('.vf-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLibVoices();
+}
+
+function filterLibVoices(){renderLibVoices();}
+
+function renderLibVoices(){
+  const grid=document.getElementById('vlib-grid');
+  const q=document.getElementById('vlib-search').value.toLowerCase();
+  let filtered=allVoices.filter(v=>{
+    const lang=getLangCode(v);
+    if(libFilter!=='all'&&lang!==libFilter)return false;
+    if(q){
+      const name=(v.name||'').toLowerCase();
+      const vLang=(v.labels?.language||v.language||'').toLowerCase();
+      if(!name.includes(q)&&!vLang.includes(q))return false;
+    }
+    return true;
+  });
+  document.getElementById('vlib-count').textContent=`${filtered.length} vozes`;
+  if(!filtered.length){
+    grid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">🎭</div><p>Nenhuma voz encontrada para este filtro.</p></div>`;
+    return;
+  }
+  grid.innerHTML=filtered.map(v=>{
+    const lang=getLangCode(v);
+    const gender=getGender(v);
+    const emoji=getGenderEmoji(v);
+    const langLabel=(v.labels?.language||v.language||lang||'—');
+    const isSel=selectedVoice===v.voice_id;
+    return `<div class="vlc${isSel?' sel-lib':''}" id="vlc-${v.voice_id}">
+      <div class="vlc-top">
+        <div class="vlc-av ${gender}">${emoji}</div>
+        <span class="vlc-badge ${lang}">${lang.toUpperCase()}</span>
+      </div>
+      <div class="vlc-name">${v.name}</div>
+      <div class="vlc-lang">${langLabel}</div>
+      <div class="vlc-actions">
+        <button class="vlc-btn use" onclick="selectVoiceFromLib('${v.voice_id}','${v.name.replace(/'/g,"\\'")}','${langLabel.replace(/'/g,"\\'")}')">
+          ${isSel?'✓ Selecionada':'⚡ Usar'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectVoiceFromLib(id,name,lang){
+  selectedVoice=id;
+  // update generate tab voice grid too
+  document.querySelectorAll('.vc').forEach(c=>c.classList.remove('sel'));
+  const vcEl=document.querySelector(`.vc[onclick*="${id}"]`);
+  if(vcEl)vcEl.classList.add('sel');
+  // update lib grid
+  document.querySelectorAll('.vlc').forEach(c=>{
+    c.classList.remove('sel-lib');
+    const btn=c.querySelector('.vlc-btn.use');
+    if(btn)btn.textContent='⚡ Usar';
+  });
+  const el=document.getElementById('vlc-'+id);
+  if(el){
+    el.classList.add('sel-lib');
+    const btn=el.querySelector('.vlc-btn.use');
+    if(btn)btn.textContent='✓ Selecionada';
+  }
+  // show banner
+  document.getElementById('svb-name').textContent=name;
+  document.getElementById('svb-lang').textContent=lang;
+  document.getElementById('svb').classList.add('show');
 }
 
 init();
