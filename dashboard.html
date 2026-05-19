@@ -909,20 +909,43 @@ async function refreshStats(){
 }
 
 async function loadVoices(){
+  const grid=document.getElementById('voices-grid');
+  const libGrid=document.getElementById('vlib-grid');
   try{
     const r=await fetch(`${API}/api/voices`,{headers:{Authorization:`Bearer ${token}`}});
+    const raw=await r.text();
+    console.log('[voices] status:',r.status,'body:',raw);
     if(r.status===401){logout();return;}
-    const d=await r.json();
-    allVoices=Array.isArray(d)?d:(d.voices||[]);
+    if(!r.ok){
+      const msg=`API retornou ${r.status}: ${raw.substring(0,120)}`;
+      grid.innerHTML=`<div class="voice-loading" style="color:var(--error)">${msg}</div>`;
+      libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">⚠️</div><p>${msg}</p></div>`;
+      return;
+    }
+    let d;
+    try{d=JSON.parse(raw);}catch(e){
+      grid.innerHTML=`<div class="voice-loading" style="color:var(--error)">JSON inválido: ${raw.substring(0,100)}</div>`;
+      libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">⚠️</div><p>Resposta inválida da API.</p></div>`;
+      return;
+    }
+    // Detectar formato: array direto, {voices:[]}, {data:[]}, {items:[]}
+    allVoices=Array.isArray(d)?d:(d.voices||d.data||d.items||[]);
+    console.log('[voices] parsed count:',allVoices.length,'sample:',allVoices[0]);
+    if(!allVoices.length){
+      const keys=Object.keys(d).join(', ');
+      grid.innerHTML=`<div class="voice-loading" style="color:var(--warning)">Array vazio. Chaves recebidas: [${keys}]<br>Raw: ${raw.substring(0,200)}</div>`;
+      libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">🔍</div><p>Nenhuma voz retornada.<br><small style="font-family:monospace;font-size:9px">Chaves: [${keys}]</small></p></div>`;
+      return;
+    }
     renderVoices(allVoices);
     renderLibVoices();
-    // populate bulk select
     const sel=document.getElementById('bulk-voice-sel');
-    sel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id)}">${escHtml(v.name)}</option>`).join('');
+    sel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
     document.getElementById('v-count-lbl').textContent=`${allVoices.length} vozes`;
   }catch(e){
-    document.getElementById('voices-grid').innerHTML='<div class="voice-loading">Erro ao carregar vozes. Verifique sua conexão.</div>';
-    document.getElementById('vlib-grid').innerHTML='<div class="vlib-empty"><div class="ve-icon">⚠️</div><p>Erro ao carregar vozes.</p></div>';
+    console.error('[voices] error:',e);
+    grid.innerHTML=`<div class="voice-loading" style="color:var(--error)">Erro: ${e.message}</div>`;
+    libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">⚠️</div><p>Erro de conexão: ${e.message}</p></div>`;
   }
 }
 
@@ -932,10 +955,10 @@ function renderVoices(voices){
   const g=document.getElementById('voices-grid');
   if(!voices.length){g.innerHTML='<div class="voice-loading">Nenhuma voz encontrada.</div>';return;}
   g.innerHTML=voices.map(v=>{
-    const vid=escHtml(v.voice_id);
-    const lang=v.labels?.language||v.language||'—';
-    const isSel=selectedVoice===v.voice_id;
-    return `<div class="vc${isSel?' sel':''}" onclick="selectVoice('${vid}',this)" data-vid="${vid}">
+    const vid=escHtml(v.voice_id||v.id||'');
+    const lang=v.labels?.language||v.language||v.lang||'—';
+    const isSel=selectedVoice===(v.voice_id||v.id);
+    return `<div class="vc${isSel?' sel':''}" onclick="selectVoice(${JSON.stringify(v.voice_id||v.id)},this)" data-vid="${vid}">
       <div class="vc-name">${escHtml(v.name)}</div>
       <div class="vc-lang">${escHtml(lang)}</div>
     </div>`;
