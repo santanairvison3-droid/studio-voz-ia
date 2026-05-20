@@ -83,27 +83,41 @@ module.exports = async (req, res) => {
     if (text.length > 150000)
       return res.status(400).json({ error: 'Texto muito longo (máx 150.000 chars).' });
 
-    // Limite diário via Supabase (opcional — não trava se falhar)
+    // Limite diário e mensal via Supabase (opcional)
     try {
       const { createClient } = require('@supabase/supabase-js');
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.SUPABASE_SERVICE_KEY
       );
+      const uid = user.sub || user.id;
       const today = new Date().toISOString().split('T')[0];
-      const { count } = await supabase
-        .from('audio_log')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.sub || user.id)
+
+      // Contagem diária
+      const { count: countDay } = await supabase
+        .from('audio_log').select('id', { count: 'exact', head: true })
+        .eq('user_id', uid)
         .gte('created_at', `${today}T00:00:00`)
         .lte('created_at', `${today}T23:59:59`);
-      const usedToday = count || 0;
+      const usedToday = countDay || 0;
       if (usedToday >= (user.lim_day || 5))
-        return res.status(429).json({ error: `Limite diário atingido (${usedToday}/${user.lim_day || 5}).` });
+        return res.status(429).json({ error: `Limite diário atingido (${usedToday}/${user.lim_day||5}).` });
 
-      // Log assíncrono (não bloqueia)
+      // Contagem mensal (plano trial30)
+      if (user.monthly_limit) {
+        const monthStart = `${today.substring(0,7)}-01T00:00:00`;
+        const { count: countMonth } = await supabase
+          .from('audio_log').select('id', { count: 'exact', head: true })
+          .eq('user_id', uid)
+          .gte('created_at', monthStart);
+        const usedMonth = countMonth || 0;
+        if (usedMonth >= user.monthly_limit)
+          return res.status(429).json({ error: `Limite mensal atingido (${usedMonth}/${user.monthly_limit} áudios este mês).` });
+      }
+
+      // Log
       supabase.from('audio_log').insert({
-        user_id: user.sub || user.id,
+        user_id: uid,
         text: text.substring(0, 500),
         voice_id,
         status: 'pendente'
