@@ -926,7 +926,16 @@ async function loadVoices(){
       let d;
       try{d=JSON.parse(raw);}catch(e){lastErr=`${ep} → JSON inválido`;continue;}
       const voices=Array.isArray(d)?d:(d.voices||d.data||d.items||d.result||[]);
-      if(!voices.length){lastErr=`${ep} → array vazio (chaves: ${Object.keys(d).join(',')})`;continue;}
+      if(!voices.length){
+        // Modo debug — backend retornou raw para diagnóstico
+        if(d.debug){
+          const msg=`Debug do backend — URL: ${d.url_used}<br>Chaves: ${Object.keys(d.raw||{}).join(', ')}<br>Raw: ${JSON.stringify(d.raw).substring(0,300)}`;
+          grid.innerHTML=`<div class="voice-loading" style="color:var(--warning);line-height:1.7">${msg}</div>`;
+          libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">🔍</div><p>${msg}</p></div>`;
+          return;
+        }
+        lastErr=`${ep} → array vazio (chaves: ${Object.keys(d).join(',')})`;continue;
+      }
       // SUCESSO
       allVoices=voices;
       console.log('[voices] OK via',ep,'count:',voices.length,'sample:',voices[0]);
