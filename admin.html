@@ -337,6 +337,9 @@ tbody td{padding:12px 18px;font-size:13px;vertical-align:middle}
     <div class="nav-item" onclick="showTab('logs')">
       <span class="nav-ic">📋</span>Logs de Áudio
     </div>
+    <div class="nav-item" onclick="showTab('assinantes')">
+      <span class="nav-ic">💳</span>Assinantes
+    </div>
     <div class="nav-section">Sistema</div>
     <a class="nav-item" href="dashboard.html">
       <span class="nav-ic">🎵</span>Dashboard
@@ -395,6 +398,7 @@ tbody td{padding:12px 18px;font-size:13px;vertical-align:middle}
       <button class="tab active" id="tab-usuarios" onclick="showTab('usuarios')">👥 Usuários</button>
       <button class="tab" id="tab-vouchers" onclick="showTab('vouchers')">🎟️ Vouchers</button>
       <button class="tab" id="tab-logs" onclick="showTab('logs')">📋 Logs</button>
+      <button class="tab" id="tab-assinantes" onclick="showTab('assinantes')">💳 Assinantes</button>
     </div>
 
     <!-- USUARIOS -->
@@ -438,6 +442,38 @@ tbody td{padding:12px 18px;font-size:13px;vertical-align:middle}
       </div>
     </div>
 
+    <!-- ASSINANTES -->
+    <div class="section" id="sec-assinantes">
+      <div class="section-header">
+        <div class="section-title">Planos & Assinantes</div>
+        <button class="btn btn-accent btn-sm" onclick="openModal('modal-plan')">+ Criar Plano</button>
+      </div>
+
+      <!-- Planos cards -->
+      <div style="margin-bottom:22px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Planos Disponíveis</div>
+        <div id="plans-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- Usuários por plano -->
+      <div class="table-wrap">
+        <div class="table-search" style="gap:12px">
+          <input type="text" id="search-assinantes" placeholder="🔍  Filtrar por nome, email..." oninput="filterAssinantes()">
+          <select id="filter-plan-sel" onchange="filterAssinantes()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;-webkit-appearance:none;min-width:130px">
+            <option value="">Todos os planos</option>
+            <option value="free">Free</option>
+            <option value="basico">Básico</option>
+            <option value="premium">Premium</option>
+          </select>
+        </div>
+        <div id="assinantes-container">
+          <div class="loading"><div class="spinner"></div><br>Carregando...</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </main>
 
@@ -464,6 +500,66 @@ tbody td{padding:12px 18px;font-size:13px;vertical-align:middle}
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-adduser')">Cancelar</button>
       <button class="btn btn-accent" onclick="createUser()">Criar Usuário</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TROCAR PLANO DO USUÁRIO -->
+<div class="modal-overlay" id="modal-change-plan">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-change-plan')">✕</button>
+    <h3>Alterar Plano</h3>
+    <p class="modal-sub" id="cp-sub">Alterar plano do usuário</p>
+    <div class="msg" id="msg-change-plan"></div>
+    <input type="hidden" id="cp-userid">
+    <div class="form-group">
+      <label>Plano</label>
+      <select id="cp-plan">
+        <option value="free">Free</option>
+        <option value="basico">Básico</option>
+        <option value="premium">Premium</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Créditos (opcional)</label><input type="text" id="cp-credits" placeholder="Deixe em branco para não alterar"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-change-plan')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveChangePlan()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: REDEFINIR SENHA (admin) -->
+<div class="modal-overlay" id="modal-reset-pw">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-reset-pw')">✕</button>
+    <h3>Redefinir Senha</h3>
+    <p class="modal-sub" id="rp-sub">Defina uma nova senha para o usuário</p>
+    <div class="msg" id="msg-reset-pw"></div>
+    <input type="hidden" id="rp-userid">
+    <div class="form-group"><label>Nova Senha *</label><input type="password" id="rp-pass" placeholder="••••••••"></div>
+    <div class="form-group"><label>Confirmar Senha *</label><input type="password" id="rp-pass2" placeholder="••••••••"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-reset-pw')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveResetPw()">Redefinir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CRIAR PLANO -->
+<div class="modal-overlay" id="modal-plan">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-plan')">✕</button>
+    <h3>Criar Plano</h3>
+    <p class="modal-sub">Defina as configurações do novo plano</p>
+    <div class="msg" id="msg-plan"></div>
+    <div class="form-group"><label>Nome do Plano *</label><input type="text" id="pl-name" placeholder="Ex: Gold"></div>
+    <div class="form-group"><label>Áudios por Dia</label><input type="number" id="pl-limit" placeholder="10" min="1"></div>
+    <div class="form-group"><label>Créditos Iniciais</label><input type="number" id="pl-credits" placeholder="100" min="0"></div>
+    <div class="form-group"><label>Preço (R$)</label><input type="text" id="pl-price" placeholder="Ex: 29,90"></div>
+    <div class="form-group"><label>Descrição</label><input type="text" id="pl-desc" placeholder="Descrição breve do plano"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-plan')">Cancelar</button>
+      <button class="btn btn-accent" onclick="savePlan()">Criar Plano</button>
     </div>
   </div>
 </div>
@@ -507,7 +603,8 @@ function logout(){localStorage.removeItem('svia_token');window.location.href='in
 const tabTitles={
   usuarios:['Usuários','Gerencie os usuários do sistema'],
   vouchers:['Vouchers','Códigos de acesso e resgates'],
-  logs:['Logs de Áudio','Histórico de gerações']
+  logs:['Logs de Áudio','Histórico de gerações'],
+  assinantes:['Assinantes','Planos e assinaturas dos usuários']
 };
 
 function showTab(tab){
@@ -523,6 +620,7 @@ function showTab(tab){
   if(tab==='usuarios')loadUsers();
   if(tab==='vouchers')loadVouchers();
   if(tab==='logs')loadLogs();
+  if(tab==='assinantes')loadAssinantes();
 }
 
 function refreshCurrent(){showTab(currentTab);}
@@ -573,7 +671,11 @@ function renderUsers(users){
       <td><span class="badge badge-${u.status==='active'?'active':u.status==='pending'?'pending':'blocked'}">${u.status||'—'}</span></td>
       <td style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent)">${u.credits??'—'}</td>
       <td style="font-size:12px;color:var(--muted)">${u.plan||'free'}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="toggleStatus('${u.id}','${u.status}')">${u.status==='active'?'Suspender':'Ativar'}</button></td>
+      <td><div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="toggleStatus('${u.id}','${u.status}')">${u.status==='active'?'Suspender':'Ativar'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="openChangePlan('${u.id}','${u.name||u.username}','${u.plan||'free'}')">🔄 Plano</button>
+        <button class="btn btn-ghost btn-sm" onclick="openResetPw('${u.id}','${u.name||u.username}')">🔑 Senha</button>
+      </div></td>
     </tr>`).join('');
   document.getElementById('users-container').innerHTML=`
     <table>
@@ -722,8 +824,158 @@ function renderLogs(logs){
   document.getElementById('logs-container').innerHTML=`<div class="log-list">${items}</div>`;
 }
 
-function esc(str){
-  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+/* ── ASSINANTES ── */
+const PLAN_DEFAULTS={
+  free:{name:'Free',limit:5,credits:0,price:'Grátis',color:'var(--muted)',desc:'Acesso básico à plataforma'},
+  basico:{name:'Básico',limit:15,credits:100,price:'R$ 19,90',color:'var(--success)',desc:'Para criadores iniciantes'},
+  premium:{name:'Premium',limit:50,credits:500,price:'R$ 49,90',color:'var(--accent)',desc:'Para produtores profissionais'}
+};
+let allPlans=JSON.parse(localStorage.getItem('svia_plans')||'null')||{...PLAN_DEFAULTS};
+let allAssinantes=[];
+
+function loadAssinantes(){
+  renderPlansGrid();
+  // Reuse allUsers if loaded, otherwise fetch
+  if(allUsers.length){allAssinantes=[...allUsers];renderAssinantes(allAssinantes);return;}
+  document.getElementById('assinantes-container').innerHTML='<div class="loading"><div class="spinner"></div><br>Carregando...</div>';
+  fetch(`${API}/api/admin-users`,{headers:{Authorization:'Bearer '+token}})
+    .then(r=>r.json()).then(d=>{
+      allAssinantes=(d.users||d||[]);
+      renderAssinantes(allAssinantes);
+    }).catch(()=>{
+      document.getElementById('assinantes-container').innerHTML='<div class="empty"><div class="ico">⚠️</div><p>Erro ao carregar.</p></div>';
+    });
+}
+
+function renderPlansGrid(){
+  const g=document.getElementById('plans-grid');
+  const planKeys=Object.keys(allPlans);
+  g.innerHTML=planKeys.map(key=>{
+    const p=allPlans[key];
+    const count=allAssinantes.filter(u=>(u.plan||'free')===key).length||0;
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:18px;transition:border-color .2s" onmouseenter="this.style.borderColor='var(--border-a)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${p.color||'var(--accent)'}">${esc(p.name)}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--text)">${count}</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">${esc(p.desc||'')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <span style="font-size:11px;background:var(--surface2);padding:3px 9px;border-radius:99px;color:var(--muted)">🎵 ${p.limit||5}/dia</span>
+        <span style="font-size:11px;background:var(--surface2);padding:3px 9px;border-radius:99px;color:var(--muted)">💎 ${p.credits||0} cred.</span>
+        <span style="font-size:11px;background:var(--surface2);padding:3px 9px;border-radius:99px;color:var(--muted)">${esc(p.price||'—')}</span>
+      </div>
+      <div style="font-size:10px;color:var(--muted)">${count} assinante${count!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderAssinantes(users){
+  const q=(document.getElementById('search-assinantes')||{value:''}).value.toLowerCase();
+  const planF=(document.getElementById('filter-plan-sel')||{value:''}).value;
+  let filtered=users;
+  if(q) filtered=filtered.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)||(u.username||'').toLowerCase().includes(q));
+  if(planF) filtered=filtered.filter(u=>(u.plan||'free')===planF);
+  if(!filtered.length){
+    document.getElementById('assinantes-container').innerHTML='<div class="empty"><div class="ico">👥</div><p>Nenhum usuário encontrado.</p></div>';
+    return;
+  }
+  const rows=filtered.map(u=>{
+    const plan=u.plan||'free';
+    const planData=allPlans[plan]||{name:plan,color:'var(--muted)'};
+    return `<tr>
+      <td>
+        <div style="font-weight:600">${esc(u.name||u.username||'—')}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(u.username||'')}</div>
+      </td>
+      <td style="color:var(--muted);font-size:12px">${esc(u.email||'—')}</td>
+      <td><span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--surface2);color:${planData.color||'var(--accent)'}">${esc(planData.name||plan)}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent)">${u.credits??'—'}</td>
+      <td><span class="badge badge-${u.status==='active'?'active':u.status==='pending'?'pending':'blocked'}">${u.status||'—'}</span></td>
+      <td><div style="display:flex;gap:5px">
+        <button class="btn btn-ghost btn-sm" onclick="openChangePlan('${u.id}','${esc(u.name||u.username)}','${plan}')">🔄 Plano</button>
+        <button class="btn btn-ghost btn-sm" onclick="openResetPw('${u.id}','${esc(u.name||u.username)}')">🔑 Senha</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('assinantes-container').innerHTML=`
+    <table><thead><tr><th>Nome</th><th>Email</th><th>Plano</th><th>Créditos</th><th>Status</th><th>Ações</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+function filterAssinantes(){renderAssinantes(allAssinantes.length?allAssinantes:allUsers);}
+
+function openChangePlan(userId,userName,currentPlan){
+  document.getElementById('cp-userid').value=userId;
+  document.getElementById('cp-sub').textContent=`Alterar plano de: ${userName}`;
+  document.getElementById('cp-plan').value=currentPlan||'free';
+  document.getElementById('cp-credits').value='';
+  document.getElementById('msg-change-plan').className='msg';
+  openModal('modal-change-plan');
+}
+
+async function saveChangePlan(){
+  const userId=document.getElementById('cp-userid').value;
+  const plan=document.getElementById('cp-plan').value;
+  const credStr=document.getElementById('cp-credits').value.trim();
+  const credits=credStr?parseInt(credStr):undefined;
+  try{
+    const body={userId,plan};
+    if(credits!==undefined&&!isNaN(credits))body.credits=credits;
+    const r=await fetch(`${API}/api/admin-users`,{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)});
+    if(!r.ok){const d=await r.json();showMsg('msg-change-plan',d.error||'Erro ao alterar plano.');return;}
+    showMsg('msg-change-plan','Plano atualizado!','success');
+    setTimeout(()=>{closeModal('modal-change-plan');loadUsers();loadAssinantes();},1100);
+  }catch(e){showMsg('msg-change-plan','Erro de conexão.');}
+}
+
+function openResetPw(userId,userName){
+  document.getElementById('rp-userid').value=userId;
+  document.getElementById('rp-sub').textContent=`Redefinir senha de: ${userName}`;
+  document.getElementById('rp-pass').value='';
+  document.getElementById('rp-pass2').value='';
+  document.getElementById('msg-reset-pw').className='msg';
+  openModal('modal-reset-pw');
+}
+
+async function saveResetPw(){
+  const userId=document.getElementById('rp-userid').value;
+  const p1=document.getElementById('rp-pass').value;
+  const p2=document.getElementById('rp-pass2').value;
+  if(!p1){showMsg('msg-reset-pw','Digite a nova senha.');return;}
+  if(p1!==p2){showMsg('msg-reset-pw','As senhas não coincidem.');return;}
+  const pw=await sha256(p1);
+  try{
+    const r=await fetch(`${API}/api/admin-users`,{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({userId,pw})});
+    if(!r.ok){const d=await r.json();showMsg('msg-reset-pw',d.error||'Erro ao redefinir senha.');return;}
+    showMsg('msg-reset-pw','Senha redefinida com sucesso!','success');
+    setTimeout(()=>closeModal('modal-reset-pw'),1200);
+  }catch(e){showMsg('msg-reset-pw','Erro de conexão.');}
+}
+
+function savePlan(){
+  const name=document.getElementById('pl-name').value.trim();
+  const limit=parseInt(document.getElementById('pl-limit').value)||5;
+  const credits=parseInt(document.getElementById('pl-credits').value)||0;
+  const price=document.getElementById('pl-price').value.trim()||'—';
+  const desc=document.getElementById('pl-desc').value.trim();
+  if(!name){showMsg('msg-plan','Digite o nome do plano.');return;}
+  const key=name.toLowerCase().replace(/\s+/g,'_');
+  allPlans[key]={name,limit,credits,price,desc,color:'var(--accent)'};
+  localStorage.setItem('svia_plans',JSON.stringify(allPlans));
+  // Update dropdowns
+  ['new-plan','cp-plan','filter-plan-sel'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    if(!el.querySelector(`option[value="${key}"]`)){const o=document.createElement('option');o.value=key;o.textContent=name;el.appendChild(o);}
+  });
+  showMsg('msg-plan',`Plano "${name}" criado!`,'success');
+  setTimeout(()=>{closeModal('modal-plan');renderPlansGrid();},1100);
+}
+
+function showMsg(id,text,type='error'){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=text;
+  el.className='msg '+(type==='success'?'success':'error');
 }
 
 async function sha256(msg){

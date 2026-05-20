@@ -297,42 +297,148 @@ audio{width:100%;border-radius:7px}
 .btn-sm.danger{background:transparent;border-color:rgba(255,77,114,.3);color:var(--error)}
 .btn-sm.danger:hover{background:rgba(255,77,114,.1)}
 
-/* Massa */
-.massa-layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
-.upload-zone{
+/* ── TXT FILES ── */
+.txt-layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+
+.drop-multi{
   border:2px dashed var(--border-a);
-  border-radius:12px;padding:24px 20px;
-  text-align:center;cursor:pointer;
-  transition:all .2s;position:relative;
-  margin-bottom:12px;
+  border-radius:14px;
+  padding:32px 24px;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s;
+  position:relative;
+  background:rgba(0,229,212,.01);
 }
-.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(0,229,212,.04)}
-.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-.uz-icon{font-size:28px;margin-bottom:8px}
-.upload-zone h3{font-size:13px;font-weight:600;margin-bottom:3px}
-.upload-zone p{font-size:11px;color:var(--muted)}
-.or-div{
-  text-align:center;color:var(--muted);font-size:10px;letter-spacing:2px;
-  margin:10px 0;position:relative;
+.drop-multi:hover,.drop-multi.drag{border-color:var(--accent);background:rgba(0,229,212,.05)}
+.drop-multi input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dm-icon{font-size:34px;margin-bottom:10px}
+.dm-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.dm-sub{font-size:12px;color:var(--muted)}
+.dm-limit{display:inline-block;margin-top:10px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);background:var(--accent-dim);border:1px solid rgba(0,229,212,.2);padding:3px 12px;border-radius:99px}
+
+.txt-files-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.txt-file-item{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:11px;
+  padding:13px 16px;
+  display:flex;align-items:center;gap:12px;
+  transition:border-color .2s;
+  position:relative;
 }
-.or-div::before,.or-div::after{content:'';position:absolute;top:50%;width:45%;height:1px;background:var(--border)}
-.or-div::before{left:0}.or-div::after{right:0}
-.split-opts{display:flex;gap:6px;margin-top:8px}
-.split-opt{
-  flex:1;padding:7px;border-radius:7px;text-align:center;
-  font-size:11px;font-weight:600;cursor:pointer;
-  border:1px solid var(--border);color:var(--muted);
-  transition:all .15s;
+.txt-file-item:hover{border-color:var(--border-a)}
+.txt-file-item.ready{border-color:rgba(0,214,143,.2)}
+.txt-file-item.generating{border-color:rgba(0,229,212,.3)}
+.txt-file-item.done{border-color:rgba(0,214,143,.35)}
+.txt-file-item.error{border-color:rgba(255,77,114,.25)}
+
+.tf-num{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;
+  background:var(--surface3);color:var(--muted);
+  flex-shrink:0;
 }
-.split-opt.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
-.preview-count{
-  margin-top:10px;padding:10px 14px;
-  background:var(--surface3);border-radius:8px;
-  font-size:12px;display:none;
-  align-items:center;justify-content:space-between;
+.txt-file-item.ready .tf-num{background:rgba(0,214,143,.1);color:var(--success)}
+.txt-file-item.generating .tf-num{background:rgba(0,229,212,.1);color:var(--accent);animation:spin .7s linear infinite}
+.txt-file-item.done .tf-num{background:rgba(0,214,143,.12);color:var(--success)}
+.txt-file-item.error .tf-num{background:rgba(255,77,114,.1);color:var(--error)}
+
+.tf-info{flex:1;min-width:0}
+.tf-name-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.tf-fname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--accent)}
+.tf-chars{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;flex-shrink:0}
+.tf-audio-name{width:100%}
+.tf-audio-name input{
+  width:100%;
+  background:transparent;
+  border:none;
+  border-bottom:1px solid var(--border);
+  border-radius:0;
+  padding:4px 0;
+  color:var(--text);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;
+  outline:none;
+  transition:border-color .2s;
 }
-.preview-count.show{display:flex}
-.pc-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--accent)}
+.tf-audio-name input:focus{border-bottom-color:rgba(0,229,212,.5)}
+.tf-audio-name input::placeholder{color:var(--muted)}
+
+.tf-status{font-size:11px;margin-top:4px}
+.tf-status.gen{color:var(--accent)}
+.tf-status.ok{color:var(--success)}
+.tf-status.err{color:var(--error)}
+.tf-dl a{font-size:11px;color:var(--accent);text-decoration:none;font-weight:600}
+.tf-dl a:hover{text-decoration:underline}
+
+.tf-remove{
+  background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:16px;padding:4px;
+  transition:color .15s;flex-shrink:0;
+}
+.tf-remove:hover{color:var(--error)}
+
+.txt-empty{
+  text-align:center;padding:40px 20px;color:var(--muted);
+  border:2px dashed var(--border);border-radius:12px;
+  font-size:13px;
+}
+.txt-empty .te-icon{font-size:32px;margin-bottom:10px;opacity:.3}
+
+/* Password modal */
+.pw-modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(5px);
+  z-index:400;display:none;
+  align-items:center;justify-content:center;padding:20px;
+}
+.pw-modal-overlay.open{display:flex}
+.pw-modal{
+  background:var(--surface);border:1px solid var(--border-a);
+  border-radius:16px;padding:28px;
+  width:100%;max-width:380px;position:relative;
+  box-shadow:0 24px 64px rgba(0,0,0,.6), 0 0 40px rgba(0,229,212,.05);
+  animation:modalIn .25s cubic-bezier(.22,1,.36,1);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.pw-modal h3{font-size:18px;font-weight:700;margin-bottom:6px}
+.pw-modal-sub{font-size:13px;color:var(--muted);margin-bottom:22px}
+.pw-close{
+  position:absolute;top:14px;right:14px;
+  background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:18px;
+  width:28px;height:28px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.pw-close:hover{background:var(--surface2);color:var(--text)}
+.pw-group{margin-bottom:14px}
+.pw-group label{
+  display:block;font-size:10px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:7px;
+}
+.pw-group input{
+  width:100%;background:var(--surface2);
+  border:1px solid var(--border);border-radius:9px;
+  padding:11px 14px;color:var(--text);font-size:14px;
+  font-family:'Space Grotesk',sans-serif;
+  outline:none;transition:border-color .2s;
+}
+.pw-group input:focus{border-color:rgba(0,229,212,.45)}
+.pw-group input::placeholder{color:var(--muted)}
+.pw-actions{display:flex;gap:9px;margin-top:8px}
+.pw-actions button{flex:1;padding:11px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;border:none;transition:all .15s}
+.pw-btn-cancel{background:var(--surface2);color:var(--text);border:1px solid var(--border)!important}
+.pw-btn-save{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709}
+.pw-msg{padding:10px 14px;border-radius:8px;font-size:13px;text-align:center;display:none;margin-bottom:14px}
+.pw-msg.error{background:rgba(255,77,114,.1);border:1px solid rgba(255,77,114,.22);color:#ff7096;display:block}
+.pw-msg.success{background:rgba(0,214,143,.1);border:1px solid rgba(0,214,143,.22);color:#2dffb4;display:block}
+
+@media(max-width:860px){
+  .txt-layout{grid-template-columns:1fr}
+}
 
 select{
   width:100%;background:var(--surface2);
@@ -667,7 +773,7 @@ select option{background:var(--surface2)}
       <span class="nav-ic">🎭</span>Biblioteca de Vozes
     </div>
     <div class="nav-item" onclick="goTab('massa',this)">
-      <span class="nav-ic">📦</span>Em Massa
+      <span class="nav-ic">📁</span>Arquivos .TXT
       <span class="nav-badge">.txt</span>
     </div>
     <div class="nav-section">Conta</div>
@@ -680,16 +786,43 @@ select option{background:var(--surface2)}
   </nav>
 
   <div class="sb-user">
-    <div class="user-row">
+    <div class="user-row" onclick="openPwModal()" title="Clique para alterar senha" style="cursor:pointer">
       <div class="user-av" id="sb-av">?</div>
       <div>
         <div class="user-name" id="sb-name">...</div>
         <div class="user-role" id="sb-role">user</div>
       </div>
-      <button class="btn-logout" onclick="logout()" title="Sair">⏻</button>
+      <button class="btn-logout" onclick="event.stopPropagation();logout()" title="Sair">⏻</button>
     </div>
+    <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:5px;letter-spacing:.5px">🔑 clique para mudar senha</div>
   </div>
 </aside>
+
+<!-- PASSWORD MODAL -->
+<div class="pw-modal-overlay" id="pw-modal">
+  <div class="pw-modal">
+    <button class="pw-close" onclick="closePwModal()">✕</button>
+    <h3>🔑 Alterar Senha</h3>
+    <p class="pw-modal-sub">Defina uma nova senha para sua conta.</p>
+    <div class="pw-msg" id="pw-msg"></div>
+    <div class="pw-group">
+      <label>Senha Atual *</label>
+      <input type="password" id="pw-current" placeholder="Sua senha atual">
+    </div>
+    <div class="pw-group">
+      <label>Nova Senha *</label>
+      <input type="password" id="pw-new" placeholder="Nova senha (mín. 6 caracteres)">
+    </div>
+    <div class="pw-group">
+      <label>Confirmar Nova Senha *</label>
+      <input type="password" id="pw-confirm" placeholder="Repita a nova senha">
+    </div>
+    <div class="pw-actions">
+      <button class="pw-btn-cancel" onclick="closePwModal()">Cancelar</button>
+      <button class="pw-btn-save" onclick="saveNewPassword()">Salvar Senha</button>
+    </div>
+  </div>
+</div>
 
 <div class="main">
   <header class="topbar">
@@ -787,82 +920,62 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
       </div>
     </div>
 
-    <!-- EM MASSA -->
+    <!-- ARQUIVOS TXT -->
     <div class="tab-pane" id="tab-massa">
-      <div class="massa-layout">
-        <div>
-          <div class="card">
-            <div class="card-title">📁 Importar .TXT</div>
-            <div class="upload-zone" id="drop-zone">
-              <input type="file" id="file-input" accept=".txt" onchange="loadTxtFile(this)">
-              <div class="uz-icon">📄</div>
-              <h3>Arraste um arquivo .txt</h3>
-              <p>ou clique para selecionar</p>
-            </div>
-            <div class="or-div">OU</div>
-            <div class="card-title" style="margin-bottom:10px">✏️ Colar Textos</div>
-            <textarea id="bulk-paste" style="min-height:130px" placeholder="Cole seus textos aqui, um por linha:
+      <div class="txt-layout">
 
-Texto do áudio 1
-Texto do áudio 2
-Texto do áudio 3" oninput="parseBulkTexts()"></textarea>
-            <div style="margin-top:10px">
-              <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Separar por:</div>
-              <div class="split-opts">
-                <div class="split-opt active" id="sp-newline" onclick="setSplit('newline')">↵ Linha</div>
-                <div class="split-opt" id="sp-blank" onclick="setSplit('blank')">⏎ Linha Vazia</div>
-                <div class="split-opt" id="sp-dot" onclick="setSplit('dot')">. Ponto</div>
-              </div>
-            </div>
-            <div class="preview-count" id="preview-count">
-              <div><span class="pc-val" id="pc-val">0</span>&nbsp;textos detectados</div>
-              <button class="btn-sm outline" onclick="clearBulk()" style="padding:5px 12px;font-size:11px;flex:none">Limpar</button>
-            </div>
-          </div>
-        </div>
-
+        <!-- LEFT: upload + file list -->
         <div>
           <div class="card" style="margin-bottom:14px">
-            <div class="card-title">⚙️ Configuração</div>
-            <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:7px">Voz para todos</div>
-            <select id="bulk-voice-sel" style="margin-bottom:14px"><option value="">Carregando vozes...</option></select>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:14px">
-              💡 Textos processados sequencialmente. Cada áudio é salvo no histórico.
+            <div class="card-title">📁 Selecionar Arquivos .TXT <span>máximo 5 arquivos</span></div>
+
+            <div class="drop-multi" id="drop-multi">
+              <input type="file" id="txt-file-input" accept=".txt" multiple onchange="addTxtFiles(this.files)">
+              <div class="dm-icon">📂</div>
+              <div class="dm-title">Arraste ou clique para selecionar</div>
+              <div class="dm-sub">Cada arquivo .txt = uma geração de áudio</div>
+              <span class="dm-limit">até 5 arquivos</span>
             </div>
-            <button class="btn-primary" id="btn-add-q" onclick="addToQueue()">➕ Adicionar à Fila</button>
-          </div>
-          <div class="card">
-            <div class="q-header">
-              <div class="card-title" style="margin:0">📦 Fila</div>
-              <button class="btn-ctrl" onclick="clearQueue()">🗑 Limpar</button>
+
+            <div class="txt-files-list" id="txt-files-list">
+              <div class="txt-empty">
+                <div class="te-icon">📄</div>
+                Nenhum arquivo selecionado ainda.<br>Selecione até 5 arquivos .txt acima.
+              </div>
             </div>
-            <div class="q-stats" id="q-stats">
-              <span class="qs pend">⏳ 0</span>
-              <span class="qs proc">⚙️ 0</span>
-              <span class="qs done">✅ 0</span>
-              <span class="qs err">❌ 0</span>
-            </div>
-            <div class="q-list" id="q-list"><div class="q-empty">Fila vazia. Adicione textos acima.</div></div>
           </div>
         </div>
+
+        <!-- RIGHT: voice + generate -->
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">🎤 Voz para todos</div>
+            <select id="txt-voice-sel" style="margin-bottom:0"><option value="">Carregando vozes...</option></select>
+            <div style="margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--muted);line-height:1.6">
+              💡 Cada arquivo .txt será convertido em um áudio separado. Nomeie cada arquivo na lista ao lado.
+            </div>
+          </div>
+
+          <button class="btn-primary" id="btn-txt-gen" onclick="generateAllTxt()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px var(--glow);transition:opacity .2s,box-shadow .2s">
+            🎙️ Gerar Todos os Áudios
+          </button>
+
+          <div id="txt-gen-status" style="margin-top:12px;display:none;padding:12px;background:var(--surface2);border-radius:9px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-align:center"></div>
+        </div>
+
       </div>
     </div>
 
     <!-- HISTÓRICO -->
     <div class="tab-pane" id="tab-history">
       <div class="card" style="margin-bottom:14px;padding:14px 18px">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <input type="checkbox" id="hist-sel-all" onchange="toggleSelectAll(this)" style="width:16px;height:16px;cursor:pointer;accent-color:#00e5d4">
-            <div class="card-title" style="margin:0">📋 Histórico Local</div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-sm teal" id="btn-zip-sel" onclick="downloadZipSelected()" style="padding:7px 14px;display:none">📦 ZIP Selecionados</button>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="card-title" style="margin:0">📋 Histórico Local</div>
+          <div style="display:flex;gap:8px">
             <button class="btn-sm outline" onclick="exportHistory()" style="padding:7px 14px">⬇ CSV</button>
             <button class="btn-sm danger" onclick="clearHistory()" style="padding:7px 14px">🗑 Limpar</button>
           </div>
         </div>
-        <div id="hist-sel-count" style="font-size:11px;color:#00e5d4;margin-top:6px;display:none">0 selecionados</div>
       </div>
       <div class="hist-list" id="hist-list"></div>
     </div>
@@ -936,8 +1049,7 @@ function parseJWT(t){try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+'
 function logout(){localStorage.removeItem('svia_token');window.location.href='index.html';}
 const token=getToken();if(!token){window.location.href='index.html';}
 let me=parseJWT(token)||{};
-let allVoices=[],selectedVoice=null,splitMode='newline',bulkTexts=[];
-const queue=[];let qRunning=false;
+let allVoices=[],selectedVoice=null;
 
 async function init(){
   document.getElementById('sb-name').textContent=me.name||me.username||'Usuário';
@@ -947,52 +1059,16 @@ async function init(){
   renderHistory();renderQueue();
 }
 
-// Rastreia uso local como fallback
-function trackLocalUsage(){
-  const today=new Date().toISOString().split('T')[0];
-  const key=`svia_used_${today}`;
-  const n=parseInt(localStorage.getItem(key)||'0')+1;
-  localStorage.setItem(key,n);
-  // Atualiza UI imediatamente
-  const lim=me?.lim_day||5;
-  const rem=Math.max(0,lim-n);
-  const s_td=document.getElementById('s-td');
-  const s_rem=document.getElementById('s-rem');
-  const top_today=document.getElementById('top-today');
-  const top_credits=document.getElementById('top-credits');
-  if(s_td)s_td.textContent=n;
-  if(s_rem)s_rem.textContent=rem;
-  if(top_today)top_today.textContent=`${n} de ${lim} hoje`;
-  if(top_credits)top_credits.textContent=`${rem} restantes hoje`;
-}
-
-function getLocalUsedToday(){
-  const today=new Date().toISOString().split('T')[0];
-  return parseInt(localStorage.getItem(`svia_used_${today}`)||'0');
-}
-
 async function refreshStats(){
   try{
     const r=await fetch(`${API}/api/auth`,{headers:{Authorization:`Bearer ${token}`}});
     if(!r.ok){if(r.status===401)logout();return;}
     const d=await r.json();const u=d.user||{};
-    const lim=u.lim_day??5;
-    // Usa localStorage como fallback se Supabase não registrou
-    const tdSupabase=u.daily?.audios??0;
-    const tdLocal=getLocalUsedToday();
-    const td=Math.max(tdSupabase,tdLocal);
-    const cr=Math.max(0,lim-td);
-    const tot=u.total_audios??0;
+    const cr=u.credits??0,td=u.daily?.audios??0,lim=u.lim_day??5,tot=u.total_audios??0;
     const rem=Math.max(0,lim-td);
     document.getElementById('s-cr') && (document.getElementById('s-cr').textContent=cr);
     document.getElementById('top-credits').textContent=`${rem} restantes hoje`;
-    document.getElementById('sb-credits').textContent=`${rem}/${lim}`;
-    // Exibe plano e validade
-    if(u.plan==='trial30'&&u.valid_until){
-      const exp=new Date(u.valid_until).toLocaleDateString('pt-BR');
-      const planEl=document.getElementById('plan-badge');
-      if(planEl){planEl.textContent=`🎫 Trial 30 dias · válido até ${exp}`;planEl.style.display='block';}
-    }
+    document.getElementById('sb-credits').textContent=`${rem}/5`;
     document.getElementById('s-td').textContent=td;
     document.getElementById('s-lim').textContent=`de ${lim} áudios`;
     document.getElementById('s-rem').textContent=rem;
@@ -1036,7 +1112,9 @@ async function loadVoices(){
       renderVoices(allVoices);
       renderLibVoices();
       const sel=document.getElementById('bulk-voice-sel');
-      sel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
+      if(sel)sel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
+      const txtSel=document.getElementById('txt-voice-sel');
+      if(txtSel)txtSel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
       document.getElementById('v-count-lbl').textContent=`${allVoices.length} vozes`;
       return;
     }catch(e){lastErr=`${ep} → ${e.message}`;}
@@ -1120,7 +1198,6 @@ async function generateSingle(){
     if(d.audio_url){
       showAudio(d.audio_url,d.job_id||'—');
       saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
-      trackLocalUsage();
       refreshStats();
     } else if(d.job_id){
       lastJobId=d.job_id;showStatus(`Job ${d.job_id} em processamento...`,'info');
@@ -1139,58 +1216,13 @@ function showStatus(msg,type){
   if(type==='success')setTimeout(()=>el.classList.remove('show'),4000);
 }
 
-function proxyUrl(url){
-  if(!url) return '';
-  // Se já é uma URL do nosso proxy, não envolve novamente
-  if(url.includes('/api/audio-proxy')) return url;
-  return `${API}/api/audio-proxy?token=${encodeURIComponent(token)}&url=${encodeURIComponent(url)}`;
-}
-
-async function showAudio(url,jobId){
-  // Se não temos audio_url ainda mas temos jobId, busca via /download/
-  if(!url && jobId && jobId !== '—'){
-    try {
-      const r = await fetch(`${API}/api/generate-index?job_id=${jobId}`, {headers:{Authorization:`Bearer ${token}`}});
-      const d = await r.json();
-      url = d.audio_url || '';
-    } catch(e){}
-  }
-  if(!url){ showStatus('URL do áudio não encontrada.','error'); return; }
-
-  // Gera nome do arquivo com as primeiras palavras do texto
-  const rawText = document.getElementById('text-input').value.trim();
-  const vozNome = (allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||'audio')
-    .replace(/[^a-zA-Z0-9À-ú\s]/g,'').trim().replace(/\s+/g,'-').substring(0,30);
-  const textoSlug = rawText.split(/\s+/).slice(0,5).join('-')
-    .replace(/[^a-zA-Z0-9À-ú\-]/g,'').substring(0,40);
-  const filename = `${vozNome}_${textoSlug}.mp3`.replace(/^-+|-+$/g,'');
-
-  const proxied = proxyUrl(url);
+function showAudio(url,jobId){
   const ap=document.getElementById('audio-player');
-
-  // Carrega via blob para evitar bloqueio de CORS
-  try {
-    const resp = await fetch(proxied);
-    if(resp.ok){
-      const blob = await resp.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      ap.src = blobUrl;
-      document.getElementById('btn-dl').href = blobUrl;
-      document.getElementById('btn-dl').download = filename;
-    } else {
-      ap.src = proxied;
-      document.getElementById('btn-dl').href = proxied;
-      document.getElementById('btn-dl').download = filename;
-    }
-  } catch(e){
-    ap.src = proxied;
-    document.getElementById('btn-dl').href = proxied;
-    document.getElementById('btn-dl').download = filename;
-  }
-
+  ap.src=url;
+  document.getElementById('btn-dl').href=url;
   document.getElementById('job-id-disp').textContent=jobId;
   document.getElementById('audio-result').classList.add('show');
-  showStatus('Áudio gerado com sucesso! 🎉','success');
+  showStatus('Áudio gerado com sucesso!','success');
   lastJobId=jobId;
 }
 
@@ -1209,7 +1241,7 @@ function pollAudio(jobId){
       const d=await r.json();
       if(d.status==='done'||d.status==='completed'){
         clearInterval(t);
-        const audioUrl=d.audio_url||'';
+        const audioUrl=d.audio_url||`${API}/api/v1/audio/download/${jobId}`;
         showAudio(audioUrl,jobId);
         saveHistory({url:d.audio_url,jobId,text:document.getElementById('text-input').value.substring(0,80),voice:selectedVoice,ts:new Date().toISOString()});
         refreshStats();
@@ -1220,127 +1252,213 @@ function pollAudio(jobId){
   },3000);
 }
 
-/* ── MASSA ── */
-function loadTxtFile(input){
-  const f=input.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=e=>{document.getElementById('bulk-paste').value=e.target.result;parseBulkTexts();};
-  r.readAsText(f,'UTF-8');
-}
-['dragover','drop'].forEach(ev=>{
-  document.getElementById('drop-zone').addEventListener(ev,e=>{
-    e.preventDefault();
-    if(ev==='drop'){
-      document.getElementById('drop-zone').classList.remove('drag');
-      const f=e.dataTransfer.files[0];if(f&&f.name.endsWith('.txt')){
-        const r=new FileReader();
-        r.onload=x=>{document.getElementById('bulk-paste').value=x.target.result;parseBulkTexts();};
-        r.readAsText(f,'UTF-8');
-      }
-    } else document.getElementById('drop-zone').classList.add('drag');
+/* ── TXT FILES ── */
+let txtFiles=[]; // [{file, name, text, audioName, status, audioUrl}]
+const MAX_TXT=5;
+
+function addTxtFiles(fileList){
+  const arr=Array.from(fileList).filter(f=>f.name.endsWith('.txt'));
+  const available=MAX_TXT-txtFiles.length;
+  if(available<=0){showTxtStatus('Máximo de 5 arquivos já adicionados.');return;}
+  arr.slice(0,available).forEach(f=>{
+    // avoid duplicates by name
+    if(txtFiles.find(x=>x.file.name===f.name))return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+      txtFiles.push({file:f,name:f.name,text:e.target.result,audioName:f.name.replace(/\.txt$/i,''),status:'ready',audioUrl:null});
+      renderTxtFiles();
+    };
+    reader.readAsText(f,'UTF-8');
   });
-});
-
-function setSplit(mode){
-  splitMode=mode;
-  document.querySelectorAll('.split-opt').forEach(o=>o.classList.remove('active'));
-  document.getElementById('sp-'+mode).classList.add('active');
-  parseBulkTexts();
+  // Reset input so same files can be re-added after removal
+  document.getElementById('txt-file-input').value='';
 }
 
-function parseBulkTexts(){
-  const raw=document.getElementById('bulk-paste').value;
-  let texts=[];
-  if(splitMode==='newline') texts=raw.split('\n');
-  else if(splitMode==='blank') texts=raw.split(/\n\s*\n/);
-  else if(splitMode==='dot') texts=raw.split('.');
-  bulkTexts=texts.map(t=>t.trim()).filter(t=>t.length>0);
-  const pc=document.getElementById('preview-count');
-  if(bulkTexts.length>0){
-    document.getElementById('pc-val').textContent=bulkTexts.length;
-    pc.classList.add('show');
-  } else pc.classList.remove('show');
+// Drag & drop multi
+(()=>{
+  const zone=document.getElementById('drop-multi');
+  if(!zone)return;
+  zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag')});
+  zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
+  zone.addEventListener('drop',e=>{
+    e.preventDefault();zone.classList.remove('drag');
+    const files=Array.from(e.dataTransfer.files).filter(f=>f.name.endsWith('.txt'));
+    if(files.length)addTxtFiles(files);
+  });
+})();
+
+function removeTxtFile(idx){
+  txtFiles.splice(idx,1);
+  renderTxtFiles();
 }
 
-function clearBulk(){
-  document.getElementById('bulk-paste').value='';
-  bulkTexts=[];
-  document.getElementById('preview-count').classList.remove('show');
+function renderTxtFiles(){
+  const list=document.getElementById('txt-files-list');
+  if(!txtFiles.length){
+    list.innerHTML=`<div class="txt-empty"><div class="te-icon">📄</div>Nenhum arquivo selecionado ainda.<br>Selecione até 5 arquivos .txt acima.</div>`;
+    return;
+  }
+  list.innerHTML=txtFiles.map((f,i)=>{
+    const icons={ready:'📄',generating:'⚙',done:'✅',error:'❌'};
+    const chars=f.text?f.text.length:0;
+    return `<div class="txt-file-item ${f.status}" id="tfi-${i}">
+      <div class="tf-num">${f.status==='generating'?'⚙':f.status==='done'?'✓':f.status==='error'?'✕':(i+1)}</div>
+      <div class="tf-info">
+        <div class="tf-name-row">
+          <span class="tf-fname" title="${escHtml(f.name)}">${escHtml(f.name)}</span>
+          <span class="tf-chars">${chars.toLocaleString('pt-BR')} car.</span>
+        </div>
+        <div class="tf-audio-name">
+          <input type="text" value="${escHtml(f.audioName)}" placeholder="Nome do áudio (opcional)"
+            oninput="txtFiles[${i}].audioName=this.value"
+            ${f.status==='generating'||f.status==='done'?'disabled':''}>
+        </div>
+        ${f.status==='generating'?'<div class="tf-status gen">⚙️ Gerando áudio...</div>':''}
+        ${f.status==='done'&&f.audioUrl?`<div class="tf-dl">✅ <a href="${f.audioUrl}" download="${escHtml(f.audioName||f.name)}.mp3" target="_blank">⬇ Baixar ${escHtml(f.audioName||f.name)}.mp3</a></div>`:''}
+        ${f.status==='error'?`<div class="tf-status err">❌ ${escHtml(f.error||'Erro na geração')}</div>`:''}
+      </div>
+      ${f.status!=='generating'?`<button class="tf-remove" title="Remover" onclick="removeTxtFile(${i})">✕</button>`:''}
+    </div>`;
+  }).join('');
+  // update drop-multi hint
+  const dm=document.getElementById('drop-multi');
+  if(dm){
+    const rem=MAX_TXT-txtFiles.length;
+    const sub=dm.querySelector('.dm-sub');
+    if(sub)sub.textContent=rem>0?`${txtFiles.length}/5 arquivo${txtFiles.length!==1?'s':''} — ainda cabe${rem>1?'m':''} mais ${rem}`:'Limite de 5 arquivos atingido';
+  }
 }
 
-function addToQueue(){
-  if(!bulkTexts.length){alert('Nenhum texto detectado.');return;}
-  const vId=document.getElementById('bulk-voice-sel').value;
-  if(!vId){alert('Selecione uma voz.');return;}
-  bulkTexts.forEach(t=>queue.push({text:t,voice_id:vId,status:'pending'}));
-  document.getElementById('s-queue').textContent=queue.filter(i=>i.status==='pending').length;
-  renderQueue();
-  if(!qRunning)processQueue();
+function showTxtStatus(msg,show=true){
+  const el=document.getElementById('txt-gen-status');
+  if(!el)return;
+  el.textContent=msg;
+  el.style.display=show?'block':'none';
 }
 
-async function processQueue(){
-  qRunning=true;
-  for(const item of queue){
-    if(item.status!=='pending')continue;
-    item.status='processing';renderQueue();
+async function generateAllTxt(){
+  const voiceId=document.getElementById('txt-voice-sel').value;
+  if(!voiceId){alert('⚠️ Selecione uma voz antes de gerar.');return;}
+  const pending=txtFiles.filter(f=>f.status==='ready'||f.status==='error');
+  if(!pending.length){alert('⚠️ Nenhum arquivo pronto para gerar. Adicione arquivos .txt.');return;}
+
+  const btn=document.getElementById('btn-txt-gen');
+  btn.disabled=true;btn.textContent='⏳ Gerando...';
+
+  let done=0,total=pending.length;
+  showTxtStatus(`Gerando 0 de ${total}...`);
+
+  for(const f of pending){
+    const idx=txtFiles.indexOf(f);
+    txtFiles[idx].status='generating';
+    txtFiles[idx].error=null;
+    renderTxtFiles();
+    showTxtStatus(`Gerando ${done+1} de ${total}: "${f.audioName||f.name}"...`);
+
     try{
-      const r=await fetch(`${API}/api/generate-index`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({text:item.text,voice_id:item.voice_id})});
+      const r=await fetch(`${API}/api/generate-index`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({text:f.text,voice_id:voiceId})
+      });
       if(r.status===401){logout();return;}
       const d=await r.json();
-      if(!r.ok)throw new Error(d.error||'Erro');
-      if(d.audio_url){item.status='done';item.audio_url=d.audio_url;saveHistory({url:d.audio_url,jobId:d.job_id,text:item.text.substring(0,80),voice:item.voice_id,ts:new Date().toISOString()});}
-      else if(d.job_id){item.job_id=d.job_id;await pollQueueItem(item);}
-      else throw new Error('Resposta inesperada.');
-    }catch(e){item.status='error';item.error=e.message;}
-    renderQueue();refreshStats();
-    await new Promise(r=>setTimeout(r,600));
+      if(!r.ok)throw new Error(d.error||'Erro na API');
+
+      if(d.audio_url){
+        txtFiles[idx].status='done';
+        txtFiles[idx].audioUrl=d.audio_url;
+        saveHistory({url:d.audio_url,jobId:d.job_id,text:f.text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||voiceId),ts:new Date().toISOString()});
+      } else if(d.job_id){
+        // polling
+        const url=await pollJobUrl(d.job_id);
+        if(url){
+          txtFiles[idx].status='done';
+          txtFiles[idx].audioUrl=url;
+          saveHistory({url,jobId:d.job_id,text:f.text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||voiceId),ts:new Date().toISOString()});
+        } else {
+          txtFiles[idx].status='error';txtFiles[idx].error='Timeout';
+        }
+      } else throw new Error('Resposta inesperada.');
+    }catch(e){
+      txtFiles[idx].status='error';txtFiles[idx].error=e.message;
+    }
+
+    renderTxtFiles();
+    refreshStats();
+    done++;
+    await new Promise(res=>setTimeout(res,500));
   }
-  qRunning=false;
-  document.getElementById('s-queue').textContent='0';
+
+  btn.disabled=false;btn.textContent='🎙️ Gerar Todos os Áudios';
+  const errs=txtFiles.filter(f=>f.status==='error').length;
+  const dones=txtFiles.filter(f=>f.status==='done').length;
+  showTxtStatus(`✅ Concluído: ${dones} gerado${dones!==1?'s':''}${errs?` · ❌ ${errs} com erro`:''}`);
 }
 
-function pollQueueItem(item){
+function pollJobUrl(jobId){
   return new Promise(resolve=>{
     let att=0;
     const t=setInterval(async()=>{
       att++;
-      if(att>60){clearInterval(t);item.status='error';item.error='Timeout';renderQueue();resolve();return;}
+      if(att>60){clearInterval(t);resolve(null);return;}
       try{
-        const r=await fetch(`${API}/api/generate-index?job_id=${item.job_id}`,{headers:{Authorization:`Bearer ${token}`}});
+        const r=await fetch(`${API}/api/generate-index?job_id=${jobId}`,{headers:{Authorization:`Bearer ${token}`}});
         const d=await r.json();
-        if(d.status==='done'||d.status==='completed'){clearInterval(t);item.status='done';item.audio_url=d.audio_url||null;saveHistory({url:item.audio_url,jobId:item.job_id,text:item.text.substring(0,80),voice:item.voice_id,ts:new Date().toISOString()});renderQueue();resolve();}
-        else if(d.status==='error'||d.status==='failed'){clearInterval(t);item.status='error';item.error='Falha';renderQueue();resolve();}
-        else renderQueue();
+        if(d.status==='done'||d.status==='completed'){clearInterval(t);resolve(d.audio_url||`${API}/api/v1/audio/download/${jobId}`);}
+        else if(d.status==='error'||d.status==='failed'){clearInterval(t);resolve(null);}
       }catch(e){}
     },3000);
   });
 }
 
-function renderQueue(){
-  const list=document.getElementById('q-list');
-  if(!queue.length){list.innerHTML='<div class="q-empty">Fila vazia. Adicione textos acima.</div>';updateQStats();return;}
-  const icons={pending:'⏳',processing:'⚙️',done:'✅',error:'❌'};
-  list.innerHTML=queue.map((item,i)=>{
-    const action=item.status==='done'&&item.audio_url?`<a href="${item.audio_url}" target="_blank">▶ Ouvir</a>`:item.status==='error'?`<span style="font-size:10px;color:var(--error)">⚠️</span>`:'';
-    return `<div class="qi ${item.status}">
-      <div class="qi-ic ${item.status.substring(0,4)}">${icons[item.status]||'⏳'}</div>
-      <div class="qi-info">
-        <div class="qi-text">${item.text.substring(0,55)}${item.text.length>55?'...':''}</div>
-        <div class="qi-meta">#${i+1} · ${item.status}${item.error?' · '+item.error:''}</div>
-      </div>
-      <div class="qi-act">${action}</div>
-    </div>`;
-  }).join('');
-  updateQStats();
+/* ── PASSWORD MODAL ── */
+function openPwModal(){
+  document.getElementById('pw-current').value='';
+  document.getElementById('pw-new').value='';
+  document.getElementById('pw-confirm').value='';
+  document.getElementById('pw-msg').className='pw-msg';
+  document.getElementById('pw-modal').classList.add('open');
+}
+function closePwModal(){document.getElementById('pw-modal').classList.remove('open');}
+document.getElementById('pw-modal').addEventListener('click',function(e){if(e.target===this)closePwModal();});
+
+async function saveNewPassword(){
+  const current=document.getElementById('pw-current').value;
+  const nw=document.getElementById('pw-new').value;
+  const confirm=document.getElementById('pw-confirm').value;
+  const msg=document.getElementById('pw-msg');
+
+  if(!current||!nw||!confirm){setPwMsg('Preencha todos os campos.','error');return;}
+  if(nw.length<6){setPwMsg('A nova senha deve ter pelo menos 6 caracteres.','error');return;}
+  if(nw!==confirm){setPwMsg('As senhas não coincidem.','error');return;}
+
+  const pwCurrent=await sha256Dash(current);
+  const pwNew=await sha256Dash(nw);
+
+  try{
+    const r=await fetch(`${API}/api/change-password`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+      body:JSON.stringify({current_pw:pwCurrent,new_pw:pwNew})
+    });
+    const d=await r.json();
+    if(!r.ok){setPwMsg(d.error||'Erro ao alterar senha.','error');return;}
+    setPwMsg('✅ Senha alterada com sucesso!','success');
+    setTimeout(()=>closePwModal(),1500);
+  }catch(e){setPwMsg('Erro de conexão.','error');}
 }
 
-function updateQStats(){
-  const c=s=>queue.filter(i=>i.status===s).length;
-  document.getElementById('q-stats').innerHTML=
-    `<span class="qs pend">⏳ ${c('pending')}</span><span class="qs proc">⚙️ ${c('processing')}</span><span class="qs done">✅ ${c('done')}</span><span class="qs err">❌ ${c('error')}</span>`;
+function setPwMsg(text,type){
+  const el=document.getElementById('pw-msg');
+  el.textContent=text;el.className='pw-msg '+type;
 }
 
-function clearQueue(){if(!confirm('Limpar toda a fila?'))return;queue.length=0;renderQueue();}
+async function sha256Dash(msg){
+  const buf=new TextEncoder().encode(msg);
+  const hash=await crypto.subtle.digest('SHA-256',buf);
+  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 
 /* ── HISTORY ── */
 function getHistory(){try{return JSON.parse(localStorage.getItem('svia_history')||'[]');}catch{return[];}}
@@ -1355,95 +1473,14 @@ function exportHistory(){
 function renderHistory(){
   const list=document.getElementById('hist-list'),h=getHistory();
   if(!h.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">🎵</div><p>Nenhum áudio gerado ainda.</p></div>`;return;}
-  list.innerHTML=h.map((item,i)=>`<div class="hi" id="hi-${i}">
-    <input type="checkbox" class="hi-chk" data-idx="${i}" onchange="updateHistSel()" style="width:15px;height:15px;min-width:15px;cursor:pointer;accent-color:#00e5d4">
+  list.innerHTML=h.map(item=>`<div class="hi">
     <div class="hi-icon">🎵</div>
     <div class="hi-info">
       <div class="hi-text">${item.text||'Áudio'}...</div>
       <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · <span style="color:#00e5d4;font-weight:600">${item.voice||'—'}</span></div>
     </div>
-    <div class="hi-act" style="display:flex;gap:6px;align-items:center">
-      ${item.url?`<button onclick="playHistItem('${item.url}','${(item.text||'audio').substring(0,20)}')" style="padding:5px 10px;border-radius:7px;background:rgba(0,229,212,.15);border:1px solid rgba(0,229,212,.3);color:#00e5d4;cursor:pointer;font-size:11px;font-weight:700">▶ Ouvir</button>
-      <a href="${item.url}" download="${(item.voice||'audio').replace(/\s+/g,'-').substring(0,20)}_${(item.text||'audio').split(' ').slice(0,3).join('-').replace(/[^a-zA-Z0-9À-ú\-]/g,'').substring(0,30)}.mp3" style="padding:5px 10px;border-radius:7px;background:rgba(0,229,212,.08);border:1px solid rgba(0,229,212,.2);color:#00e5d4;cursor:pointer;font-size:11px;font-weight:700;text-decoration:none">⬇</a>`
-      :`<span style="font-size:10px;color:var(--muted)">ID: ${item.jobId||'—'}</span>`}
-    </div>
+    <div class="hi-act">${item.url?`<a href="${item.url}" target="_blank">▶ Ouvir</a>`:`<span style="font-size:10px;color:var(--muted)">ID: ${item.jobId||'—'}</span>`}</div>
   </div>`).join('');
-}
-
-function updateHistSel(){
-  const chks=[...document.querySelectorAll('.hi-chk')];
-  const sel=chks.filter(c=>c.checked).length;
-  const all=document.getElementById('hist-sel-all');
-  const cnt=document.getElementById('hist-sel-count');
-  const btn=document.getElementById('btn-zip-sel');
-  if(all)all.indeterminate=(sel>0&&sel<chks.length),all.checked=(sel===chks.length&&chks.length>0);
-  if(cnt){cnt.textContent=`${sel} selecionado${sel!==1?'s':''}`;cnt.style.display=sel>0?'block':'none';}
-  if(btn)btn.style.display=sel>0?'':'none';
-}
-
-function toggleSelectAll(cb){
-  document.querySelectorAll('.hi-chk').forEach(c=>c.checked=cb.checked);
-  updateHistSel();
-}
-
-async function playHistItem(url,label){
-  const proxied=proxyUrl(url);
-  try{
-    const resp=await fetch(proxied);
-    if(resp.ok){
-      const blob=await resp.blob();
-      const blobUrl=URL.createObjectURL(blob);
-      const ap=document.getElementById('audio-player');
-      if(ap){
-        ap.src=blobUrl;
-        document.getElementById('btn-dl').href=blobUrl;
-        document.getElementById('btn-dl').download=label+'.mp3';
-        document.getElementById('audio-result').classList.add('show');
-        goTab('generate',document.querySelector('[onclick*="generate"]'));
-      }
-    }
-  }catch(e){window.open(proxied,'_blank');}
-}
-
-async function downloadZipSelected(){
-  const chks=[...document.querySelectorAll('.hi-chk:checked')];
-  if(!chks.length){alert('Selecione ao menos um áudio.');return;}
-  const h=getHistory();
-  const btn=document.getElementById('btn-zip-sel');
-  btn.disabled=true;btn.textContent='⏳ Baixando...';
-
-  // Carrega JSZip dinamicamente
-  if(!window.JSZip){
-    await new Promise((res,rej)=>{
-      const s=document.createElement('script');
-      s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-      s.onload=res;s.onerror=rej;document.head.appendChild(s);
-    });
-  }
-  const zip=new JSZip();
-  const folder=zip.folder('audios_studio_voz_ia');
-
-  for(const chk of chks){
-    const idx=parseInt(chk.dataset.idx);
-    const item=h[idx];
-    if(!item?.url)continue;
-    try{
-      const proxied=proxyUrl(item.url);
-      const resp=await fetch(proxied);
-      if(resp.ok){
-        const blob=await resp.blob();
-        const nome=`${(item.voice||'audio').replace(/\s+/g,'-').substring(0,20)}_${(item.text||'audio').split(' ').slice(0,3).join('-').replace(/[^a-zA-Z0-9À-ú\-]/g,'').substring(0,30)}_${idx+1}.mp3`;
-        folder.file(nome,blob);
-      }
-    }catch(e){}
-  }
-
-  const content=await zip.generateAsync({type:'blob'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(content);
-  a.download=`audios_studio_${new Date().toISOString().split('T')[0]}.zip`;
-  a.click();
-  btn.disabled=false;btn.textContent='📦 ZIP Selecionados';
 }
 
 /* ── VOUCHER ── */
@@ -1454,26 +1491,14 @@ async function redeemVoucher(){
   try{
     const r=await fetch(`${API}/api/voucher-redeem`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({code,username:me.username})});
     const d=await r.json();
-    if(r.ok){
-      msg.textContent=d.message||`✅ Resgatado com sucesso!`;
-      msg.className='vchr-msg ok';
-      document.getElementById('vchr-in').value='';
-      // Salva novo token se plano trial30 foi ativado
-      if(d.new_token){
-        localStorage.setItem('svia_token',d.new_token);
-        token=d.new_token;
-        me=parseJWT(token)||me;
-        setTimeout(()=>location.reload(),2000);
-      }
-      refreshStats();
-    }
+    if(r.ok){msg.textContent=`✅ ${d.message||`Voucher resgatado! +${d.credits||''} créditos.`}`;msg.className='vchr-msg ok';document.getElementById('vchr-in').value='';refreshStats();}
     else{msg.textContent=`❌ ${d.error||'Voucher inválido.'}`;msg.className='vchr-msg err';}
   }catch(e){msg.textContent='❌ Erro de conexão.';msg.className='vchr-msg err';}
   finally{btn.disabled=false;btn.textContent='Resgatar';}
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Em Massa',history:'Histórico',voucher:'Voucher'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -1621,8 +1646,8 @@ async function generateFromLib(vid, vname, btnEl, e){
         const d2=await r2.json();
         if(d2.status==='done'||d2.status==='completed'){
           clearInterval(t);
-          const url=d2.audio_url||null;
-          if(url&&resultEl){resultEl.innerHTML=`🎵 Pronto! <a href="${proxyUrl(url)}" download="audio-${vid}.mp3" target="_blank">⬇ Baixar</a>`;resultEl.classList.add('show');}
+          const url=d2.audio_url||`${API}/api/v1/audio/download/${d.job_id}`;
+          if(resultEl){resultEl.innerHTML=`🎵 Pronto! <a href="${url}" download="audio-${vid}.mp3" target="_blank">⬇ Baixar</a>`;resultEl.classList.add('show');}
           saveHistory({url,jobId:d.job_id,text:text.substring(0,80),voice:vname,ts:new Date().toISOString()});
           refreshStats();
           btnEl.textContent='🎵 Gerar';btnEl.disabled=false;
@@ -1660,7 +1685,7 @@ async function downloadFavoritesZip(){
           await new Promise(res=>setTimeout(res,3000));
           const r2=await fetch(`${API}/api/generate-index?job_id=${d.job_id}`,{headers:{Authorization:`Bearer ${token}`}});
           const d2=await r2.json();
-          if(d2.status==='done'||d2.status==='completed'){url=d2.audio_url||null;break;}
+          if(d2.status==='done'||d2.status==='completed'){url=d2.audio_url||`${API}/api/v1/audio/download/${d.job_id}`;break;}
           if(d2.status==='error'||d2.status==='failed')break;
         }
       }
@@ -1751,10 +1776,6 @@ function selectVoiceFromLib(id,name,lang){
     const btn=el.querySelector('.vlc-btn.use');
     if(btn)btn.textContent='✓ Selecionada';
   }
-  // ✅ Atualiza barra da aba Gerar
-  const bar=document.getElementById('voz-selecionada-bar');
-  const nomeEl=document.getElementById('voz-selecionada-nome');
-  if(bar&&nomeEl){nomeEl.textContent=name;bar.style.display='flex';}
   // show banner
   document.getElementById('svb-name').textContent=name;
   document.getElementById('svb-lang').textContent=lang;
