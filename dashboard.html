@@ -1571,10 +1571,14 @@ function selectVoiceFromLib(id,name,lang){
     const btn=el.querySelector('.vlc-btn.use');
     if(btn)btn.textContent='✓ Selecionada';
   }
-  // show banner
+  // show banner in library tab
   document.getElementById('svb-name').textContent=name;
   document.getElementById('svb-lang').textContent=lang;
   document.getElementById('svb').classList.add('show');
+  // ← TAMBÉM atualiza a barra da aba Gerar Áudio
+  const bar=document.getElementById('voz-selecionada-bar');
+  const nomeEl=document.getElementById('voz-selecionada-nome');
+  if(bar&&nomeEl){nomeEl.textContent=name;bar.style.display='flex';}
 }
 
 init();
