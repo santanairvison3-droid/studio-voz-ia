@@ -1128,11 +1128,13 @@ function updateStatsUI(td, rem, lim, cr, tot){
 // Incremento otimista — atualiza a UI IMEDIATAMENTE após cada geração,
 // sem esperar o servidor, garantindo feedback instantâneo ao usuário.
 function incrementLocalStats(){
+  // daily_used é o campo real do banco (coluna plana no Supabase)
+  me.daily_used=(me.daily_used||0)+1;
   if(!me.daily)me.daily={audios:0};
-  me.daily.audios=(me.daily.audios||0)+1;
+  me.daily.audios=me.daily_used;
   if(typeof me.total_audios==='number')me.total_audios++;
   const lim=me.lim_day??5;
-  const td=me.daily.audios;
+  const td=me.daily_used;
   const rem=Math.max(0,lim-td);
   updateStatsUI(td,rem,lim,me.credits??0,me.total_audios??0);
 }
@@ -1153,15 +1155,16 @@ async function refreshStats(retries=2,delay=900){
       // Mescla no objeto me
       me={...me,...u};
       const cr=u.credits??me.credits??0;
-      // Aceita múltiplos nomes de campo que o backend possa usar
-      const backendTd=u.daily?.audios??u.audios_today??u.today_count??u.dailyAudios??0;
-      const lim=u.lim_day??u.daily_limit??u.limDay??me.lim_day??5;
-      const tot=u.total_audios??u.totalAudios??u.total??me.total_audios??0;
+      // daily_used é o campo real do Supabase — aceita também aliases legados
+      const backendTd=u.daily_used??u.daily?.audios??u.audios_today??u.today_count??0;
+      const lim=u.lim_day??u.daily_limit??me.lim_day??5;
+      const tot=u.total_audios??u.total??me.total_audios??0;
       // Nunca regredir abaixo do valor otimista já exibido
-      const localTd=me.daily?.audios??0;
+      const localTd=me.daily_used??me.daily?.audios??0;
       const finalTd=Math.max(backendTd,localTd);
       const rem=Math.max(0,lim-finalTd);
-      // Atualiza me com os valores finais
+      // Atualiza me com os valores finais — sempre via daily_used
+      me.daily_used=finalTd;
       me.daily={...(me.daily||{}),audios:finalTd};
       me.lim_day=lim;
       me.total_audios=tot;
@@ -1278,7 +1281,7 @@ async function generateSingle(){
   // Limite diário (não aplica a admin)
   if(me.role!=='admin'){
     const lim=me.lim_day??5;
-    const td=me.daily?.audios??0;
+    const td=me.daily_used??me.daily?.audios??0;
     if(td>=lim){showStatus(`Limite diário atingido (${lim} áudios/dia). Resgate um voucher para mais créditos.`,'error');return;}
   }
   const btn=document.getElementById('btn-gen');
@@ -1535,7 +1538,7 @@ async function generateAllTxt(){
   // Limite diário — bloqueia para não-admin
   if(me.role!=='admin'){
     const lim=me.lim_day??5;
-    const td=me.daily?.audios??0;
+    const td=me.daily_used??me.daily?.audios??0;
     const restam=lim-td;
     if(restam<=0){
       showTxtStatus(`❌ Limite diário atingido (${lim} áudios/dia). Resgate um voucher para mais créditos.`);
