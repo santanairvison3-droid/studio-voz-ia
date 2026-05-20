@@ -1094,28 +1094,84 @@ async function init(){
   renderHistory();
 }
 
-async function refreshStats(){
-  try{
-    const r=await fetch(`${API}/api/auth`,{headers:{Authorization:`Bearer ${token}`}});
-    if(!r.ok){if(r.status===401)logout();return;}
-    const d=await r.json();const u=d.user||{};
-    me={...me,...u}; // update me FIRST so limit checks use fresh data
-    const cr=u.credits??0,td=u.daily?.audios??0,lim=u.lim_day??5,tot=u.total_audios??0;
-    const rem=Math.max(0,lim-td);
-    document.getElementById('s-cr') && (document.getElementById('s-cr').textContent=cr);
-    document.getElementById('top-credits').textContent=`${rem} restantes hoje`;
-    document.getElementById('sb-credits').textContent=`${rem}/${lim}`;
-    document.getElementById('s-td').textContent=td;
-    document.getElementById('s-lim').textContent=`de ${lim} áudios`;
-    document.getElementById('s-rem').textContent=rem;
-    document.getElementById('s-tot').textContent=tot;
-    document.getElementById('top-today').textContent=`${td} de ${lim} hoje`;
-    // Color the "restam" counter: red if 0, yellow if 1, green otherwise
-    const remEl=document.getElementById('s-rem');
-    if(remEl)remEl.style.color=rem===0?'var(--error)':rem===1?'var(--warning)':'var(--success)';
-    const topEl=document.getElementById('top-credits');
-    if(topEl)topEl.parentElement.querySelector('.pill-dot').style.background=rem===0?'var(--error)':rem===1?'var(--warning)':'var(--accent)';
-  }catch(e){}
+// ── STATS HELPERS ──────────────────────────────────────────────────────────────
+
+// Aplica valores calculados em TODOS os elementos do dashboard de uma só vez
+function updateStatsUI(td, rem, lim, cr, tot){
+  // sidebar badge
+  const sbCr=document.getElementById('sb-credits');
+  if(sbCr)sbCr.textContent=`${rem}/${lim}`;
+  // topbar pills
+  const topCr=document.getElementById('top-credits');
+  if(topCr)topCr.textContent=`${rem} restantes hoje`;
+  const topTd=document.getElementById('top-today');
+  if(topTd)topTd.textContent=`${td} de ${lim} hoje`;
+  // cards de stats
+  const sCr=document.getElementById('s-cr');
+  if(sCr)sCr.textContent=cr;
+  const sTd=document.getElementById('s-td');
+  if(sTd)sTd.textContent=td;
+  const sLim=document.getElementById('s-lim');
+  if(sLim)sLim.textContent=`de ${lim} áudios`;
+  const sRem=document.getElementById('s-rem');
+  if(sRem){sRem.textContent=rem;sRem.style.color=rem===0?'var(--error)':rem===1?'var(--warning)':'var(--success)';}
+  const sTot=document.getElementById('s-tot');
+  if(sTot)sTot.textContent=tot;
+  // pill-dot color
+  const topCrEl=document.getElementById('top-credits');
+  if(topCrEl){
+    const dot=topCrEl.closest('.pill')?.querySelector('.pill-dot');
+    if(dot)dot.style.background=rem===0?'var(--error)':rem===1?'var(--warning)':'var(--accent)';
+  }
+}
+
+// Incremento otimista — atualiza a UI IMEDIATAMENTE após cada geração,
+// sem esperar o servidor, garantindo feedback instantâneo ao usuário.
+function incrementLocalStats(){
+  if(!me.daily)me.daily={audios:0};
+  me.daily.audios=(me.daily.audios||0)+1;
+  if(typeof me.total_audios==='number')me.total_audios++;
+  const lim=me.lim_day??5;
+  const td=me.daily.audios;
+  const rem=Math.max(0,lim-td);
+  updateStatsUI(td,rem,lim,me.credits??0,me.total_audios??0);
+}
+
+// refreshStats — busca o backend com cache-busting e até 2 tentativas.
+// Nunca deixa o contador regredir abaixo do valor otimista local.
+async function refreshStats(retries=2,delay=900){
+  for(let attempt=0;attempt<=retries;attempt++){
+    try{
+      if(attempt>0)await new Promise(res=>setTimeout(res,delay));
+      const ts=Date.now();
+      const r=await fetch(`${API}/api/auth?_t=${ts}`,{
+        headers:{Authorization:`Bearer ${token}`,'Cache-Control':'no-cache','Pragma':'no-cache'}
+      });
+      if(!r.ok){if(r.status===401)logout();return;}
+      const d=await r.json();
+      const u=d.user||{};
+      // Mescla no objeto me
+      me={...me,...u};
+      const cr=u.credits??me.credits??0;
+      // Aceita múltiplos nomes de campo que o backend possa usar
+      const backendTd=u.daily?.audios??u.audios_today??u.today_count??u.dailyAudios??0;
+      const lim=u.lim_day??u.daily_limit??u.limDay??me.lim_day??5;
+      const tot=u.total_audios??u.totalAudios??u.total??me.total_audios??0;
+      // Nunca regredir abaixo do valor otimista já exibido
+      const localTd=me.daily?.audios??0;
+      const finalTd=Math.max(backendTd,localTd);
+      const rem=Math.max(0,lim-finalTd);
+      // Atualiza me com os valores finais
+      me.daily={...(me.daily||{}),audios:finalTd};
+      me.lim_day=lim;
+      me.total_audios=tot;
+      me.credits=cr;
+      updateStatsUI(finalTd,rem,lim,cr,tot);
+      return; // sucesso — sai do loop
+    }catch(e){
+      if(attempt===retries)console.warn('[refreshStats] falhou após',retries+1,'tentativas:',e);
+    }
+  }
 }
 
 // Tenta cada endpoint em ordem até achar um que responda 200
@@ -1242,7 +1298,8 @@ async function generateSingle(){
     if(d.audio_url){
       showAudio(d.audio_url,d.job_id||'—');
       saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
-      await refreshStats();
+      incrementLocalStats(); // atualiza contador IMEDIATAMENTE
+      refreshStats(2,1200);  // sincroniza com backend em background
       btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');
     } else if(d.job_id){
       lastJobId=d.job_id;
@@ -1304,7 +1361,8 @@ function pollAudio(jobId, btn){
         const audioUrl=d.audio_url||`${API}/api/v1/audio/download/${jobId}`;
         showAudio(audioUrl,jobId);
         saveHistory({url:audioUrl,jobId,text:document.getElementById('text-input').value.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
-        await refreshStats();
+        incrementLocalStats(); // atualiza contador IMEDIATAMENTE
+        refreshStats(2,1200);  // sincroniza com backend em background
         if(btn){btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';}
         document.getElementById('gen-prog').classList.remove('show');
       } else if(d.status==='error'||d.status==='failed'){
@@ -1521,6 +1579,7 @@ async function generateAllTxt(){
         txtFiles[idx].status='done';
         txtFiles[idx].audioUrl=d.audio_url;
         saveHistory({url:d.audio_url,jobId:d.job_id,text:f.text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||voiceId),ts:new Date().toISOString()});
+        incrementLocalStats(); // atualiza contador IMEDIATAMENTE
       } else if(d.job_id){
         // polling
         const url=await pollJobUrl(d.job_id);
@@ -1528,6 +1587,7 @@ async function generateAllTxt(){
           txtFiles[idx].status='done';
           txtFiles[idx].audioUrl=url;
           saveHistory({url,jobId:d.job_id,text:f.text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||voiceId),ts:new Date().toISOString()});
+          incrementLocalStats(); // atualiza contador IMEDIATAMENTE
         } else {
           txtFiles[idx].status='error';txtFiles[idx].error='Timeout';
         }
@@ -1537,7 +1597,7 @@ async function generateAllTxt(){
     }
 
     renderTxtFiles();
-    refreshStats();
+    refreshStats(1,1200); // sincroniza em background após cada geração
     done++;
     await new Promise(res=>setTimeout(res,500));
   }
@@ -1856,7 +1916,8 @@ async function generateFromLib(vid, vname, btnEl, e){
       resultEl.innerHTML=`🎵 Pronto! <a href="${d.audio_url}" download="audio-${vid}.mp3" target="_blank">⬇ Baixar</a>`;
       resultEl.classList.add('show');
       saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:vname,ts:new Date().toISOString()});
-      refreshStats();
+      incrementLocalStats(); // atualiza contador IMEDIATAMENTE
+      refreshStats(2,1200);  // sincroniza com backend em background
     } else if(d.job_id){
       btnEl.textContent='⏳ Aguardando...';
       // polling simples
@@ -1870,7 +1931,8 @@ async function generateFromLib(vid, vname, btnEl, e){
           const url=d2.audio_url||`${API}/api/v1/audio/download/${d.job_id}`;
           if(resultEl){resultEl.innerHTML=`🎵 Pronto! <a href="${url}" download="audio-${vid}.mp3" target="_blank">⬇ Baixar</a>`;resultEl.classList.add('show');}
           saveHistory({url,jobId:d.job_id,text:text.substring(0,80),voice:vname,ts:new Date().toISOString()});
-          refreshStats();
+          incrementLocalStats(); // atualiza contador IMEDIATAMENTE
+          refreshStats(2,1200);  // sincroniza com backend em background
           btnEl.textContent='🎵 Gerar';btnEl.disabled=false;
         } else if(d2.status==='error'||d2.status==='failed'){
           clearInterval(t);btnEl.textContent='🎵 Gerar';btnEl.disabled=false;
@@ -1921,7 +1983,7 @@ async function downloadFavoritesZip(){
   }
   btn.disabled=false;btn.textContent='⬇ ZIP Favoritas';
   alert(`✅ ${urls.length} áudio(s) baixado(s)!`);
-  refreshStats();
+  refreshStats(2,1200);
 }
 
 function renderLibVoices(){
