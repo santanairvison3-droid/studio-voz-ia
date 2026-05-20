@@ -1115,6 +1115,14 @@ async function showAudio(url,jobId){
   }
   if(!url){ showStatus('URL do áudio não encontrada.','error'); return; }
 
+  // Gera nome do arquivo com as primeiras palavras do texto
+  const rawText = document.getElementById('text-input').value.trim();
+  const vozNome = (allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||'audio')
+    .replace(/[^a-zA-Z0-9À-ú\s]/g,'').trim().replace(/\s+/g,'-').substring(0,30);
+  const textoSlug = rawText.split(/\s+/).slice(0,5).join('-')
+    .replace(/[^a-zA-Z0-9À-ú\-]/g,'').substring(0,40);
+  const filename = `${vozNome}_${textoSlug}.mp3`.replace(/^-+|-+$/g,'');
+
   const proxied = proxyUrl(url);
   const ap=document.getElementById('audio-player');
 
@@ -1126,14 +1134,16 @@ async function showAudio(url,jobId){
       const blobUrl = URL.createObjectURL(blob);
       ap.src = blobUrl;
       document.getElementById('btn-dl').href = blobUrl;
+      document.getElementById('btn-dl').download = filename;
     } else {
-      // fallback direto
       ap.src = proxied;
       document.getElementById('btn-dl').href = proxied;
+      document.getElementById('btn-dl').download = filename;
     }
   } catch(e){
     ap.src = proxied;
     document.getElementById('btn-dl').href = proxied;
+    document.getElementById('btn-dl').download = filename;
   }
 
   document.getElementById('job-id-disp').textContent=jobId;
@@ -1606,6 +1616,10 @@ function selectVoiceFromLib(id,name,lang){
     const btn=el.querySelector('.vlc-btn.use');
     if(btn)btn.textContent='✓ Selecionada';
   }
+  // ✅ Atualiza barra da aba Gerar
+  const bar=document.getElementById('voz-selecionada-bar');
+  const nomeEl=document.getElementById('voz-selecionada-nome');
+  if(bar&&nomeEl){nomeEl.textContent=name;bar.style.display='flex';}
   // show banner
   document.getElementById('svb-name').textContent=name;
   document.getElementById('svb-lang').textContent=lang;
