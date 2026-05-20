@@ -1131,10 +1131,19 @@ function showStatus(msg,type){
   if(type==='success')setTimeout(()=>el.classList.remove('show'),4000);
 }
 
+function proxyAudioUrl(url){
+  if(!url)return '';
+  // Se já é URL do nosso proxy, retorna como está
+  if(url.includes('/api/audio-proxy'))return url;
+  // Wrap na nossa API proxy que adiciona o X-API-Key
+  return `${API}/api/audio-proxy?url=${encodeURIComponent(url)}`;
+}
+
 function showAudio(url,jobId){
+  const proxied=proxyAudioUrl(url);
   const ap=document.getElementById('audio-player');
-  ap.src=url;
-  document.getElementById('btn-dl').href=url;
+  ap.src=proxied;
+  document.getElementById('btn-dl').href=proxied;
   document.getElementById('job-id-disp').textContent=jobId;
   document.getElementById('audio-result').classList.add('show');
   showStatus('Áudio gerado com sucesso!','success');
@@ -1340,10 +1349,10 @@ function renderHistory(){
     <div class="hi-info" style="flex:1;min-width:0">
       <div class="hi-text">${escHtml(item.text||'Áudio')}...</div>
       <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · <span style="color:#00e5d4;font-weight:600">${escHtml(item.voice||'—')}</span></div>
-      ${item.url?`<audio controls src="${item.url}" style="width:100%;height:28px;margin-top:8px;border-radius:6px" preload="none"></audio>`:`<div style="font-size:10px;color:var(--muted);margin-top:6px">Job ID: ${item.jobId||'—'}</div>`}
+      ${item.url?`<audio controls src="${proxyAudioUrl(item.url)}" style="width:100%;height:28px;margin-top:8px;border-radius:6px" preload="none"></audio>`:`<div style="font-size:10px;color:var(--muted);margin-top:6px">Job ID: ${item.jobId||'—'}</div>`}
     </div>
     <div class="hi-act" style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-      ${item.url?`<a href="${item.url}" download style="font-size:11px;color:var(--accent);text-decoration:none;white-space:nowrap">⬇ Baixar</a>`:''}
+      ${item.url?`<a href="${proxyAudioUrl(item.url)}" download style="font-size:11px;color:var(--accent);text-decoration:none;white-space:nowrap">⬇ Baixar</a>`:''}
       <button onclick="deleteHistoryItem(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:0" title="Remover">🗑</button>
     </div>
   </div>`).join('');
