@@ -851,13 +851,18 @@ Texto do áudio 3" oninput="parseBulkTexts()"></textarea>
     <!-- HISTÓRICO -->
     <div class="tab-pane" id="tab-history">
       <div class="card" style="margin-bottom:14px;padding:14px 18px">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div class="card-title" style="margin:0">📋 Histórico Local</div>
-          <div style="display:flex;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="checkbox" id="hist-sel-all" onchange="toggleSelectAll(this)" style="width:16px;height:16px;cursor:pointer;accent-color:#00e5d4">
+            <div class="card-title" style="margin:0">📋 Histórico Local</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-sm teal" id="btn-zip-sel" onclick="downloadZipSelected()" style="padding:7px 14px;display:none">📦 ZIP Selecionados</button>
             <button class="btn-sm outline" onclick="exportHistory()" style="padding:7px 14px">⬇ CSV</button>
             <button class="btn-sm danger" onclick="clearHistory()" style="padding:7px 14px">🗑 Limpar</button>
           </div>
         </div>
+        <div id="hist-sel-count" style="font-size:11px;color:#00e5d4;margin-top:6px;display:none">0 selecionados</div>
       </div>
       <div class="hist-list" id="hist-list"></div>
     </div>
@@ -942,16 +947,52 @@ async function init(){
   renderHistory();renderQueue();
 }
 
+// Rastreia uso local como fallback
+function trackLocalUsage(){
+  const today=new Date().toISOString().split('T')[0];
+  const key=`svia_used_${today}`;
+  const n=parseInt(localStorage.getItem(key)||'0')+1;
+  localStorage.setItem(key,n);
+  // Atualiza UI imediatamente
+  const lim=me?.lim_day||5;
+  const rem=Math.max(0,lim-n);
+  const s_td=document.getElementById('s-td');
+  const s_rem=document.getElementById('s-rem');
+  const top_today=document.getElementById('top-today');
+  const top_credits=document.getElementById('top-credits');
+  if(s_td)s_td.textContent=n;
+  if(s_rem)s_rem.textContent=rem;
+  if(top_today)top_today.textContent=`${n} de ${lim} hoje`;
+  if(top_credits)top_credits.textContent=`${rem} restantes hoje`;
+}
+
+function getLocalUsedToday(){
+  const today=new Date().toISOString().split('T')[0];
+  return parseInt(localStorage.getItem(`svia_used_${today}`)||'0');
+}
+
 async function refreshStats(){
   try{
     const r=await fetch(`${API}/api/auth`,{headers:{Authorization:`Bearer ${token}`}});
     if(!r.ok){if(r.status===401)logout();return;}
     const d=await r.json();const u=d.user||{};
-    const cr=u.credits??0,td=u.daily?.audios??0,lim=u.lim_day??5,tot=u.total_audios??0;
+    const lim=u.lim_day??5;
+    // Usa localStorage como fallback se Supabase não registrou
+    const tdSupabase=u.daily?.audios??0;
+    const tdLocal=getLocalUsedToday();
+    const td=Math.max(tdSupabase,tdLocal);
+    const cr=Math.max(0,lim-td);
+    const tot=u.total_audios??0;
     const rem=Math.max(0,lim-td);
     document.getElementById('s-cr') && (document.getElementById('s-cr').textContent=cr);
     document.getElementById('top-credits').textContent=`${rem} restantes hoje`;
-    document.getElementById('sb-credits').textContent=`${rem}/5`;
+    document.getElementById('sb-credits').textContent=`${rem}/${lim}`;
+    // Exibe plano e validade
+    if(u.plan==='trial30'&&u.valid_until){
+      const exp=new Date(u.valid_until).toLocaleDateString('pt-BR');
+      const planEl=document.getElementById('plan-badge');
+      if(planEl){planEl.textContent=`🎫 Trial 30 dias · válido até ${exp}`;planEl.style.display='block';}
+    }
     document.getElementById('s-td').textContent=td;
     document.getElementById('s-lim').textContent=`de ${lim} áudios`;
     document.getElementById('s-rem').textContent=rem;
@@ -1079,6 +1120,7 @@ async function generateSingle(){
     if(d.audio_url){
       showAudio(d.audio_url,d.job_id||'—');
       saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
+      trackLocalUsage();
       refreshStats();
     } else if(d.job_id){
       lastJobId=d.job_id;showStatus(`Job ${d.job_id} em processamento...`,'info');
@@ -1313,14 +1355,95 @@ function exportHistory(){
 function renderHistory(){
   const list=document.getElementById('hist-list'),h=getHistory();
   if(!h.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">🎵</div><p>Nenhum áudio gerado ainda.</p></div>`;return;}
-  list.innerHTML=h.map(item=>`<div class="hi">
+  list.innerHTML=h.map((item,i)=>`<div class="hi" id="hi-${i}">
+    <input type="checkbox" class="hi-chk" data-idx="${i}" onchange="updateHistSel()" style="width:15px;height:15px;min-width:15px;cursor:pointer;accent-color:#00e5d4">
     <div class="hi-icon">🎵</div>
     <div class="hi-info">
       <div class="hi-text">${item.text||'Áudio'}...</div>
       <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · <span style="color:#00e5d4;font-weight:600">${item.voice||'—'}</span></div>
     </div>
-    <div class="hi-act">${item.url?`<a href="${item.url}" target="_blank">▶ Ouvir</a>`:`<span style="font-size:10px;color:var(--muted)">ID: ${item.jobId||'—'}</span>`}</div>
+    <div class="hi-act" style="display:flex;gap:6px;align-items:center">
+      ${item.url?`<button onclick="playHistItem('${item.url}','${(item.text||'audio').substring(0,20)}')" style="padding:5px 10px;border-radius:7px;background:rgba(0,229,212,.15);border:1px solid rgba(0,229,212,.3);color:#00e5d4;cursor:pointer;font-size:11px;font-weight:700">▶ Ouvir</button>
+      <a href="${item.url}" download="${(item.voice||'audio').replace(/\s+/g,'-').substring(0,20)}_${(item.text||'audio').split(' ').slice(0,3).join('-').replace(/[^a-zA-Z0-9À-ú\-]/g,'').substring(0,30)}.mp3" style="padding:5px 10px;border-radius:7px;background:rgba(0,229,212,.08);border:1px solid rgba(0,229,212,.2);color:#00e5d4;cursor:pointer;font-size:11px;font-weight:700;text-decoration:none">⬇</a>`
+      :`<span style="font-size:10px;color:var(--muted)">ID: ${item.jobId||'—'}</span>`}
+    </div>
   </div>`).join('');
+}
+
+function updateHistSel(){
+  const chks=[...document.querySelectorAll('.hi-chk')];
+  const sel=chks.filter(c=>c.checked).length;
+  const all=document.getElementById('hist-sel-all');
+  const cnt=document.getElementById('hist-sel-count');
+  const btn=document.getElementById('btn-zip-sel');
+  if(all)all.indeterminate=(sel>0&&sel<chks.length),all.checked=(sel===chks.length&&chks.length>0);
+  if(cnt){cnt.textContent=`${sel} selecionado${sel!==1?'s':''}`;cnt.style.display=sel>0?'block':'none';}
+  if(btn)btn.style.display=sel>0?'':'none';
+}
+
+function toggleSelectAll(cb){
+  document.querySelectorAll('.hi-chk').forEach(c=>c.checked=cb.checked);
+  updateHistSel();
+}
+
+async function playHistItem(url,label){
+  const proxied=proxyUrl(url);
+  try{
+    const resp=await fetch(proxied);
+    if(resp.ok){
+      const blob=await resp.blob();
+      const blobUrl=URL.createObjectURL(blob);
+      const ap=document.getElementById('audio-player');
+      if(ap){
+        ap.src=blobUrl;
+        document.getElementById('btn-dl').href=blobUrl;
+        document.getElementById('btn-dl').download=label+'.mp3';
+        document.getElementById('audio-result').classList.add('show');
+        goTab('generate',document.querySelector('[onclick*="generate"]'));
+      }
+    }
+  }catch(e){window.open(proxied,'_blank');}
+}
+
+async function downloadZipSelected(){
+  const chks=[...document.querySelectorAll('.hi-chk:checked')];
+  if(!chks.length){alert('Selecione ao menos um áudio.');return;}
+  const h=getHistory();
+  const btn=document.getElementById('btn-zip-sel');
+  btn.disabled=true;btn.textContent='⏳ Baixando...';
+
+  // Carrega JSZip dinamicamente
+  if(!window.JSZip){
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      s.onload=res;s.onerror=rej;document.head.appendChild(s);
+    });
+  }
+  const zip=new JSZip();
+  const folder=zip.folder('audios_studio_voz_ia');
+
+  for(const chk of chks){
+    const idx=parseInt(chk.dataset.idx);
+    const item=h[idx];
+    if(!item?.url)continue;
+    try{
+      const proxied=proxyUrl(item.url);
+      const resp=await fetch(proxied);
+      if(resp.ok){
+        const blob=await resp.blob();
+        const nome=`${(item.voice||'audio').replace(/\s+/g,'-').substring(0,20)}_${(item.text||'audio').split(' ').slice(0,3).join('-').replace(/[^a-zA-Z0-9À-ú\-]/g,'').substring(0,30)}_${idx+1}.mp3`;
+        folder.file(nome,blob);
+      }
+    }catch(e){}
+  }
+
+  const content=await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(content);
+  a.download=`audios_studio_${new Date().toISOString().split('T')[0]}.zip`;
+  a.click();
+  btn.disabled=false;btn.textContent='📦 ZIP Selecionados';
 }
 
 /* ── VOUCHER ── */
@@ -1331,7 +1454,19 @@ async function redeemVoucher(){
   try{
     const r=await fetch(`${API}/api/voucher-redeem`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({code,username:me.username})});
     const d=await r.json();
-    if(r.ok){msg.textContent=`✅ ${d.message||`Voucher resgatado! +${d.credits||''} créditos.`}`;msg.className='vchr-msg ok';document.getElementById('vchr-in').value='';refreshStats();}
+    if(r.ok){
+      msg.textContent=d.message||`✅ Resgatado com sucesso!`;
+      msg.className='vchr-msg ok';
+      document.getElementById('vchr-in').value='';
+      // Salva novo token se plano trial30 foi ativado
+      if(d.new_token){
+        localStorage.setItem('svia_token',d.new_token);
+        token=d.new_token;
+        me=parseJWT(token)||me;
+        setTimeout(()=>location.reload(),2000);
+      }
+      refreshStats();
+    }
     else{msg.textContent=`❌ ${d.error||'Voucher inválido.'}`;msg.className='vchr-msg err';}
   }catch(e){msg.textContent='❌ Erro de conexão.';msg.className='vchr-msg err';}
   finally{btn.disabled=false;btn.textContent='Resgatar';}
