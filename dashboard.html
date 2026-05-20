@@ -264,9 +264,13 @@ textarea::placeholder{color:var(--muted);font-size:13px}
 .btn-gen:disabled::after{display:none}
 
 /* Progress */
-.progress-bar{height:2px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:14px;display:none}
-.progress-bar.show{display:block}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;animation:prog 1.4s ease-in-out infinite;width:30%}
+.progress-bar{display:none;margin-top:16px;flex-direction:column;gap:6px}
+.progress-bar.show{display:flex}
+.progress-track{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width 0.8s ease;width:5%}
+.progress-fill.indeterminate{animation:prog 1.4s ease-in-out infinite;width:30%}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.progress-pct{font-weight:700;color:var(--accent)}
 @keyframes prog{0%{transform:translateX(-120%)}100%{transform:translateX(500%)}}
 .status-msg{margin-top:10px;font-size:12px;color:var(--muted);text-align:center;font-family:'JetBrains Mono',monospace;display:none}
 .status-msg.show{display:block}
@@ -755,7 +759,10 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
               <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#3d4f6e">Voz selecionada:</span>
               <span id="voz-selecionada-nome" style="font-weight:700;color:#00e5d4">—</span>
             </div>
-            <div class="progress-bar" id="gen-prog"><div class="progress-fill"></div></div>
+            <div class="progress-bar" id="gen-prog">
+              <div class="progress-label"><span id="prog-msg">Enviando...</span><span class="progress-pct" id="prog-pct">0%</span></div>
+              <div class="progress-track"><div class="progress-fill indeterminate" id="prog-fill"></div></div>
+            </div>
             <div class="status-msg" id="gen-status"></div>
             <div class="audio-result" id="audio-result">
               <h4>✅ Áudio Gerado com Sucesso!</h4>
@@ -1058,6 +1065,22 @@ function updateCounter(){
 }
 
 let lastJobId='';
+function setProgress(pct, msg){
+  const fill=document.getElementById('prog-fill');
+  const pctEl=document.getElementById('prog-pct');
+  const msgEl=document.getElementById('prog-msg');
+  if(!fill)return;
+  if(pct<0){
+    fill.classList.add('indeterminate');
+    if(pctEl)pctEl.textContent='';
+  } else {
+    fill.classList.remove('indeterminate');
+    fill.style.width=pct+'%';
+    if(pctEl)pctEl.textContent=pct+'%';
+  }
+  if(msgEl&&msg)msgEl.textContent=msg;
+}
+
 async function generateSingle(){
   const text=document.getElementById('text-input').value.trim();
   if(!text){showStatus('Digite um texto primeiro.','error');return;}
@@ -1066,6 +1089,7 @@ async function generateSingle(){
   btn.disabled=true;btn.textContent='⏳ Gerando...';
   document.getElementById('gen-prog').classList.add('show');
   document.getElementById('audio-result').classList.remove('show');
+  setProgress(-1,'Enviando para processamento...');
   showStatus('Enviando para processamento...','info');
   try{
     const r=await fetch(`${API}/api/generate-index`,{
@@ -1077,17 +1101,27 @@ async function generateSingle(){
     const d=await r.json();
     if(!r.ok){showStatus(d.error||'Erro ao gerar.','error');return;}
     if(d.audio_url){
+      setProgress(100,'Áudio pronto!');
       showAudio(d.audio_url,d.job_id||'—');
       saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
       refreshStats();
     } else if(d.job_id){
-      lastJobId=d.job_id;showStatus(`Job ${d.job_id} em processamento...`,'info');
-      pollAudio(d.job_id);
+      lastJobId=d.job_id;
+      setProgress(15,'Job criado, aguardando processamento...');
+      showStatus(`Processando...`,'info');
+      pollAudio(d.job_id,text);
+      return; // não remove barra ainda
+    } else if(d.campos){
+      showStatus('Resposta inesperada: '+JSON.stringify(d.campos),'error');
     } else {
-      showStatus('Resposta inesperada.','error');
+      showStatus(d.error||'Resposta inesperada.','error');
     }
-  }catch(e){showStatus('Erro de conexão.','error');}
-  finally{btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');}
+  }catch(e){showStatus('Erro de conexão: '+e.message,'error');}
+  finally{
+    btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';
+    // Só esconde barra se não ficou em polling
+    if(!lastJobId)document.getElementById('gen-prog').classList.remove('show');
+  }
 }
 
 function showStatus(msg,type){
@@ -1112,22 +1146,55 @@ function copyJobId(){
   showStatus('Job ID copiado!','success');
 }
 
-function pollAudio(jobId){
+function pollAudio(jobId,textOrig){
   let att=0;
+  const btn=document.getElementById('btn-gen');
+  btn.disabled=true;btn.textContent='⏳ Gerando...';
+  // Progresso simulado: sobe de 15% a 90% durante o polling
+  const stages=[
+    {pct:15,msg:'Job criado, aguardando fila...'},
+    {pct:30,msg:'Na fila de processamento...'},
+    {pct:50,msg:'Sintetizando voz...'},
+    {pct:70,msg:'Aplicando efeitos de áudio...'},
+    {pct:85,msg:'Finalizando arquivo...'},
+    {pct:92,msg:'Quase pronto...'}
+  ];
+  let stageIdx=0;
   const t=setInterval(async()=>{
     att++;
-    if(att>60){clearInterval(t);showStatus('Timeout. Tente novamente.','error');return;}
+    // Avança progresso visual a cada 2 tentativas
+    if(att%2===0&&stageIdx<stages.length){
+      const s=stages[stageIdx++];
+      setProgress(s.pct,s.msg);
+    }
+    if(att>80){
+      clearInterval(t);
+      btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';
+      document.getElementById('gen-prog').classList.remove('show');
+      showStatus('Timeout — tente novamente.','error');
+      lastJobId='';
+      return;
+    }
     try{
       const r=await fetch(`${API}/api/generate-index?job_id=${jobId}`,{headers:{Authorization:`Bearer ${token}`}});
       const d=await r.json();
-      if(d.status==='done'||d.status==='completed'){
+      if(d.status==='done'){
         clearInterval(t);
-        const audioUrl=d.audio_url||`${API}/api/v1/audio/download/${jobId}`;
+        btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';
+        setProgress(100,'Áudio pronto! 🎉');
+        setTimeout(()=>document.getElementById('gen-prog').classList.remove('show'),2000);
+        const audioUrl=d.audio_url||`https://app.darkplanner.com.br/api/v1/audio/download/${jobId}`;
         showAudio(audioUrl,jobId);
-        saveHistory({url:d.audio_url,jobId,text:document.getElementById('text-input').value.substring(0,80),voice:selectedVoice,ts:new Date().toISOString()});
+        const voiceName=allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice;
+        saveHistory({url:audioUrl,jobId,text:(textOrig||document.getElementById('text-input').value).substring(0,80),voice:voiceName,ts:new Date().toISOString()});
         refreshStats();
-      } else if(d.status==='error'||d.status==='failed'){
-        clearInterval(t);showStatus('Falha na geração.','error');
+        lastJobId='';
+      } else if(d.status==='error'){
+        clearInterval(t);
+        btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';
+        document.getElementById('gen-prog').classList.remove('show');
+        showStatus('Falha na geração de áudio.','error');
+        lastJobId='';
       }
     }catch(e){}
   },3000);
@@ -1257,7 +1324,7 @@ function clearQueue(){if(!confirm('Limpar toda a fila?'))return;queue.length=0;r
 
 /* ── HISTORY ── */
 function getHistory(){try{return JSON.parse(localStorage.getItem('svia_history')||'[]');}catch{return[];}}
-function saveHistory(item){const h=getHistory();h.unshift(item);if(h.length>100)h.pop();localStorage.setItem('svia_history',JSON.stringify(h));}
+function saveHistory(item){const h=getHistory();h.unshift(item);if(h.length>100)h.pop();localStorage.setItem('svia_history',JSON.stringify(h));renderHistory();}
 function clearHistory(){if(!confirm('Limpar histórico?'))return;localStorage.removeItem('svia_history');renderHistory();}
 function exportHistory(){
   const h=getHistory();
@@ -1268,14 +1335,22 @@ function exportHistory(){
 function renderHistory(){
   const list=document.getElementById('hist-list'),h=getHistory();
   if(!h.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">🎵</div><p>Nenhum áudio gerado ainda.</p></div>`;return;}
-  list.innerHTML=h.map(item=>`<div class="hi">
+  list.innerHTML=h.map((item,i)=>`<div class="hi">
     <div class="hi-icon">🎵</div>
-    <div class="hi-info">
-      <div class="hi-text">${item.text||'Áudio'}...</div>
-      <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · <span style="color:#00e5d4;font-weight:600">${item.voice||'—'}</span></div>
+    <div class="hi-info" style="flex:1;min-width:0">
+      <div class="hi-text">${escHtml(item.text||'Áudio')}...</div>
+      <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · <span style="color:#00e5d4;font-weight:600">${escHtml(item.voice||'—')}</span></div>
+      ${item.url?`<audio controls src="${item.url}" style="width:100%;height:28px;margin-top:8px;border-radius:6px" preload="none"></audio>`:`<div style="font-size:10px;color:var(--muted);margin-top:6px">Job ID: ${item.jobId||'—'}</div>`}
     </div>
-    <div class="hi-act">${item.url?`<a href="${item.url}" target="_blank">▶ Ouvir</a>`:`<span style="font-size:10px;color:var(--muted)">ID: ${item.jobId||'—'}</span>`}</div>
+    <div class="hi-act" style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      ${item.url?`<a href="${item.url}" download style="font-size:11px;color:var(--accent);text-decoration:none;white-space:nowrap">⬇ Baixar</a>`:''}
+      <button onclick="deleteHistoryItem(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:0" title="Remover">🗑</button>
+    </div>
   </div>`).join('');
+}
+
+function deleteHistoryItem(idx){
+  const h=getHistory();h.splice(idx,1);localStorage.setItem('svia_history',JSON.stringify(h));renderHistory();
 }
 
 /* ── VOUCHER ── */
