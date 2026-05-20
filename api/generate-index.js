@@ -3,6 +3,11 @@ const jwt = require('jsonwebtoken');
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // ── CORS ──
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   // ── Auth ──
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer '))
@@ -47,7 +52,6 @@ module.exports = async (req, res) => {
       }
 
       if (['completed', 'done', 'success', 'finished'].includes(s)) {
-        // Busca URL real de download
         const dlRes = await fetch(`${DP_BASE}/download/${job_id}`, { headers: dpHeaders });
         const dlText = await dlRes.text();
         let dlData = {};
@@ -83,52 +87,85 @@ module.exports = async (req, res) => {
     if (text.length > 150000)
       return res.status(400).json({ error: 'Texto muito longo (máx 150.000 chars).' });
 
-    // Limite diário e mensal via Supabase (opcional)
+    // ══════════════════════════════════════════════
+    // BLOQUEIO REAL DE LIMITE DIÁRIO (via Supabase)
+    // ══════════════════════════════════════════════
+    let supabase;
+    let uid;
     try {
       const { createClient } = require('@supabase/supabase-js');
-      const supabase = createClient(
+      supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.SUPABASE_SERVICE_KEY
       );
-      const uid = user.sub || user.id;
+      uid = user.sub || user.id;
       const today = new Date().toISOString().split('T')[0];
 
-      // Contagem diária
-      const { count: countDay } = await supabase
-        .from('audio_log').select('id', { count: 'exact', head: true })
-        .eq('user_id', uid)
-        .gte('created_at', `${today}T00:00:00`)
-        .lte('created_at', `${today}T23:59:59`);
-      const usedToday = countDay || 0;
-      if (usedToday >= (user.lim_day || 5))
-        return res.status(429).json({ error: `Limite diário atingido (${usedToday}/${user.lim_day||5}).` });
+      // Busca dados atuais do usuário no banco
+      const { data: dbUser, error: userErr } = await supabase
+        .from('users')
+        .select('lim_day, daily_used, last_reset, status, plan')
+        .eq('id', uid)
+        .single();
 
-      // Contagem mensal (plano trial30)
-      if (user.monthly_limit) {
-        const monthStart = `${today.substring(0,7)}-01T00:00:00`;
-        const { count: countMonth } = await supabase
-          .from('audio_log').select('id', { count: 'exact', head: true })
-          .eq('user_id', uid)
-          .gte('created_at', monthStart);
-        const usedMonth = countMonth || 0;
-        if (usedMonth >= user.monthly_limit)
-          return res.status(429).json({ error: `Limite mensal atingido (${usedMonth}/${user.monthly_limit} áudios este mês).` });
+      if (userErr || !dbUser) {
+        return res.status(401).json({ error: 'Usuário não encontrado.' });
       }
 
-      // Log
+      // Bloqueia usuário suspenso
+      if (dbUser.status === 'suspenso' || dbUser.status === 'suspended' || dbUser.status === 'blocked') {
+        return res.status(403).json({ error: 'Conta suspensa. Entre em contato com o suporte.' });
+      }
+
+      const limDay = dbUser.lim_day || 5;
+      const lastReset = dbUser.last_reset ? String(dbUser.last_reset).split('T')[0] : null;
+
+      // Zera contador se o dia mudou
+      if (lastReset !== today) {
+        await supabase
+          .from('users')
+          .update({ daily_used: 0, last_reset: today })
+          .eq('id', uid);
+        dbUser.daily_used = 0;
+      }
+
+      const usedToday = dbUser.daily_used || 0;
+
+      // BLOQUEIO: não deixa passar se atingiu o limite
+      if (usedToday >= limDay) {
+        return res.status(429).json({
+          error: `Limite diário atingido. Você usou ${usedToday} de ${limDay} áudios hoje.`,
+          used: usedToday,
+          limit: limDay,
+          reset: 'meia-noite'
+        });
+      }
+
+      // Incrementa ANTES de chamar a API (evita chamadas duplas em paralelo)
+      await supabase
+        .from('users')
+        .update({ daily_used: usedToday + 1, last_reset: today })
+        .eq('id', uid);
+
+      // Log no audio_log
       supabase.from('audio_log').insert({
         user_id: uid,
         text: text.substring(0, 500),
         voice_id,
         status: 'pendente'
       }).catch(() => {});
+
     } catch (e) {
-      console.warn('[supabase] ignorado:', e.message);
+      console.warn('[supabase limite] erro:', e.message);
+      // Se o Supabase falhar, NÃO deixa gerar (proteção conservadora)
+      return res.status(500).json({ error: 'Erro ao verificar limite. Tente novamente.' });
     }
 
+    // ══════════════════════════════════════════════
     // Chama DarkPlanner
+    // ══════════════════════════════════════════════
     try {
-      console.log('[generate] POST voice_id:', voice_id, 'chars:', text.length);
+      console.log('[generate] POST voice_id:', voice_id, 'chars:', text.length, 'user:', uid);
 
       const r = await fetch(`${DP_BASE}/generate`, {
         method: 'POST',
@@ -143,6 +180,20 @@ module.exports = async (req, res) => {
       try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
 
       if (!r.ok) {
+        // Se a API falhou, desconta o crédito de volta
+        try {
+          const { createClient } = require('@supabase/supabase-js');
+          const supabaseRollback = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            process.env.SUPABASE_SERVICE_KEY
+          );
+          const today = new Date().toISOString().split('T')[0];
+          const { data: cur } = await supabaseRollback.from('users').select('daily_used').eq('id', uid).single();
+          if (cur && cur.daily_used > 0) {
+            await supabaseRollback.from('users').update({ daily_used: cur.daily_used - 1 }).eq('id', uid);
+          }
+        } catch {}
+
         return res.status(r.status).json({
           error: `DarkPlanner retornou ${r.status}`,
           detail: rawText.substring(0, 300)
