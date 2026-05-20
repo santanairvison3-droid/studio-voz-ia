@@ -20,6 +20,8 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: 'Token inválido' });
   }
 
+  const apiKey = process.env.DP_API_KEY;
+
   // ── GET: status do job ──
   if (req.method === 'GET') {
     const { job_id } = req.query;
@@ -27,10 +29,34 @@ module.exports = async (req, res) => {
 
     try {
       const r = await fetch(`https://app.darkplanner.com.br/api/v1/audio/status/${job_id}`, {
-        headers: { 'X-API-Key': process.env.DP_API_KEY }
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'X-API-Key': apiKey,
+          'Content-Type': 'application/json'
+        }
       });
       const data = await r.json();
-      return res.status(r.status).json(data);
+
+      // Normaliza o status para o que o frontend espera (done / error)
+      let normalized = { ...data };
+      if (data.status) {
+        const s = String(data.status).toLowerCase();
+        if (s === 'completed' || s === 'done' || s === 'success' || s === 'finished') {
+          normalized.status = 'done';
+        } else if (s === 'failed' || s === 'error' || s === 'cancelled') {
+          normalized.status = 'error';
+        } else {
+          normalized.status = 'processing';
+        }
+      }
+
+      // Garante que audio_url aparece se tiver url/download_url/file_url
+      if (!normalized.audio_url) {
+        normalized.audio_url =
+          data.url || data.download_url || data.file_url || data.audio || null;
+      }
+
+      return res.status(r.status).json(normalized);
     } catch (err) {
       return res.status(500).json({ error: 'Erro ao verificar status', detail: err.message });
     }
@@ -51,10 +77,9 @@ module.exports = async (req, res) => {
       .gte('created_at', `${today}T00:00:00`)
       .lte('created_at', `${today}T23:59:59`);
 
-    if (count >= 5)
-      return res.status(429).json({ error: 'Limite diário atingido. Máximo 5 áudios por dia.' });
+    if (count >= (user.lim_day || 5))
+      return res.status(429).json({ error: 'Limite diário atingido.' });
 
-    // Limite: 150.000 caracteres por áudio
     if (text.length > 150000)
       return res.status(400).json({ error: 'Texto muito longo. Máximo 150.000 caracteres.' });
 
@@ -62,7 +87,8 @@ module.exports = async (req, res) => {
       const r = await fetch('https://app.darkplanner.com.br/api/v1/audio/generate', {
         method: 'POST',
         headers: {
-          'X-API-Key': process.env.DP_API_KEY,
+          'Authorization': `Bearer ${apiKey}`,
+          'X-API-Key': apiKey,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ text, voice_id })
@@ -79,7 +105,14 @@ module.exports = async (req, res) => {
         status:   data.job_id ? 'pendente' : 'erro'
       }).catch(() => {});
 
-      return res.status(r.status).json(data);
+      // Normaliza audio_url caso venha com outro nome
+      let normalized = { ...data };
+      if (!normalized.audio_url) {
+        normalized.audio_url =
+          data.url || data.download_url || data.file_url || data.audio || null;
+      }
+
+      return res.status(r.status).json(normalized);
     } catch (err) {
       return res.status(500).json({ error: 'Erro ao gerar áudio', detail: err.message });
     }
