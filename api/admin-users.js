@@ -1,794 +1,97 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Studio Voz IA — Admin</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#070910;
-  --surface:#0d1220;
-  --surface2:#121829;
-  --surface3:#161e33;
-  --border:rgba(255,255,255,0.06);
-  --border-a:rgba(0,229,212,0.16);
-  --accent:#00e5d4;
-  --accent2:#0abfb0;
-  --accent-dim:rgba(0,229,212,0.1);
-  --glow:rgba(0,229,212,0.18);
-  --text:#e8edf5;
-  --muted:#3d4f6e;
-  --success:#00d68f;
-  --warning:#ffab00;
-  --error:#ff4d72;
-  --sidebar:240px;
-}
-body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;display:flex}
-.sidebar{width:var(--sidebar);min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;}
-.sb-brand{padding:22px 16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px;}
-.sb-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 0 22px var(--glow);}
-.sb-brand h1{font-size:13px;font-weight:700;letter-spacing:.3px;line-height:1.2}
-.sb-brand p{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:2px}
-.admin-chip{margin:12px 12px 4px;background:linear-gradient(135deg,rgba(0,229,212,.12),rgba(0,229,212,.06));border:1px solid var(--border-a);border-radius:8px;padding:8px 13px;display:flex;align-items:center;gap:8px;}
-.admin-chip-dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:blink 2s infinite;flex-shrink:0}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.admin-chip span{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent)}
-.sb-nav{flex:1;padding:8px 10px;display:flex;flex-direction:column;gap:1px}
-.nav-section{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);padding:12px 10px 5px}
-.nav-item{display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:9px;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid transparent;text-decoration:none;position:relative;}
-.nav-item:hover{background:var(--surface2);color:var(--text)}
-.nav-item.active{background:var(--accent-dim);border-color:var(--border-a);color:var(--accent)}
-.nav-item.active::before{content:'';position:absolute;left:-1px;top:25%;bottom:25%;width:3px;background:var(--accent);border-radius:0 3px 3px 0;}
-.nav-ic{font-size:15px;width:20px;text-align:center}
-.sb-user{padding:12px;border-top:1px solid var(--border)}
-.user-row{background:var(--surface2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:9px;}
-.user-av{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#040709;flex-shrink:0;}
-.user-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.user-role{font-size:9px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
-.btn-logout{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:4px;margin-left:auto;transition:color .15s;flex-shrink:0;}
-.btn-logout:hover{color:var(--error)}
-.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{padding:14px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(7,9,16,.9);backdrop-filter:blur(16px);position:sticky;top:0;z-index:100;}
-.topbar-left h2{font-size:16px;font-weight:700;letter-spacing:-.2px}
-.topbar-left p{font-size:11px;color:var(--muted);margin-top:3px}
-.topbar-right{display:flex;align-items:center;gap:8px}
-.content{padding:24px 28px;flex:1}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;transition:border-color .2s;}
-.stat-card:hover{border-color:var(--border-a)}
-.stat-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-.stat-value{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;line-height:1}
-.stat-value.teal{color:var(--accent)}.stat-value.green{color:var(--success)}.stat-value.warn{color:var(--warning)}.stat-value.red{color:var(--error)}
-.stat-sub{font-size:11px;color:var(--muted);margin-top:6px}
-.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:4px;width:fit-content;margin-bottom:22px;}
-.tab{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;border:none;background:none;font-family:'Space Grotesk',sans-serif;}
-.tab:hover{color:var(--text)}
-.tab.active{background:var(--surface2);color:var(--accent);box-shadow:0 0 0 1px var(--border-a)}
-.section{display:none}
-.section.active{display:block;animation:fadeUp .2s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-.section-title{font-size:16px;font-weight:700}
-.btn{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Space Grotesk',sans-serif;transition:all .15s;}
-.btn-accent{background:var(--accent);color:#040709;box-shadow:0 3px 14px rgba(0,229,212,.2)}
-.btn-accent:hover{background:#00cfc0;box-shadow:0 4px 20px rgba(0,229,212,.35)}
-.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.btn-ghost:hover{border-color:var(--border-a);color:var(--accent)}
-.btn-danger{background:rgba(255,77,114,.1);color:var(--error);border:1px solid rgba(255,77,114,.2)}
-.btn-danger:hover{background:rgba(255,77,114,.18)}
-.btn-sm{padding:5px 12px;font-size:12px;border-radius:7px}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
-.table-search{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-.table-search input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 14px;color:var(--text);font-size:13px;font-family:'Space Grotesk',sans-serif;outline:none;transition:border-color .2s;}
-.table-search input:focus{border-color:rgba(0,229,212,.4)}
-.table-search input::placeholder{color:var(--muted)}
-table{width:100%;border-collapse:collapse}
-thead th{text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:12px 18px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.12);}
-tbody tr{border-bottom:1px solid var(--border);transition:background .12s}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:rgba(0,229,212,.02)}
-tbody td{padding:12px 18px;font-size:13px;vertical-align:middle}
-.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:.3px;}
-.badge-active,.badge-ativo{background:rgba(0,214,143,.1);color:#00d68f;border:1px solid rgba(0,214,143,.22)}
-.badge-pending,.badge-pendente{background:rgba(255,171,0,.1);color:#ffab00;border:1px solid rgba(255,171,0,.22)}
-.badge-blocked,.badge-suspended,.badge-suspenso{background:rgba(255,77,114,.1);color:var(--error);border:1px solid rgba(255,77,114,.22)}
-.badge-admin{background:var(--accent-dim);color:var(--accent);border:1px solid var(--border-a)}
-.badge-user{background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--border)}
-.badge-used{background:rgba(255,77,114,.08);color:#ff7096;border:1px solid rgba(255,77,114,.18)}
-.badge-free{background:rgba(0,214,143,.08);color:#00d68f;border:1px solid rgba(0,214,143,.18)}
-.badge-premium{background:var(--accent-dim);color:var(--accent);border:1px solid var(--border-a)}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(5px);z-index:300;display:none;align-items:center;justify-content:center;padding:20px;}
-.modal-overlay.open{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border-a);border-radius:16px;padding:28px;width:100%;max-width:420px;position:relative;box-shadow:0 24px 64px rgba(0,0,0,.6),0 0 40px rgba(0,229,212,.05);animation:modalIn .25s cubic-bezier(.22,1,.36,1);}
-@keyframes modalIn{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.modal h3{font-size:18px;font-weight:700;margin-bottom:6px}
-.modal-sub{font-size:13px;color:var(--muted);margin-bottom:22px}
-.modal-close{position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.modal-close:hover{background:var(--surface2);color:var(--text)}
-.form-group{margin-bottom:14px}
-.form-group label{display:block;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
-.form-group input,.form-group select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;color:var(--text);font-size:14px;font-family:'Space Grotesk',sans-serif;outline:none;transition:border-color .2s;-webkit-appearance:none;}
-.form-group input:focus,.form-group select:focus{border-color:rgba(0,229,212,.45)}
-.form-group input::placeholder{color:var(--muted)}
-.form-group select option{background:var(--surface2)}
-.modal-actions{display:flex;gap:9px;margin-top:8px}
-.modal-actions .btn{flex:1;padding:11px}
-.msg{padding:11px 14px;border-radius:8px;font-size:13px;text-align:center;display:none;margin-bottom:16px;}
-.msg.error{background:rgba(255,77,114,.1);border:1px solid rgba(255,77,114,.22);color:#ff7096;display:block}
-.msg.success{background:rgba(0,229,212,.1);border:1px solid var(--border-a);color:var(--accent);display:block}
-.empty{text-align:center;padding:52px 20px;color:var(--muted)}
-.empty .ico{font-size:36px;margin-bottom:12px;opacity:.25}
-.empty p{font-size:14px}
-.loading{text-align:center;padding:44px;color:var(--muted);font-size:13px}
-.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--surface3);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:10px;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.log-list{display:flex;flex-direction:column}
-.log-entry{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:13px;transition:background .12s;}
-.log-entry:last-child{border-bottom:none}
-.log-entry:hover{background:rgba(0,229,212,.02)}
-.log-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
-.log-dot.ok{background:var(--success);box-shadow:0 0 6px rgba(0,214,143,.4)}
-.log-dot.fail{background:var(--error);box-shadow:0 0 6px rgba(255,77,114,.4)}
-.log-dot.pend{background:var(--warning);box-shadow:0 0 6px rgba(255,171,0,.4)}
-.log-body{flex:1;min-width:0}
-.log-text{font-size:13px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.log-meta{font-size:11px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap}
-.log-voice{font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:4px;}
-</style>
-</head>
-<body>
+const { verifyToken } = require('./_lib/auth');
+const { supabase } = require('./_lib/supabase');
 
-<aside class="sidebar">
-  <div class="sb-brand">
-    <div class="sb-icon">🎙️</div>
-    <div><h1>Studio Voz IA</h1><p>Irvison Dark Studio</p></div>
-  </div>
-  <div class="admin-chip">
-    <div class="admin-chip-dot"></div>
-    <span>Painel Admin</span>
-  </div>
-  <nav class="sb-nav">
-    <div class="nav-section">Gestão</div>
-    <div class="nav-item active" onclick="showTab('usuarios')"><span class="nav-ic">👥</span>Usuários</div>
-    <div class="nav-item" onclick="showTab('vouchers')"><span class="nav-ic">🎟️</span>Vouchers</div>
-    <div class="nav-item" onclick="showTab('logs')"><span class="nav-ic">📋</span>Logs de Áudio</div>
-    <div class="nav-item" onclick="showTab('assinantes')"><span class="nav-ic">💳</span>Assinantes</div>
-    <div class="nav-section">Sistema</div>
-    <a class="nav-item" href="dashboard.html"><span class="nav-ic">🎵</span>Dashboard</a>
-  </nav>
-  <div class="sb-user">
-    <div class="user-row">
-      <div class="user-av" id="sb-avatar">A</div>
-      <div>
-        <div class="user-name" id="sb-name">Admin</div>
-        <div class="user-role">Administrador</div>
-      </div>
-      <button class="btn-logout" onclick="logout()" title="Sair">⏻</button>
-    </div>
-  </div>
-</aside>
+module.exports = async (req, res) => {
+  // ── CORS ──
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-<main class="main">
-  <div class="topbar">
-    <div class="topbar-left">
-      <h2 id="topbar-title">Usuários</h2>
-      <p id="topbar-sub">Gerencie os usuários do sistema</p>
-    </div>
-    <div class="topbar-right">
-      <button class="btn btn-ghost btn-sm" onclick="refreshCurrent()">🔄 Atualizar</button>
-    </div>
-  </div>
+  const user = verifyToken(req);
+  if (!user) return res.status(401).json({ error: 'Não autorizado' });
+  if (user.role !== 'admin') return res.status(403).json({ error: 'Acesso negado' });
 
-  <div class="content">
-    <div class="stats-grid" id="stats-grid">
-      <div class="stat-card"><div class="stat-label">Total Usuários</div><div class="stat-value teal" id="stat-total">—</div><div class="stat-sub">cadastrados</div></div>
-      <div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-value green" id="stat-active">—</div><div class="stat-sub">com acesso</div></div>
-      <div class="stat-card"><div class="stat-label">Suspensos</div><div class="stat-value warn" id="stat-pending">—</div><div class="stat-sub">bloqueados</div></div>
-      <div class="stat-card"><div class="stat-label">Vouchers Livres</div><div class="stat-value teal" id="stat-vouchers">—</div><div class="stat-sub">disponíveis</div></div>
-    </div>
+  const resource = req.query.resource || 'users';
 
-    <div class="tabs">
-      <button class="tab active" id="tab-usuarios" onclick="showTab('usuarios')">👥 Usuários</button>
-      <button class="tab" id="tab-vouchers" onclick="showTab('vouchers')">🎟️ Vouchers</button>
-      <button class="tab" id="tab-logs" onclick="showTab('logs')">📋 Logs</button>
-      <button class="tab" id="tab-assinantes" onclick="showTab('assinantes')">💳 Assinantes</button>
-    </div>
+  // ── VOUCHERS ──
+  if (resource === 'vouchers') {
+    if (req.method === 'GET') {
+      const { data, error } = await supabase.from('vouchers').select('*').order('created_at', { ascending: false });
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json(data);
+    }
+    if (req.method === 'POST') {
+      const { action, code, plan, id } = req.body;
+      if (action === 'create') {
+        const { data, error } = await supabase.from('vouchers').insert({ code, plan }).select().single();
+        if (error) return res.status(500).json({ error: error.message });
+        return res.status(201).json(data);
+      }
+      if (action === 'revoke') {
+        const { error } = await supabase.from('vouchers').delete().eq('id', id);
+        if (error) return res.status(500).json({ error: error.message });
+        return res.status(200).json({ ok: true });
+      }
+    }
+  }
 
-    <!-- USUARIOS -->
-    <div class="section active" id="sec-usuarios">
-      <div class="section-header">
-        <div class="section-title">Usuários</div>
-        <button class="btn btn-accent btn-sm" onclick="openModal('modal-adduser')">+ Novo Usuário</button>
-      </div>
-      <div class="table-wrap">
-        <div class="table-search">
-          <input type="text" id="search-users" placeholder="🔍  Buscar usuário por nome, email..." oninput="filterUsers()">
-        </div>
-        <div id="users-container"><div class="loading"><div class="spinner"></div><br>Carregando usuários...</div></div>
-      </div>
-    </div>
+  // ── LOGS ──
+  if (resource === 'logs') {
+    const { data, error } = await supabase
+      .from('audio_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json(data);
+  }
 
-    <!-- VOUCHERS -->
-    <div class="section" id="sec-vouchers">
-      <div class="section-header">
-        <div class="section-title">Vouchers</div>
-        <button class="btn btn-accent btn-sm" onclick="openModal('modal-voucher')">+ Criar Voucher</button>
-      </div>
-      <div class="table-wrap">
-        <div id="vouchers-container"><div class="loading"><div class="spinner"></div><br>Carregando vouchers...</div></div>
-      </div>
-    </div>
+  // ── USERS ──
+  if (req.method === 'GET') {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, username, name, email, role, plan, status, created_at')
+      .order('created_at', { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json(data);
+  }
 
-    <!-- LOGS -->
-    <div class="section" id="sec-logs">
-      <div class="section-header"><div class="section-title">Logs de Geração</div></div>
-      <div class="table-wrap">
-        <div id="logs-container"><div class="loading"><div class="spinner"></div><br>Carregando logs...</div></div>
-      </div>
-    </div>
+  if (req.method === 'POST') {
+    const { action, id, username, name, email, pw, role, plan, status, lim_day } = req.body;
 
-    <!-- ASSINANTES -->
-    <div class="section" id="sec-assinantes">
-      <div class="section-header">
-        <div class="section-title">Planos & Assinantes</div>
-        <button class="btn btn-accent btn-sm" onclick="openModal('modal-plan')">+ Criar Plano</button>
-      </div>
-      <div style="margin-bottom:22px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Planos Disponíveis</div>
-        <div id="plans-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">
-          <div class="loading"><div class="spinner"></div></div>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <div class="table-search" style="gap:12px">
-          <input type="text" id="search-assinantes" placeholder="🔍  Filtrar por nome, email..." oninput="filterAssinantes()">
-          <select id="filter-plan-sel" onchange="filterAssinantes()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;-webkit-appearance:none;min-width:130px">
-            <option value="">Todos os planos</option>
-            <option value="free">Free</option>
-            <option value="basico">Básico</option>
-            <option value="premium">Premium</option>
-          </select>
-        </div>
-        <div id="assinantes-container"><div class="loading"><div class="spinner"></div><br>Carregando...</div></div>
-      </div>
-    </div>
-  </div>
-</main>
+    if (action === 'create') {
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          username,
+          name,
+          email,
+          pw,
+          role: role || 'user',
+          plan: plan || 'basico',
+          status: status || 'ativo',
+          lim_day: lim_day || 5,
+          credits: (lim_day || 5) * 30
+        })
+        .select()
+        .single();
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(201).json(data);
+    }
 
-<!-- MODAL: NOVO USUÁRIO -->
-<div class="modal-overlay" id="modal-adduser">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('modal-adduser')">✕</button>
-    <h3>Novo Usuário</h3>
-    <p class="modal-sub">Crie uma conta manualmente no sistema</p>
-    <div class="msg" id="msg-adduser"></div>
-    <div class="form-group"><label>Nome</label><input type="text" id="new-name" placeholder="Nome completo"></div>
-    <div class="form-group"><label>Usuário *</label><input type="text" id="new-username" placeholder="nome_usuario"></div>
-    <div class="form-group"><label>Email *</label><input type="text" id="new-email" placeholder="email@exemplo.com"></div>
-    <div class="form-group"><label>Senha *</label><input type="password" id="new-password" placeholder="••••••••"></div>
-    <div class="form-group">
-      <label>Plano</label>
-      <select id="new-plan">
-        <option value="free">Free</option>
-        <option value="basico" selected>Básico</option>
-        <option value="premium">Premium</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>🎙️ Áudios por Dia</label>
-      <input type="number" id="new-credits" placeholder="5" min="1" max="999" value="5">
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">Limite diário de gerações de áudio para este usuário</div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('modal-adduser')">Cancelar</button>
-      <button class="btn btn-accent" onclick="createUser()">Criar Usuário</button>
-    </div>
-  </div>
-</div>
+    if (action === 'update') {
+      const updates = {};
+      if (status    !== undefined) updates.status   = status;
+      if (role      !== undefined) updates.role     = role;
+      if (plan      !== undefined) updates.plan     = plan;
+      if (pw        !== undefined) updates.pw       = pw;
+      if (lim_day   !== undefined) updates.lim_day  = lim_day;
+      const { error } = await supabase.from('users').update(updates).eq('id', id);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ ok: true });
+    }
+  }
 
-<!-- MODAL: TROCAR PLANO -->
-<div class="modal-overlay" id="modal-change-plan">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('modal-change-plan')">✕</button>
-    <h3>Alterar Plano</h3>
-    <p class="modal-sub" id="cp-sub">Alterar plano do usuário</p>
-    <div class="msg" id="msg-change-plan"></div>
-    <input type="hidden" id="cp-userid">
-    <div class="form-group">
-      <label>Plano</label>
-      <select id="cp-plan">
-        <option value="free">Free</option>
-        <option value="basico">Básico</option>
-        <option value="premium">Premium</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>🎙️ Áudios por Dia (opcional)</label>
-      <input type="number" id="cp-credits" placeholder="Deixe em branco para não alterar" min="1" max="999">
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('modal-change-plan')">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveChangePlan()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: REDEFINIR SENHA -->
-<div class="modal-overlay" id="modal-reset-pw">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('modal-reset-pw')">✕</button>
-    <h3>Redefinir Senha</h3>
-    <p class="modal-sub" id="rp-sub">Defina uma nova senha para o usuário</p>
-    <div class="msg" id="msg-reset-pw"></div>
-    <input type="hidden" id="rp-userid">
-    <div class="form-group"><label>Nova Senha *</label><input type="password" id="rp-pass" placeholder="••••••••"></div>
-    <div class="form-group"><label>Confirmar Senha *</label><input type="password" id="rp-pass2" placeholder="••••••••"></div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('modal-reset-pw')">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveResetPw()">Redefinir</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: CRIAR PLANO -->
-<div class="modal-overlay" id="modal-plan">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('modal-plan')">✕</button>
-    <h3>Criar Plano</h3>
-    <p class="modal-sub">Defina as configurações do novo plano</p>
-    <div class="msg" id="msg-plan"></div>
-    <div class="form-group"><label>Nome do Plano *</label><input type="text" id="pl-name" placeholder="Ex: Gold"></div>
-    <div class="form-group"><label>Áudios por Dia</label><input type="number" id="pl-limit" placeholder="10" min="1"></div>
-    <div class="form-group"><label>Preço (R$)</label><input type="text" id="pl-price" placeholder="Ex: 29,90"></div>
-    <div class="form-group"><label>Descrição</label><input type="text" id="pl-desc" placeholder="Descrição breve do plano"></div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('modal-plan')">Cancelar</button>
-      <button class="btn btn-accent" onclick="savePlan()">Criar Plano</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: VOUCHER -->
-<div class="modal-overlay" id="modal-voucher">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('modal-voucher')">✕</button>
-    <h3>Criar Voucher</h3>
-    <p class="modal-sub">Gere um código de acesso para novos usuários</p>
-    <div class="msg" id="msg-voucher"></div>
-    <div class="form-group">
-      <label>Código *</label>
-      <input type="text" id="v-code" placeholder="BETA2025" style="font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase">
-    </div>
-    <div class="form-group">
-      <label>Plano que libera</label>
-      <select id="v-plan">
-        <option value="free">Free</option>
-        <option value="basico" selected>Básico</option>
-        <option value="premium">Premium</option>
-      </select>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('modal-voucher')">Cancelar</button>
-      <button class="btn btn-accent" onclick="createVoucher()">Criar Voucher</button>
-    </div>
-  </div>
-</div>
-
-<script>
-const API='https://studio-voz-ia-irvison-s-projects.vercel.app';
-let token=localStorage.getItem('svia_token');
-let allUsers=[];
-let currentTab='usuarios';
-
-function parseJWT(t){try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));}catch{return null;}}
-if(!token){window.location.href='index.html';}
-const me=parseJWT(token);
-if(!me||me.role!=='admin'){window.location.href='dashboard.html';}
-
-document.getElementById('sb-name').textContent=me.name||me.username||'Admin';
-document.getElementById('sb-avatar').textContent=(me.name||me.username||'A')[0].toUpperCase();
-
-function logout(){localStorage.removeItem('svia_token');window.location.href='index.html';}
-
-const tabTitles={
-  usuarios:['Usuários','Gerencie os usuários do sistema'],
-  vouchers:['Vouchers','Códigos de acesso e resgates'],
-  logs:['Logs de Áudio','Histórico de gerações'],
-  assinantes:['Assinantes','Planos e assinaturas dos usuários']
+  return res.status(405).json({ error: 'Método não permitido' });
 };
-
-function showTab(tab){
-  currentTab=tab;
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('sec-'+tab).classList.add('active');
-  document.getElementById('tab-'+tab).classList.add('active');
-  const titles=tabTitles[tab]||[tab,tab];
-  document.getElementById('topbar-title').textContent=titles[0];
-  document.getElementById('topbar-sub').textContent=titles[1];
-  if(tab==='usuarios')loadUsers();
-  if(tab==='vouchers')loadVouchers();
-  if(tab==='logs')loadLogs();
-  if(tab==='assinantes')loadAssinantes();
-}
-
-function refreshCurrent(){showTab(currentTab);}
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.modal-overlay').forEach(o=>{
-  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});
-});
-
-function showMsg(id,text,type='error'){
-  const el=document.getElementById(id);
-  if(!el)return;
-  el.textContent=text;
-  el.className='msg '+(type==='success'?'success':'error');
-}
-
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
-/* ══════════════════════════════
-   USERS
-══════════════════════════════ */
-async function loadUsers(){
-  document.getElementById('users-container').innerHTML='<div class="loading"><div class="spinner"></div><br>Carregando usuários...</div>';
-  try{
-    const res=await fetch(`${API}/api/admin-users`,{headers:{'Authorization':'Bearer '+token}});
-    const data=await res.json();
-    allUsers=data.users||data||[];
-    updateStats(allUsers);
-    renderUsers(allUsers);
-  }catch(e){
-    document.getElementById('users-container').innerHTML='<div class="empty"><div class="ico">⚠️</div><p>Erro ao carregar usuários.</p></div>';
-  }
-}
-
-function updateStats(users){
-  document.getElementById('stat-total').textContent=users.length;
-  document.getElementById('stat-active').textContent=users.filter(u=>u.status==='ativo'||u.status==='active').length;
-  document.getElementById('stat-pending').textContent=users.filter(u=>u.status==='suspenso'||u.status==='suspended'||u.status==='blocked').length;
-}
-
-function renderUsers(users){
-  if(!users.length){
-    document.getElementById('users-container').innerHTML='<div class="empty"><div class="ico">👥</div><p>Nenhum usuário encontrado.</p></div>';
-    return;
-  }
-  const rows=users.map(u=>`
-    <tr>
-      <td>
-        <div style="font-weight:600">${esc(u.name||u.username||'—')}</div>
-        <div style="font-size:11px;color:var(--muted)">${esc(u.username||'')}</div>
-      </td>
-      <td style="color:var(--muted);font-size:12px">${esc(u.email||'—')}</td>
-      <td><span class="badge badge-${u.role==='admin'?'admin':'user'}">${u.role||'user'}</span></td>
-      <td><span class="badge badge-${u.status==='ativo'||u.status==='active'?'ativo':'suspenso'}">${u.status||'—'}</span></td>
-      <td style="font-size:12px;color:var(--accent)">${u.plan||'free'}</td>
-      <td><div style="display:flex;gap:5px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="toggleStatus('${u.id}','${u.status}')">${u.status==='ativo'||u.status==='active'?'Suspender':'Ativar'}</button>
-        <button class="btn btn-ghost btn-sm" onclick="openChangePlan('${u.id}','${esc(u.name||u.username)}','${u.plan||'free'}')">🔄 Plano</button>
-        <button class="btn btn-ghost btn-sm" onclick="openResetPw('${u.id}','${esc(u.name||u.username)}')">🔑 Senha</button>
-      </div></td>
-    </tr>`).join('');
-  document.getElementById('users-container').innerHTML=`
-    <table>
-      <thead><tr><th>Nome</th><th>Email</th><th>Perfil</th><th>Status</th><th>Plano</th><th>Ação</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-}
-
-function filterUsers(){
-  const q=document.getElementById('search-users').value.toLowerCase();
-  const filtered=allUsers.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.username||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q));
-  renderUsers(filtered);
-}
-
-async function toggleStatus(userId,currentStatus){
-  const isActive=currentStatus==='ativo'||currentStatus==='active';
-  const newStatus=isActive?'suspenso':'ativo';
-  try{
-    const r=await fetch(`${API}/api/admin-users`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({action:'update',id:userId,status:newStatus})
-    });
-    if(!r.ok){const d=await r.json();alert(d.error||'Erro ao atualizar status.');return;}
-    loadUsers();
-  }catch(e){alert('Erro de conexão.');}
-}
-
-async function createUser(){
-  const name=document.getElementById('new-name').value.trim();
-  const username=document.getElementById('new-username').value.trim();
-  const email=document.getElementById('new-email').value.trim();
-  const password=document.getElementById('new-password').value;
-  const plan=document.getElementById('new-plan').value;
-  const lim_day=parseInt(document.getElementById('new-credits').value)||5;
-  if(!username||!email||!password){showMsg('msg-adduser','Preencha todos os campos obrigatórios.');return;}
-  const pw=await sha256(password);
-  try{
-    const res=await fetch(`${API}/api/admin-users`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({action:'create',name,username,email,pw,plan,status:'ativo',role:'user',lim_day})
-    });
-    const data=await res.json();
-    if(!res.ok){showMsg('msg-adduser',data.error||'Erro ao criar usuário.');return;}
-    showMsg('msg-adduser','Usuário criado com sucesso!','success');
-    setTimeout(()=>{closeModal('modal-adduser');loadUsers();},1200);
-  }catch(e){showMsg('msg-adduser','Erro de conexão.');}
-}
-
-/* ══════════════════════════════
-   CHANGE PLAN / RESET PW
-══════════════════════════════ */
-function openChangePlan(userId,userName,currentPlan){
-  document.getElementById('cp-userid').value=userId;
-  document.getElementById('cp-sub').textContent='Alterar plano de: '+userName;
-  document.getElementById('cp-plan').value=currentPlan||'free';
-  document.getElementById('cp-credits').value='';
-  document.getElementById('msg-change-plan').className='msg';
-  openModal('modal-change-plan');
-}
-
-async function saveChangePlan(){
-  const userId=document.getElementById('cp-userid').value;
-  const plan=document.getElementById('cp-plan').value;
-  const limStr=document.getElementById('cp-credits').value.trim();
-  const lim_day=limStr?parseInt(limStr):undefined;
-  try{
-    const body={action:'update',id:userId,plan};
-    if(lim_day!==undefined&&!isNaN(lim_day)) body.lim_day=lim_day;
-    const r=await fetch(`${API}/api/admin-users`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify(body)
-    });
-    if(!r.ok){const d=await r.json();showMsg('msg-change-plan',d.error||'Erro ao alterar plano.');return;}
-    showMsg('msg-change-plan','Plano atualizado!','success');
-    setTimeout(()=>{closeModal('modal-change-plan');loadUsers();loadAssinantes();},1100);
-  }catch(e){showMsg('msg-change-plan','Erro de conexão.');}
-}
-
-function openResetPw(userId,userName){
-  document.getElementById('rp-userid').value=userId;
-  document.getElementById('rp-sub').textContent='Redefinir senha de: '+userName;
-  document.getElementById('rp-pass').value='';
-  document.getElementById('rp-pass2').value='';
-  document.getElementById('msg-reset-pw').className='msg';
-  openModal('modal-reset-pw');
-}
-
-async function saveResetPw(){
-  const userId=document.getElementById('rp-userid').value;
-  const p1=document.getElementById('rp-pass').value;
-  const p2=document.getElementById('rp-pass2').value;
-  if(!p1){showMsg('msg-reset-pw','Digite a nova senha.');return;}
-  if(p1!==p2){showMsg('msg-reset-pw','As senhas não coincidem.');return;}
-  const pw=await sha256(p1);
-  try{
-    const r=await fetch(`${API}/api/admin-users`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({action:'update',id:userId,pw})
-    });
-    if(!r.ok){const d=await r.json();showMsg('msg-reset-pw',d.error||'Erro ao redefinir senha.');return;}
-    showMsg('msg-reset-pw','Senha redefinida com sucesso!','success');
-    setTimeout(()=>closeModal('modal-reset-pw'),1200);
-  }catch(e){showMsg('msg-reset-pw','Erro de conexão.');}
-}
-
-/* ══════════════════════════════
-   VOUCHERS
-══════════════════════════════ */
-async function loadVouchers(){
-  document.getElementById('vouchers-container').innerHTML='<div class="loading"><div class="spinner"></div><br>Carregando vouchers...</div>';
-  try{
-    const res=await fetch(`${API}/api/admin-users?resource=vouchers`,{headers:{'Authorization':'Bearer '+token}});
-    const data=await res.json();
-    const vouchers=Array.isArray(data)?data:(data.vouchers||[]);
-    document.getElementById('stat-vouchers').textContent=vouchers.filter(v=>!v.used&&!v.used_at).length;
-    renderVouchers(vouchers);
-  }catch(e){
-    document.getElementById('vouchers-container').innerHTML='<div class="empty"><div class="ico">⚠️</div><p>Erro ao carregar vouchers.</p></div>';
-  }
-}
-
-function renderVouchers(vouchers){
-  if(!vouchers.length){
-    document.getElementById('vouchers-container').innerHTML='<div class="empty"><div class="ico">🎟️</div><p>Nenhum voucher criado ainda.</p></div>';
-    return;
-  }
-  const rows=vouchers.map(v=>{
-    const used=v.used||!!v.used_at;
-    return `<tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:1px;color:var(--accent)">${esc(v.code)}</td>
-      <td style="font-size:12px;color:var(--muted)">${esc(v.plan||'—')}</td>
-      <td><span class="badge badge-${used?'used':'free'}">${used?'Usado':'Disponível'}</span></td>
-      <td style="font-size:11px;color:var(--muted)">${v.used_by||'—'}</td>
-      <td style="font-size:11px;color:var(--muted)">${v.used_at?new Date(v.used_at).toLocaleDateString('pt-BR'):'—'}</td>
-      <td>${!used?`<button class="btn btn-danger btn-sm" onclick="revokeVoucher('${v.id}')">Revogar</button>`:'<span style="color:var(--muted);font-size:12px">—</span>'}</td>
-    </tr>`;
-  }).join('');
-  document.getElementById('vouchers-container').innerHTML=`
-    <table>
-      <thead><tr><th>Código</th><th>Plano</th><th>Status</th><th>Usado Por</th><th>Data</th><th>Ação</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-}
-
-async function createVoucher(){
-  const code=document.getElementById('v-code').value.trim().toUpperCase();
-  const plan=document.getElementById('v-plan').value||'basico';
-  if(!code){showMsg('msg-voucher','Digite um código para o voucher.');return;}
-  try{
-    const res=await fetch(`${API}/api/admin-users?resource=vouchers`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({action:'create',code,plan})
-    });
-    const data=await res.json();
-    if(!res.ok){showMsg('msg-voucher',data.error||'Erro ao criar voucher.');return;}
-    showMsg('msg-voucher','Voucher '+code+' criado!','success');
-    setTimeout(()=>{closeModal('modal-voucher');loadVouchers();},1200);
-  }catch(e){showMsg('msg-voucher','Erro de conexão.');}
-}
-
-async function revokeVoucher(id){
-  if(!confirm('Revogar este voucher?'))return;
-  try{
-    await fetch(`${API}/api/admin-users?resource=vouchers`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({action:'revoke',id})
-    });
-    loadVouchers();
-  }catch(e){alert('Erro ao revogar voucher.');}
-}
-
-/* ══════════════════════════════
-   LOGS
-══════════════════════════════ */
-async function loadLogs(){
-  document.getElementById('logs-container').innerHTML='<div class="loading"><div class="spinner"></div><br>Carregando logs...</div>';
-  try{
-    const res=await fetch(`${API}/api/admin-users?resource=logs`,{headers:{'Authorization':'Bearer '+token}});
-    const data=await res.json();
-    renderLogs(Array.isArray(data)?data:(data.logs||[]));
-  }catch(e){
-    document.getElementById('logs-container').innerHTML='<div class="empty"><div class="ico">⚠️</div><p>Erro ao carregar logs.</p></div>';
-  }
-}
-
-function renderLogs(logs){
-  if(!logs.length){
-    document.getElementById('logs-container').innerHTML='<div class="empty"><div class="ico">📋</div><p>Nenhum log encontrado.</p></div>';
-    return;
-  }
-  const items=logs.map(l=>{
-    const dotClass=l.status==='completed'?'ok':l.status==='failed'?'fail':'pend';
-    const date=l.created_at?new Date(l.created_at).toLocaleString('pt-BR'):'—';
-    return `<div class="log-entry">
-      <div class="log-dot ${dotClass}"></div>
-      <div class="log-body">
-        <div class="log-text">${esc(l.text||l.filename||'—')}</div>
-        <div class="log-meta">
-          <span>${esc(l.username||l.user_id||'—')}</span>
-          <span class="log-voice">${esc(l.voice_id||'—')}</span>
-          <span>${date}</span>
-          <span style="color:${l.status==='completed'?'var(--success)':l.status==='failed'?'var(--error)':'var(--warning)'}">${l.status||'—'}</span>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-  document.getElementById('logs-container').innerHTML='<div class="log-list">'+items+'</div>';
-}
-
-/* ══════════════════════════════
-   ASSINANTES
-══════════════════════════════ */
-const PLAN_DEFAULTS={
-  free:{name:'Free',limit:5,price:'Grátis',color:'var(--muted)',desc:'Acesso básico à plataforma'},
-  basico:{name:'Básico',limit:15,price:'R$ 19,90',color:'var(--success)',desc:'Para criadores iniciantes'},
-  premium:{name:'Premium',limit:50,price:'R$ 49,90',color:'var(--accent)',desc:'Para produtores profissionais'}
-};
-let allPlans=JSON.parse(localStorage.getItem('svia_plans')||'null')||{...PLAN_DEFAULTS};
-let allAssinantes=[];
-
-function loadAssinantes(){
-  renderPlansGrid();
-  if(allUsers.length){allAssinantes=[...allUsers];renderAssinantes(allAssinantes);return;}
-  document.getElementById('assinantes-container').innerHTML='<div class="loading"><div class="spinner"></div><br>Carregando...</div>';
-  fetch(`${API}/api/admin-users`,{headers:{Authorization:'Bearer '+token}})
-    .then(r=>r.json()).then(d=>{
-      allAssinantes=(d.users||d||[]);
-      renderAssinantes(allAssinantes);
-    }).catch(()=>{
-      document.getElementById('assinantes-container').innerHTML='<div class="empty"><div class="ico">⚠️</div><p>Erro ao carregar.</p></div>';
-    });
-}
-
-function renderPlansGrid(){
-  const g=document.getElementById('plans-grid');
-  g.innerHTML=Object.keys(allPlans).map(key=>{
-    const p=allPlans[key];
-    const src=allAssinantes.length?allAssinantes:allUsers;
-    const count=src.filter(u=>(u.plan||'free')===key).length;
-    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:18px;transition:border-color .2s" onmouseenter="this.style.borderColor='var(--border-a)'" onmouseleave="this.style.borderColor='var(--border)'">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <span style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${p.color||'var(--accent)'}">${esc(p.name)}</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--text)">${count}</span>
-      </div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">${esc(p.desc||'')}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-        <span style="font-size:11px;background:var(--surface2);padding:3px 9px;border-radius:99px;color:var(--muted)">🎵 ${p.limit||5}/dia</span>
-        <span style="font-size:11px;background:var(--surface2);padding:3px 9px;border-radius:99px;color:var(--muted)">${esc(p.price||'—')}</span>
-      </div>
-      <div style="font-size:10px;color:var(--muted)">${count} assinante${count!==1?'s':''}</div>
-    </div>`;
-  }).join('');
-}
-
-function renderAssinantes(users){
-  const q=(document.getElementById('search-assinantes')||{value:''}).value.toLowerCase();
-  const planF=(document.getElementById('filter-plan-sel')||{value:''}).value;
-  let filtered=users;
-  if(q) filtered=filtered.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)||(u.username||'').toLowerCase().includes(q));
-  if(planF) filtered=filtered.filter(u=>(u.plan||'free')===planF);
-  if(!filtered.length){
-    document.getElementById('assinantes-container').innerHTML='<div class="empty"><div class="ico">👥</div><p>Nenhum usuário encontrado.</p></div>';
-    return;
-  }
-  const rows=filtered.map(u=>{
-    const plan=u.plan||'free';
-    const planData=allPlans[plan]||{name:plan,color:'var(--muted)'};
-    return `<tr>
-      <td><div style="font-weight:600">${esc(u.name||u.username||'—')}</div><div style="font-size:11px;color:var(--muted)">${esc(u.username||'')}</div></td>
-      <td style="color:var(--muted);font-size:12px">${esc(u.email||'—')}</td>
-      <td><span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--surface2);color:${planData.color||'var(--accent)'}">${esc(planData.name||plan)}</span></td>
-      <td><span class="badge badge-${u.status==='ativo'||u.status==='active'?'ativo':'suspenso'}">${u.status||'—'}</span></td>
-      <td><div style="display:flex;gap:5px">
-        <button class="btn btn-ghost btn-sm" onclick="openChangePlan('${u.id}','${esc(u.name||u.username)}','${plan}')">🔄 Plano</button>
-        <button class="btn btn-ghost btn-sm" onclick="openResetPw('${u.id}','${esc(u.name||u.username)}')">🔑 Senha</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-  document.getElementById('assinantes-container').innerHTML=`
-    <table><thead><tr><th>Nome</th><th>Email</th><th>Plano</th><th>Status</th><th>Ações</th></tr></thead>
-    <tbody>${rows}</tbody></table>`;
-}
-
-function filterAssinantes(){renderAssinantes(allAssinantes.length?allAssinantes:allUsers);}
-
-function savePlan(){
-  const name=document.getElementById('pl-name').value.trim();
-  const limit=parseInt(document.getElementById('pl-limit').value)||5;
-  const price=document.getElementById('pl-price').value.trim()||'—';
-  const desc=document.getElementById('pl-desc').value.trim();
-  if(!name){showMsg('msg-plan','Digite o nome do plano.');return;}
-  const key=name.toLowerCase().replace(/\s+/g,'_');
-  allPlans[key]={name,limit,price,desc,color:'var(--accent)'};
-  localStorage.setItem('svia_plans',JSON.stringify(allPlans));
-  ['new-plan','cp-plan','filter-plan-sel'].forEach(id=>{
-    const el=document.getElementById(id);if(!el)return;
-    if(!el.querySelector(`option[value="${key}"]`)){const o=document.createElement('option');o.value=key;o.textContent=name;el.appendChild(o);}
-  });
-  showMsg('msg-plan','Plano "'+name+'" criado!','success');
-  setTimeout(()=>{closeModal('modal-plan');renderPlansGrid();},1100);
-}
-
-async function sha256(msg){
-  const buf=new TextEncoder().encode(msg);
-  const hash=await crypto.subtle.digest('SHA-256',buf);
-  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-loadUsers();
-</script>
-</body>
-</html>
