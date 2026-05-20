@@ -1133,10 +1133,11 @@ function showStatus(msg,type){
 
 function proxyAudioUrl(url){
   if(!url)return '';
-  // Se já é URL do nosso proxy, retorna como está
+  // CDN do DarkPlanner é público — usa direto sem proxy
+  if(url.includes('cdn.darkplanner.com.br'))return url;
+  // Outros endpoints internos passam pelo proxy com token
   if(url.includes('/api/audio-proxy'))return url;
-  // Wrap na nossa API proxy que adiciona o X-API-Key
-  return `${API}/api/audio-proxy?url=${encodeURIComponent(url)}`;
+  return `${API}/api/audio-proxy?token=${encodeURIComponent(token)}&url=${encodeURIComponent(url)}`;
 }
 
 function showAudio(url,jobId){
