@@ -1,6 +1,13 @@
 const { verifyToken } = require('./_lib/auth');
 const { supabase } = require('./_lib/supabase');
 
+// Limites diários por plano — altere aqui quando quiser
+const PLAN_LIMITS = {
+  free:    3,
+  basico:  5,
+  premium: 10
+};
+
 module.exports = async (req, res) => {
   // ── CORS ──
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -51,7 +58,7 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const { data, error } = await supabase
       .from('users')
-      .select('id, username, name, email, role, plan, status, lim_day, credits, created_at')
+      .select('id, username, name, email, role, plan, status, lim_day, credits, daily_used, last_reset, created_at')
       .order('created_at', { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json(data);
@@ -61,6 +68,12 @@ module.exports = async (req, res) => {
     const { action, id, username, name, email, pw, role, plan, status, lim_day } = req.body;
 
     if (action === 'create') {
+      // Limite automático pelo plano — admin pode sobrescrever com lim_day manual
+      const planLimit = PLAN_LIMITS[plan] ?? PLAN_LIMITS['basico'];
+      const finalLimit = (lim_day !== undefined && lim_day !== null && lim_day !== '')
+        ? parseInt(lim_day)
+        : planLimit;
+
       const { data, error } = await supabase
         .from('users')
         .insert({
@@ -68,28 +81,40 @@ module.exports = async (req, res) => {
           name,
           email,
           pw,
-          role:    role    || 'user',
-          plan:    plan    || 'basico',
-          status:  status  || 'ativo',
-          lim_day: lim_day || 5,
-          credits: (lim_day || 5) * 30
+          role:       role    || 'user',
+          plan:       plan    || 'basico',
+          status:     status  || 'ativo',
+          lim_day:    finalLimit,
+          credits:    finalLimit * 30,
+          daily_used: 0,
+          last_reset: new Date().toISOString().split('T')[0]
         })
         .select()
         .single();
+
       if (error) return res.status(500).json({ error: error.message });
       return res.status(201).json(data);
     }
 
     if (action === 'update') {
       const updates = {};
-      if (status  !== undefined) updates.status  = status;
-      if (role    !== undefined) updates.role    = role;
-      if (plan    !== undefined) updates.plan    = plan;
-      if (pw      !== undefined) updates.pw      = pw;
-      if (lim_day !== undefined) {
-        updates.lim_day = lim_day;
-        updates.credits = lim_day * 30;
+      if (status !== undefined) updates.status = status;
+      if (role   !== undefined) updates.role   = role;
+      if (pw     !== undefined) updates.pw     = pw;
+
+      // Se mudou o plano, atualiza lim_day automaticamente pelo plano
+      if (plan !== undefined) {
+        updates.plan    = plan;
+        updates.lim_day = PLAN_LIMITS[plan] ?? 5;
+        updates.credits = updates.lim_day * 30;
       }
+
+      // Override manual de lim_day (sobrescreve o automático do plano se informado)
+      if (lim_day !== undefined && lim_day !== null && lim_day !== '') {
+        updates.lim_day = parseInt(lim_day);
+        updates.credits = updates.lim_day * 30;
+      }
+
       const { error } = await supabase.from('users').update(updates).eq('id', id);
       if (error) return res.status(500).json({ error: error.message });
       return res.status(200).json({ ok: true });
