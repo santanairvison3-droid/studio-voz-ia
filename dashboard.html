@@ -1351,6 +1351,27 @@ function setGenderFilter(g,btn){
 
 function filterLibVoices(){renderLibVoices();}
 
+// Handlers usando data-vid para evitar problema de aspas no onclick
+function handleFav(btn){
+  const vid=btn.dataset.vid;
+  toggleFav(vid,btn,{stopPropagation:()=>{}});
+}
+function handlePrev(btn,e){
+  const vid=btn.dataset.vid;
+  const v=allVoices.find(x=>(x.voice_id||x.id)===vid);
+  previewVoice(vid,v?.name||vid,e||{stopPropagation:()=>{}});
+}
+function handleUse(btn){
+  const vid=btn.dataset.vid;
+  const v=allVoices.find(x=>(x.voice_id||x.id)===vid);
+  if(v) selectVoiceFromLib(vid,v.name,v.labels?.language||v.language||'');
+}
+function handleGen(btn,e){
+  const vid=btn.dataset.vid;
+  const v=allVoices.find(x=>(x.voice_id||x.id)===vid);
+  generateFromLib(vid,v?.name||vid,btn,e||{stopPropagation:()=>{}});
+}
+
 // Preview de voz — gera áudio curto via API
 async function previewVoice(vid, vname, e){
   e.stopPropagation();
@@ -1524,7 +1545,7 @@ function renderLibVoices(){
     grid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">🎭</div><p>Nenhuma voz encontrada para este filtro.</p></div>`;
     return;
   }
-  grid.innerHTML=filtered.map(v=>{
+  grid.innerHTML=filtered.map((v,i)=>{
     const lang=getLangCode(v);
     const gender=getGender(v);
     const emoji=getGenderEmoji(v);
@@ -1533,7 +1554,7 @@ function renderLibVoices(){
     const vname=escHtml(v.name);
     const isSel=selectedVoice===(v.voice_id||v.id);
     const favActive=isFav(v.voice_id||v.id)?'active':'';
-    return `<div class="vlc${isSel?' sel-lib':''}" id="vlc-${vid}">
+    return `<div class="vlc${isSel?' sel-lib':''}" id="vlc-${vid}" data-vid="${vid}">
       <div class="vlc-top">
         <div class="vlc-av ${gender}">${emoji}</div>
         <span class="vlc-badge ${lang}">${lang.toUpperCase()}</span>
@@ -1541,12 +1562,12 @@ function renderLibVoices(){
       <div class="vlc-name" title="${vname}">${vname}</div>
       <div class="vlc-lang">${langLabel}</div>
       <div class="vlc-actions">
-        <button class="vlc-btn fav ${favActive}" title="${favActive?'Desfavoritar':'Favoritar'}" onclick="toggleFav(${JSON.stringify(v.voice_id||v.id)},this,event)">⭐</button>
-        <button class="vlc-btn prev" title="Prévia" onclick="previewVoice(${JSON.stringify(v.voice_id||v.id)},${JSON.stringify(v.name)},event)">▶</button>
-        <button class="vlc-btn use" onclick="selectVoiceFromLib(${JSON.stringify(v.voice_id||v.id)},${JSON.stringify(v.name)},${JSON.stringify(v.labels?.language||v.language||lang)})">
+        <button class="vlc-btn fav ${favActive}" title="${favActive?'Desfavoritar':'Favoritar'}" data-vid="${vid}" onclick="handleFav(this)">⭐</button>
+        <button class="vlc-btn prev" title="Prévia" data-vid="${vid}" onclick="handlePrev(this,event)">▶</button>
+        <button class="vlc-btn use" data-vid="${vid}" onclick="handleUse(this)">
           ${isSel?'✓ Selecionada':'⚡ Usar'}
         </button>
-        <button class="vlc-btn gen-lib" title="Gerar com este voz" onclick="generateFromLib(${JSON.stringify(v.voice_id||v.id)},${JSON.stringify(v.name)},this,event)">🎵 Gerar</button>
+        <button class="vlc-btn gen-lib" title="Gerar áudio" data-vid="${vid}" onclick="handleGen(this,event)">🎵 Gerar</button>
       </div>
       <div class="vlc-preview-bar" id="vprev-${vid}"></div>
       <div class="gen-lib-result" id="glr-${vid}"></div>
