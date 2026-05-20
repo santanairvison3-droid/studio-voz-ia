@@ -61,10 +61,32 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   border-radius:10px;
   padding:12px 14px;
   display:flex;align-items:center;gap:10px;
+  transition:background .3s,border-color .3s;
 }
+.sb-credits.exhausted{background:rgba(255,77,114,0.1);border-color:rgba(255,77,114,0.3)}
 .cr-icon{font-size:18px}
 .cr-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .cr-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--accent);line-height:1}
+.sb-credits.exhausted .cr-val{color:var(--error)}
+.cr-bar-wrap{height:3px;background:rgba(255,255,255,0.06);border-radius:99px;margin-top:6px;overflow:hidden}
+.cr-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s ease,background .3s}
+.cr-bar-fill.low{background:var(--warning)}
+.cr-bar-fill.empty{background:var(--error)}
+/* Limit reached banner */
+.limit-banner{
+  display:none;
+  background:rgba(255,77,114,0.08);
+  border:1px solid rgba(255,77,114,0.25);
+  border-radius:12px;
+  padding:16px 20px;
+  margin-bottom:16px;
+  text-align:center;
+}
+.limit-banner.show{display:block;animation:fadeUp .3s ease}
+.lb-icon{font-size:28px;margin-bottom:6px}
+.lb-title{font-size:15px;font-weight:700;color:var(--error);margin-bottom:4px}
+.lb-sub{font-size:12px;color:var(--muted);line-height:1.6}
+.lb-reset{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--warning);font-weight:600;margin-top:6px}
 
 .sb-nav{flex:1;padding:8px 10px;display:flex;flex-direction:column;gap:1px}
 .nav-section{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);padding:12px 10px 5px}
@@ -514,28 +536,26 @@ select option{background:var(--surface2)}
 .hist-list{display:flex;flex-direction:column;gap:7px}
 .hi{
   background:var(--surface);border:1px solid var(--border);
-  border-radius:12px;padding:14px 16px;
-  display:flex;align-items:center;gap:12px;
+  border-radius:12px;padding:14px 18px;
+  display:flex;align-items:center;gap:14px;
   transition:border-color .2s;
 }
 .hi:hover{border-color:var(--border-a)}
-.hi.selected{border-color:rgba(0,229,212,.4);background:rgba(0,229,212,.03)}
 .hi-icon{
-  width:36px;height:36px;
+  width:38px;height:38px;
   background:rgba(0,229,212,.08);
   border-radius:10px;
   display:flex;align-items:center;justify-content:center;
-  font-size:16px;flex-shrink:0;
+  font-size:17px;flex-shrink:0;
   border:1px solid var(--border-a);
 }
 .hi-info{flex:1;min-width:0}
 .hi-text{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
 .hi-meta{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
-.hi-act{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .hi-act a{
   font-size:11px;font-weight:600;color:var(--accent);
   border:1px solid var(--border-a);
-  padding:5px 10px;border-radius:7px;text-decoration:none;white-space:nowrap;
+  padding:6px 12px;border-radius:7px;text-decoration:none;white-space:nowrap;
 }
 .hi-act a:hover{background:var(--accent-dim)}
 .empty-state{text-align:center;padding:56px 20px;color:var(--muted)}
@@ -758,11 +778,12 @@ select option{background:var(--surface2)}
     <div><h1>Irvison Dark</h1><p>Dark Studio</p></div>
   </div>
 
-  <div class="sb-credits">
+  <div class="sb-credits" id="sb-credits-box">
     <div class="cr-icon">🎙️</div>
-    <div>
+    <div style="flex:1">
       <div class="cr-label">Restam Hoje</div>
       <div class="cr-val" id="sb-credits">5/5</div>
+      <div class="cr-bar-wrap"><div class="cr-bar-fill" id="cr-bar-fill" style="width:100%"></div></div>
     </div>
   </div>
 
@@ -850,6 +871,15 @@ select option{background:var(--surface2)}
 
     <!-- GERAR -->
     <div class="tab-pane active" id="tab-generate">
+
+      <!-- LIMITE ATINGIDO BANNER -->
+      <div class="limit-banner" id="limit-banner">
+        <div class="lb-icon">🚫</div>
+        <div class="lb-title">Limite diário atingido!</div>
+        <div class="lb-sub">Você já gerou <strong id="lb-used">5</strong> de <strong id="lb-max">5</strong> áudios hoje.<br>O limite reseta automaticamente à meia-noite.</div>
+        <div class="lb-reset">⏱ Reset em: <span id="lb-countdown">--:--:--</span></div>
+      </div>
+
       <div class="stats-row">
         <div class="sc">
           <div class="sc-label">Áudios Hoje</div>
@@ -886,7 +916,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
               <div style="font-size:10px;color:var(--muted)" id="char-est"></div>
             </div>
             <button class="btn-gen" id="btn-gen" onclick="generateSingle()">🎙️ Gerar Áudio</button>
-            <div id="voz-selecionada-bar" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(0,229,212,.07);border:1px solid rgba(0,229,212,.2);border-radius:9px;font-size:12px;gap:8px">
+            <div id="voz-selecionada-bar" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(0,229,212,.07);border:1px solid rgba(0,229,212,.2);border-radius:9px;font-size:12px;align-items:center;gap:8px">
               <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#3d4f6e">Voz selecionada:</span>
               <span id="voz-selecionada-nome" style="font-weight:700;color:#00e5d4">—</span>
             </div>
@@ -952,30 +982,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
         <div>
           <div class="card" style="margin-bottom:14px">
             <div class="card-title">🎤 Voz para todos</div>
-
-            <!-- Favoritas toggle -->
-            <div style="display:flex;gap:6px;margin-bottom:10px">
-              <button id="btn-txt-fav" onclick="toggleTxtFavMode()" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;flex:1">
-                ⭐ <span id="txt-fav-label">Ver Favoritas</span> <span id="txt-fav-count" style="font-size:10px;background:rgba(255,180,0,.12);color:#ffb400;padding:1px 7px;border-radius:99px;border:1px solid rgba(255,180,0,.25)"></span>
-              </button>
-              <button onclick="clearTxtFavMode()" id="btn-txt-all" style="display:none;padding:7px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s">
-                Todas
-              </button>
-            </div>
-
-            <!-- select normal (hidden when fav mode) -->
-            <div id="txt-select-wrap">
-              <select id="txt-voice-sel" style="margin-bottom:0"><option value="">Carregando vozes...</option></select>
-            </div>
-
-            <!-- favoritas grid (hidden by default) -->
-            <div id="txt-fav-grid" style="display:none;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-a) transparent;display:none;flex-direction:column;gap:4px"></div>
-
-            <div id="txt-selected-voice-bar" style="display:none;margin-top:10px;padding:9px 13px;background:rgba(0,229,212,.07);border:1px solid rgba(0,229,212,.2);border-radius:9px;font-size:12px;display:none;align-items:center;gap:8px">
-              <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Selecionada:</span>
-              <span id="txt-sel-vname" style="font-weight:700;color:var(--accent)">—</span>
-            </div>
-
+            <select id="txt-voice-sel" style="margin-bottom:0"><option value="">Carregando vozes...</option></select>
             <div style="margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--muted);line-height:1.6">
               💡 Cada arquivo .txt será convertido em um áudio separado. Nomeie cada arquivo na lista ao lado.
             </div>
@@ -984,6 +991,11 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
           <button class="btn-primary" id="btn-txt-gen" onclick="generateAllTxt()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px var(--glow);transition:opacity .2s,box-shadow .2s">
             🎙️ Gerar Todos os Áudios
           </button>
+          <div id="txt-limit-banner" class="limit-banner" style="margin-top:12px">
+            <div class="lb-icon">🚫</div>
+            <div class="lb-title">Limite diário atingido!</div>
+            <div class="lb-sub">Sem áudios disponíveis hoje. Reset em: <span class="lb-reset" id="txt-lb-countdown">--:--:--</span></div>
+          </div>
 
           <div id="txt-gen-status" style="margin-top:12px;display:none;padding:12px;background:var(--surface2);border-radius:9px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-align:center"></div>
         </div>
@@ -994,25 +1006,15 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     <!-- HISTÓRICO -->
     <div class="tab-pane" id="tab-history">
       <div class="card" style="margin-bottom:14px;padding:14px 18px">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div class="card-title" style="margin:0">📋 Histórico Local</div>
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--muted);user-select:none">
-              <input type="checkbox" id="hist-sel-all" onchange="toggleSelectAll(this.checked)" style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer">
-              Selecionar tudo
-            </label>
-            <span id="hist-sel-count" style="display:none;font-size:11px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace"></span>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button id="btn-dl-selected" class="btn-sm teal" onclick="downloadSelected()" style="display:none;padding:7px 14px">⬇ Baixar Selecionados</button>
-            <button id="btn-dl-zip" class="btn-sm outline" onclick="downloadAllZip()" style="padding:7px 14px">📦 ZIP Tudo</button>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="card-title" style="margin:0">📋 Histórico Local</div>
+          <div style="display:flex;gap:8px">
             <button class="btn-sm outline" onclick="exportHistory()" style="padding:7px 14px">⬇ CSV</button>
             <button class="btn-sm danger" onclick="clearHistory()" style="padding:7px 14px">🗑 Limpar</button>
           </div>
         </div>
       </div>
       <div class="hist-list" id="hist-list"></div>
-      <div id="hist-dl-progress" style="display:none;margin-top:12px;padding:14px 18px;background:var(--surface);border:1px solid var(--border-a);border-radius:12px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-align:center"></div>
     </div>
 
     <!-- VOUCHER -->
@@ -1091,7 +1093,7 @@ async function init(){
   document.getElementById('sb-role').textContent=me.role||'user';
   document.getElementById('sb-av').textContent=(me.name||me.username||'U')[0].toUpperCase();
   await Promise.all([refreshStats(),loadVoices()]);
-  renderHistory();
+  renderHistory();renderQueue();
 }
 
 async function refreshStats(){
@@ -1099,7 +1101,6 @@ async function refreshStats(){
     const r=await fetch(`${API}/api/auth`,{headers:{Authorization:`Bearer ${token}`}});
     if(!r.ok){if(r.status===401)logout();return;}
     const d=await r.json();const u=d.user||{};
-    me={...me,...u}; // update me FIRST so limit checks use fresh data
     const cr=u.credits??0,td=u.daily?.audios??0,lim=u.lim_day??5,tot=u.total_audios??0;
     const rem=Math.max(0,lim-td);
     document.getElementById('s-cr') && (document.getElementById('s-cr').textContent=cr);
@@ -1110,12 +1111,79 @@ async function refreshStats(){
     document.getElementById('s-rem').textContent=rem;
     document.getElementById('s-tot').textContent=tot;
     document.getElementById('top-today').textContent=`${td} de ${lim} hoje`;
-    // Color the "restam" counter: red if 0, yellow if 1, green otherwise
-    const remEl=document.getElementById('s-rem');
-    if(remEl)remEl.style.color=rem===0?'var(--error)':rem===1?'var(--warning)':'var(--success)';
-    const topEl=document.getElementById('top-credits');
-    if(topEl)topEl.parentElement.querySelector('.pill-dot').style.background=rem===0?'var(--error)':rem===1?'var(--warning)':'var(--accent)';
+    me={...me,...u};
+    // ── LIMIT UI ──
+    updateLimitUI(rem,td,lim);
   }catch(e){}
+}
+
+function updateLimitUI(rem,used,max){
+  // Sidebar bar
+  const pct=max>0?Math.round((rem/max)*100):0;
+  const bar=document.getElementById('cr-bar-fill');
+  const box=document.getElementById('sb-credits-box');
+  if(bar){
+    bar.style.width=pct+'%';
+    bar.className='cr-bar-fill'+(pct===0?' empty':pct<=40?' low':'');
+  }
+  if(box) box.classList.toggle('exhausted',rem===0);
+  // Generate tab banner
+  const banner=document.getElementById('limit-banner');
+  const txtBanner=document.getElementById('txt-limit-banner');
+  const btnGen=document.getElementById('btn-gen');
+  const btnTxt=document.getElementById('btn-txt-gen');
+  if(rem===0){
+    if(banner){
+      document.getElementById('lb-used').textContent=used;
+      document.getElementById('lb-max').textContent=max;
+      banner.classList.add('show');
+    }
+    if(txtBanner) txtBanner.classList.add('show');
+    if(btnGen){btnGen.disabled=true;btnGen.style.opacity='0.35';btnGen.title='Limite diário atingido';}
+    if(btnTxt){btnTxt.disabled=true;btnTxt.style.opacity='0.35';}
+    startCountdown();
+  } else {
+    if(banner) banner.classList.remove('show');
+    if(txtBanner) txtBanner.classList.remove('show');
+    if(btnGen){btnGen.disabled=false;btnGen.style.opacity='';btnGen.title='';}
+    if(btnTxt){btnTxt.disabled=false;btnTxt.style.opacity='';}
+  }
+}
+
+let _countdownTimer=null;
+function startCountdown(){
+  if(_countdownTimer) return; // already running
+  function tick(){
+    const now=new Date();
+    const midnight=new Date();
+    midnight.setHours(24,0,0,0);
+    const diff=Math.max(0,midnight-now);
+    const h=String(Math.floor(diff/3600000)).padStart(2,'0');
+    const m=String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+    const s=String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+    const txt=`${h}:${m}:${s}`;
+    const el=document.getElementById('lb-countdown');
+    const el2=document.getElementById('txt-lb-countdown');
+    if(el) el.textContent=txt;
+    if(el2) el2.textContent=txt;
+    if(diff===0){clearInterval(_countdownTimer);_countdownTimer=null;refreshStats();}
+  }
+  tick();
+  _countdownTimer=setInterval(tick,1000);
+}
+
+function getDailyRemaining(){
+  const lim=me.lim_day??5;
+  const used=me.daily?.audios??0;
+  return Math.max(0,lim-used);
+}
+
+function alertLimitReached(){
+  const h=new Date();h.setHours(24,0,0,0);
+  const diff=Math.max(0,h-new Date());
+  const hh=String(Math.floor(diff/3600000)).padStart(2,'0');
+  const mm=String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+  alert(`🚫 Limite diário de ${me.lim_day??5} áudios atingido!\nReset em ${hh}h${mm}min (meia-noite).`);
 }
 
 // Tenta cada endpoint em ordem até achar um que responda 200
@@ -1193,9 +1261,11 @@ function selectVoice(id,el){
   el.classList.add("sel");
   const voz=allVoices.find(v=>(v.voice_id||v.id)===id);
   const nome=voz?.name||id;
+  // mostra barra de voz selecionada
   const bar=document.getElementById("voz-selecionada-bar");
   const nomeEl=document.getElementById("voz-selecionada-nome");
-  if(bar&&nomeEl){nomeEl.textContent=nome;bar.style.display='flex';bar.style.alignItems='center';}
+  if(bar&&nomeEl){nomeEl.textContent=nome;bar.style.display="flex";}
+  // atualiza também o banner da biblioteca
   const svb=document.getElementById('svb');
   const svbName=document.getElementById('svb-name');
   if(svbName)svbName.textContent=nome;
@@ -1219,12 +1289,8 @@ async function generateSingle(){
   const text=document.getElementById('text-input').value.trim();
   if(!text){showStatus('Digite um texto primeiro.','error');return;}
   if(!selectedVoice){showStatus('Selecione uma voz.','error');return;}
-  // Limite diário (não aplica a admin)
-  if(me.role!=='admin'){
-    const lim=me.lim_day??5;
-    const td=me.daily?.audios??0;
-    if(td>=lim){showStatus(`Limite diário atingido (${lim} áudios/dia). Resgate um voucher para mais créditos.`,'error');return;}
-  }
+  // ── VERIFICAR LIMITE ANTES DE CHAMAR A API ──
+  if(getDailyRemaining()<=0){alertLimitReached();return;}
   const btn=document.getElementById('btn-gen');
   btn.disabled=true;btn.textContent='⏳ Gerando...';
   document.getElementById('gen-prog').classList.add('show');
@@ -1238,25 +1304,19 @@ async function generateSingle(){
     });
     if(r.status===401){logout();return;}
     const d=await r.json();
-    if(!r.ok){showStatus(d.error||'Erro ao gerar.','error');btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');return;}
+    if(!r.ok){showStatus(d.error||'Erro ao gerar.','error');return;}
     if(d.audio_url){
       showAudio(d.audio_url,d.job_id||'—');
       saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
-      await refreshStats();
-      btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');
+      refreshStats();
     } else if(d.job_id){
-      lastJobId=d.job_id;
-      showStatus(`⏳ Processando... aguarde.`,'info');
-      // keep button disabled and progress bar visible during polling
-      pollAudio(d.job_id, btn);
+      lastJobId=d.job_id;showStatus(`Job ${d.job_id} em processamento...`,'info');
+      pollAudio(d.job_id);
     } else {
       showStatus('Resposta inesperada.','error');
-      btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');
     }
-  }catch(e){
-    showStatus('Erro de conexão.','error');
-    btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');
-  }
+  }catch(e){showStatus('Erro de conexão.','error');}
+  finally{btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');}
 }
 
 function showStatus(msg,type){
@@ -1281,21 +1341,11 @@ function copyJobId(){
   showStatus('Job ID copiado!','success');
 }
 
-function pollAudio(jobId, btn){
+function pollAudio(jobId){
   let att=0;
-  if(!btn)btn=document.getElementById('btn-gen');
   const t=setInterval(async()=>{
     att++;
-    // Animate status dots so user sees something is happening
-    const dots='.'.repeat((att%3)+1);
-    showStatus(`⏳ Processando${dots} (${att*3}s)`,'info');
-    if(att>60){
-      clearInterval(t);
-      showStatus('Timeout. Tente novamente.','error');
-      if(btn){btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';}
-      document.getElementById('gen-prog').classList.remove('show');
-      return;
-    }
+    if(att>60){clearInterval(t);showStatus('Timeout. Tente novamente.','error');return;}
     try{
       const r=await fetch(`${API}/api/generate-index?job_id=${jobId}`,{headers:{Authorization:`Bearer ${token}`}});
       const d=await r.json();
@@ -1303,85 +1353,13 @@ function pollAudio(jobId, btn){
         clearInterval(t);
         const audioUrl=d.audio_url||`${API}/api/v1/audio/download/${jobId}`;
         showAudio(audioUrl,jobId);
-        saveHistory({url:audioUrl,jobId,text:document.getElementById('text-input').value.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
-        await refreshStats();
-        if(btn){btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';}
-        document.getElementById('gen-prog').classList.remove('show');
+        saveHistory({url:d.audio_url,jobId,text:document.getElementById('text-input').value.substring(0,80),voice:selectedVoice,ts:new Date().toISOString()});
+        refreshStats();
       } else if(d.status==='error'||d.status==='failed'){
-        clearInterval(t);
-        showStatus('Falha na geração. Tente novamente.','error');
-        if(btn){btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';}
-        document.getElementById('gen-prog').classList.remove('show');
+        clearInterval(t);showStatus('Falha na geração.','error');
       }
     }catch(e){}
   },3000);
-}
-
-/* ── TXT VOICE FAV MODE ── */
-let txtFavMode=false;
-let txtSelectedVoiceId='';
-
-function getTxtSelectedVoice(){
-  if(txtFavMode) return txtSelectedVoiceId;
-  return document.getElementById('txt-voice-sel')?.value||'';
-}
-
-function toggleTxtFavMode(){
-  if(!favorites.length){
-    alert('⭐ Você ainda não marcou nenhuma voz como favorita.\nVá à Biblioteca de Vozes e favorite algumas vozes primeiro!');
-    return;
-  }
-  txtFavMode=true;
-  txtSelectedVoiceId='';
-  document.getElementById('txt-select-wrap').style.display='none';
-  document.getElementById('txt-fav-grid').style.display='flex';
-  document.getElementById('btn-txt-all').style.display='block';
-  const btn=document.getElementById('btn-txt-fav');
-  btn.style.background='var(--accent-dim)';
-  btn.style.borderColor='rgba(0,229,212,.3)';
-  btn.style.color='var(--accent)';
-  document.getElementById('txt-fav-label').textContent='Favoritas ativas';
-  renderTxtFavGrid();
-}
-
-function clearTxtFavMode(){
-  txtFavMode=false;txtSelectedVoiceId='';
-  document.getElementById('txt-select-wrap').style.display='block';
-  document.getElementById('txt-fav-grid').style.display='none';
-  document.getElementById('btn-txt-all').style.display='none';
-  const btn=document.getElementById('btn-txt-fav');
-  btn.style.background='var(--surface2)';btn.style.borderColor='var(--border)';btn.style.color='var(--muted)';
-  document.getElementById('txt-fav-label').textContent='Ver Favoritas';
-  document.getElementById('txt-selected-voice-bar').style.display='none';
-}
-
-function renderTxtFavGrid(){
-  const grid=document.getElementById('txt-fav-grid');
-  if(!grid)return;
-  const favVoices=allVoices.filter(v=>isFav(v.voice_id||v.id));
-  const cnt=document.getElementById('txt-fav-count');
-  if(cnt)cnt.textContent=favVoices.length||'';
-  if(!favVoices.length){grid.innerHTML=`<div style="font-size:12px;color:var(--muted);padding:10px;text-align:center">Nenhuma favorita encontrada.</div>`;return;}
-  grid.innerHTML=favVoices.map(v=>{
-    const vid=v.voice_id||v.id;
-    const isSel=txtSelectedVoiceId===vid;
-    return `<div onclick="selectTxtFavVoice('${escHtml(vid)}','${escHtml(v.name)}')"
-      style="padding:10px 13px;border-radius:9px;border:1px solid ${isSel?'var(--accent)':'var(--border)'};background:${isSel?'rgba(0,229,212,.07)':'var(--surface2)'};cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s;margin-bottom:4px">
-      <span style="font-size:14px">${isSel?'✓':'⭐'}</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isSel?'var(--accent)':'var(--text)'}">${escHtml(v.name)}</div>
-        <div style="font-size:10px;color:var(--muted);letter-spacing:.5px">${escHtml(v.labels?.language||v.language||'—')}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function selectTxtFavVoice(vid,vname){
-  txtSelectedVoiceId=vid;
-  renderTxtFavGrid();
-  const bar=document.getElementById('txt-selected-voice-bar');
-  const nm=document.getElementById('txt-sel-vname');
-  if(bar&&nm){nm.textContent=vname;bar.style.display='flex';}
 }
 
 /* ── TXT FILES ── */
@@ -1469,38 +1447,27 @@ function showTxtStatus(msg,show=true){
 }
 
 async function generateAllTxt(){
-  const voiceId=getTxtSelectedVoice();
+  const voiceId=document.getElementById('txt-voice-sel').value;
   if(!voiceId){alert('⚠️ Selecione uma voz antes de gerar.');return;}
   const pending=txtFiles.filter(f=>f.status==='ready'||f.status==='error');
   if(!pending.length){alert('⚠️ Nenhum arquivo pronto para gerar. Adicione arquivos .txt.');return;}
 
-  // Limite diário — bloqueia para não-admin
-  if(me.role!=='admin'){
-    const lim=me.lim_day??5;
-    const td=me.daily?.audios??0;
-    const restam=lim-td;
-    if(restam<=0){
-      showTxtStatus(`❌ Limite diário atingido (${lim} áudios/dia). Resgate um voucher para mais créditos.`);
-      document.getElementById('txt-gen-status').style.color='var(--error)';
-      document.getElementById('txt-gen-status').style.display='block';
-      return;
-    }
-    if(pending.length>restam){
-      const ok=confirm(`Você tem apenas ${restam} geração(ões) restante(s) hoje (limite: ${lim}/dia).\nSomente os primeiros ${restam} arquivo(s) serão gerados. Continuar?`);
-      if(!ok)return;
-      // Mark extras as skipped
-      pending.slice(restam).forEach(f=>{f.status='error';f.error=`Limite diário (${lim}/dia)`;});
-      renderTxtFiles();
-    }
+  // ── VERIFICAR LIMITE ANTES DE CHAMAR A API ──
+  const rem=getDailyRemaining();
+  if(rem<=0){alertLimitReached();return;}
+  if(pending.length>rem){
+    const ok=confirm(`⚠️ Você tem ${rem} geração${rem!==1?'ões':''} restante${rem!==1?'s':''} hoje.\nSerão gerados apenas os primeiros ${rem} arquivo${rem!==1?'s':''} da fila.\n\nDeseja continuar?`);
+    if(!ok)return;
+    pending.splice(rem); // trunca para o limite disponível
   }
+
   const btn=document.getElementById('btn-txt-gen');
   btn.disabled=true;btn.textContent='⏳ Gerando...';
 
-  const toProcess=txtFiles.filter(f=>f.status==='ready');
-  let done=0,total=toProcess.length;
+  let done=0,total=pending.length;
   showTxtStatus(`Gerando 0 de ${total}...`);
 
-  for(const f of toProcess){
+  for(const f of pending){
     const idx=txtFiles.indexOf(f);
     txtFiles[idx].status='generating';
     txtFiles[idx].error=null;
@@ -1624,81 +1591,15 @@ function exportHistory(){
 
 function renderHistory(){
   const list=document.getElementById('hist-list'),h=getHistory();
-  if(!h.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">🎵</div><p>Nenhum áudio gerado ainda.</p></div>`;updateHistSelUI();return;}
-  list.innerHTML=h.map((item,i)=>`<div class="hi" id="hi-${i}">
-    <label style="display:flex;align-items:center;padding:0 4px 0 2px;cursor:pointer;flex-shrink:0">
-      <input type="checkbox" class="hist-cb" data-idx="${i}" data-url="${item.url||''}"
-        onchange="onHistCheck()" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">
-    </label>
+  if(!h.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">🎵</div><p>Nenhum áudio gerado ainda.</p></div>`;return;}
+  list.innerHTML=h.map(item=>`<div class="hi">
     <div class="hi-icon">🎵</div>
     <div class="hi-info">
-      <div class="hi-text">${escHtml(item.text||'Áudio')}...</div>
-      <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · <span style="color:#00e5d4;font-weight:600">${escHtml(item.voice||'—')}</span></div>
+      <div class="hi-text">${item.text||'Áudio'}...</div>
+      <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · <span style="color:#00e5d4;font-weight:600">${item.voice||'—'}</span></div>
     </div>
-    <div class="hi-act">${item.url
-      ?`<a href="${item.url}" target="_blank" download="${escHtml((item.voice||'audio')+'-'+i)}.mp3">⬇ Baixar</a>
-         <a href="${item.url}" target="_blank" style="margin-left:6px;font-size:11px;color:var(--muted)">▶ Ouvir</a>`
-      :`<span style="font-size:10px;color:var(--muted)">ID: ${item.jobId||'—'}</span>`}
-    </div>
+    <div class="hi-act">${item.url?`<a href="${item.url}" target="_blank">▶ Ouvir</a>`:`<span style="font-size:10px;color:var(--muted)">ID: ${item.jobId||'—'}</span>`}</div>
   </div>`).join('');
-  updateHistSelUI();
-}
-
-function onHistCheck(){
-  // sync select-all checkbox state
-  const cbs=document.querySelectorAll('.hist-cb');
-  const checked=document.querySelectorAll('.hist-cb:checked');
-  const all=document.getElementById('hist-sel-all');
-  if(all){all.indeterminate=checked.length>0&&checked.length<cbs.length;all.checked=checked.length===cbs.length&&cbs.length>0;}
-  updateHistSelUI();
-}
-
-function toggleSelectAll(val){
-  document.querySelectorAll('.hist-cb').forEach(cb=>{cb.checked=val;});
-  updateHistSelUI();
-}
-
-function updateHistSelUI(){
-  const checked=[...document.querySelectorAll('.hist-cb:checked')];
-  const cntEl=document.getElementById('hist-sel-count');
-  const dlBtn=document.getElementById('btn-dl-selected');
-  if(checked.length>0){
-    if(cntEl){cntEl.textContent=`${checked.length} selecionado${checked.length>1?'s':''}`;cntEl.style.display='inline';}
-    if(dlBtn)dlBtn.style.display='inline-block';
-  } else {
-    if(cntEl)cntEl.style.display='none';
-    if(dlBtn)dlBtn.style.display='none';
-  }
-}
-
-async function downloadSelected(){
-  const checked=[...document.querySelectorAll('.hist-cb:checked')];
-  const urls=checked.map(cb=>cb.dataset.url).filter(u=>u);
-  if(!urls.length){alert('Nenhum áudio com URL para baixar.');return;}
-  await triggerDownloads(urls,'selecionados');
-}
-
-async function downloadAllZip(){
-  const h=getHistory();
-  const urls=h.map(i=>i.url).filter(u=>u);
-  if(!urls.length){alert('Nenhum áudio no histórico para baixar.');return;}
-  await triggerDownloads(urls,'todos');
-}
-
-async function triggerDownloads(urls, label){
-  const prog=document.getElementById('hist-dl-progress');
-  prog.style.display='block';
-  let done=0;
-  for(const url of urls){
-    prog.textContent=`⬇ Baixando ${done+1} de ${urls.length} ${label}...`;
-    const a=document.createElement('a');
-    a.href=url;a.download=`audio-${done+1}.mp3`;a.target='_blank';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    done++;
-    await new Promise(res=>setTimeout(res,700));
-  }
-  prog.textContent=`✅ ${done} arquivo${done>1?'s':''} enviado${done>1?'s':''} para download!`;
-  setTimeout(()=>{prog.style.display='none';},3500);
 }
 
 /* ── VOUCHER ── */
@@ -1738,9 +1639,6 @@ function saveFavorites(){
   const c=favorites.length;
   const b=document.getElementById('gen-fav-count');
   if(b)b.textContent=c?' ('+c+')':'';
-  const fc=document.getElementById('txt-fav-count');
-  if(fc)fc.textContent=c||'';
-  if(txtFavMode)renderTxtFavGrid();
 }
 function isFav(vid){return favorites.includes(vid);}
 function toggleFav(vid,btn,e){
@@ -1840,6 +1738,8 @@ async function generateFromLib(vid, vname, btnEl, e){
     alert('⚠️ Digite um texto na aba "Gerar Áudio" primeiro!');
     return;
   }
+  // ── VERIFICAR LIMITE ANTES DE CHAMAR A API ──
+  if(getDailyRemaining()<=0){alertLimitReached();return;}
   btnEl.disabled=true; btnEl.textContent='⏳...';
   const resultEl=document.getElementById('glr-'+vid);
   if(resultEl){resultEl.classList.remove('show');}
@@ -1887,6 +1787,14 @@ async function downloadFavoritesZip(){
   if(!favorites.length){alert('⭐ Marque algumas vozes como favoritas primeiro!');return;}
   const text=document.getElementById('text-input')?.value?.trim();
   if(!text){alert('⚠️ Digite um texto na aba "Gerar Áudio" antes de baixar em ZIP!');return;}
+  // ── VERIFICAR LIMITE ANTES DE CHAMAR A API ──
+  const rem=getDailyRemaining();
+  if(rem<=0){alertLimitReached();return;}
+  if(favorites.length>rem){
+    const ok=confirm(`⚠️ Você tem ${rem} geração${rem!==1?'ões':''} restante${rem!==1?'s':''} hoje.\nSerão gerados apenas os primeiros ${rem} favorito${rem!==1?'s':''} da lista.\n\nDeseja continuar?`);
+    if(!ok)return;
+    favorites.splice(rem);
+  }
   const btn=document.getElementById('btn-dl-zip');
   btn.disabled=true;btn.textContent='⏳ Gerando...';
   const urls=[];
