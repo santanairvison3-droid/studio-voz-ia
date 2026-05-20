@@ -1090,8 +1090,10 @@ async function init(){
   document.getElementById('sb-name').textContent=me.name||me.username||'Usuário';
   document.getElementById('sb-role').textContent=me.role||'user';
   document.getElementById('sb-av').textContent=(me.name||me.username||'U')[0].toUpperCase();
-  await Promise.all([refreshStats(),loadVoices()]);
+  await Promise.all([refreshStats(2,800),loadVoices()]);
   renderHistory();
+  // Auto-sync com backend a cada 30s para manter contadores sempre atualizados
+  setInterval(()=>refreshStats(1,500),30000);
 }
 
 // ── STATS HELPERS ──────────────────────────────────────────────────────────────
@@ -1152,15 +1154,16 @@ async function refreshStats(retries=2,delay=900){
       if(!r.ok){if(r.status===401)logout();return;}
       const d=await r.json();
       const u=d.user||{};
-      // Mescla no objeto me
+      // Salva o valor otimista LOCAL ANTES do spread sobrescrever
+      const localTd=me.daily_used??me.daily?.audios??0;
+      // Mescla no objeto me (pode sobrescrever daily_used com valor do backend)
       me={...me,...u};
       const cr=u.credits??me.credits??0;
       // daily_used é o campo real do Supabase — aceita também aliases legados
       const backendTd=u.daily_used??u.daily?.audios??u.audios_today??u.today_count??0;
       const lim=u.lim_day??u.daily_limit??me.lim_day??5;
       const tot=u.total_audios??u.total??me.total_audios??0;
-      // Nunca regredir abaixo do valor otimista já exibido
-      const localTd=me.daily_used??me.daily?.audios??0;
+      // Nunca regredir abaixo do valor otimista já exibido (localTd capturado ANTES do spread)
       const finalTd=Math.max(backendTd,localTd);
       const rem=Math.max(0,lim-finalTd);
       // Atualiza me com os valores finais — sempre via daily_used
@@ -1297,7 +1300,12 @@ async function generateSingle(){
     });
     if(r.status===401){logout();return;}
     const d=await r.json();
-    if(!r.ok){showStatus(d.error||'Erro ao gerar.','error');btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');return;}
+    if(!r.ok){
+      const errMsg=d.error||'Erro ao gerar.';
+      const m=errMsg.match(/usou\s+(\d+)\s+de\s+(\d+)/i)||errMsg.match(/(\d+)\s*\/\s*(\d+)/);
+      if(m&&r.status===429){const used=parseInt(m[1]),lLim=parseInt(m[2]);if(!isNaN(used)&&!isNaN(lLim)&&used>=(me.daily_used??0)){me.daily_used=used;me.lim_day=lLim;if(!me.daily)me.daily={audios:0};me.daily.audios=used;updateStatsUI(used,Math.max(0,lLim-used),lLim,me.credits??0,me.total_audios??0);}}
+      showStatus(errMsg,'error');btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');return;
+    }
     if(d.audio_url){
       showAudio(d.audio_url,d.job_id||'—');
       saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
