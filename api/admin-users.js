@@ -51,14 +51,14 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const { data, error } = await supabase
       .from('users')
-      .select('id, username, name, email, role, plan, status, created_at')
+      .select('id, username, name, email, role, plan, status, lim_day, credits, created_at')
       .order('created_at', { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json(data);
   }
 
   if (req.method === 'POST') {
-    const { action, id, username, name, email, pw, role, plan, status } = req.body;
+    const { action, id, username, name, email, pw, role, plan, status, lim_day } = req.body;
 
     if (action === 'create') {
       const { data, error } = await supabase
@@ -68,9 +68,11 @@ module.exports = async (req, res) => {
           name,
           email,
           pw,
-          role: role || 'user',
-          plan: plan || 'basico',
-          status: status || 'ativo'
+          role:    role    || 'user',
+          plan:    plan    || 'basico',
+          status:  status  || 'ativo',
+          lim_day: lim_day || 5,
+          credits: (lim_day || 5) * 30
         })
         .select()
         .single();
@@ -80,10 +82,14 @@ module.exports = async (req, res) => {
 
     if (action === 'update') {
       const updates = {};
-      if (status !== undefined) updates.status = status;
-      if (role   !== undefined) updates.role   = role;
-      if (plan   !== undefined) updates.plan   = plan;
-      if (pw     !== undefined) updates.pw     = pw;
+      if (status  !== undefined) updates.status  = status;
+      if (role    !== undefined) updates.role    = role;
+      if (plan    !== undefined) updates.plan    = plan;
+      if (pw      !== undefined) updates.pw      = pw;
+      if (lim_day !== undefined) {
+        updates.lim_day = lim_day;
+        updates.credits = lim_day * 30;
+      }
       const { error } = await supabase.from('users').update(updates).eq('id', id);
       if (error) return res.status(500).json({ error: error.message });
       return res.status(200).json({ ok: true });
