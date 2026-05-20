@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Studio Voz IA — Dashboard</title>
+<title>Irvison Dark — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -647,7 +647,7 @@ select option{background:var(--surface2)}
 <aside class="sidebar" id="sidebar">
   <div class="sb-brand">
     <div class="sb-icon">🎙️</div>
-    <div><h1>Studio Voz IA</h1><p>Dark Studio</p></div>
+    <div><h1>Irvison Dark</h1><p>Dark Studio</p></div>
   </div>
 
   <div class="sb-credits">
@@ -751,6 +751,10 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
               <div style="font-size:10px;color:var(--muted)" id="char-est"></div>
             </div>
             <button class="btn-gen" id="btn-gen" onclick="generateSingle()">🎙️ Gerar Áudio</button>
+            <div id="voz-selecionada-bar" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(0,229,212,.07);border:1px solid rgba(0,229,212,.2);border-radius:9px;font-size:12px;align-items:center;gap:8px">
+              <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#3d4f6e">Voz selecionada:</span>
+              <span id="voz-selecionada-nome" style="font-weight:700;color:#00e5d4">—</span>
+            </div>
             <div class="progress-bar" id="gen-prog"><div class="progress-fill"></div></div>
             <div class="status-msg" id="gen-status"></div>
             <div class="audio-result" id="audio-result">
@@ -1024,8 +1028,13 @@ function filterVoices(){
 
 function selectVoice(id,el){
   selectedVoice=id;
-  document.querySelectorAll('.vc').forEach(c=>c.classList.remove('sel'));
-  el.classList.add('sel');
+  document.querySelectorAll(".vc").forEach(c=>c.classList.remove("sel"));
+  el.classList.add("sel");
+  const voz=allVoices.find(v=>(v.voice_id||v.id)===id);
+  const nome=voz?.name||id;
+  const bar=document.getElementById("voz-selecionada-bar");
+  const nomeEl=document.getElementById("voz-selecionada-nome");
+  if(bar&&nomeEl){nomeEl.textContent=nome;bar.style.display="flex";}
 }
 
 function updateCounter(){
@@ -1061,7 +1070,7 @@ async function generateSingle(){
     if(!r.ok){showStatus(d.error||'Erro ao gerar.','error');return;}
     if(d.audio_url){
       showAudio(d.audio_url,d.job_id||'—');
-      saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:selectedVoice,ts:new Date().toISOString()});
+      saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
       refreshStats();
     } else if(d.job_id){
       lastJobId=d.job_id;showStatus(`Job ${d.job_id} em processamento...`,'info');
@@ -1255,7 +1264,7 @@ function renderHistory(){
     <div class="hi-icon">🎵</div>
     <div class="hi-info">
       <div class="hi-text">${item.text||'Áudio'}...</div>
-      <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · ${item.voice||'—'}</div>
+      <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · <span style="color:#00e5d4;font-weight:600">${item.voice||'—'}</span></div>
     </div>
     <div class="hi-act">${item.url?`<a href="${item.url}" target="_blank">▶ Ouvir</a>`:`<span style="font-size:10px;color:var(--muted)">ID: ${item.jobId||'—'}</span>`}</div>
   </div>`).join('');
