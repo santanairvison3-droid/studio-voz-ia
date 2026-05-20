@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio Voz IA — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#070910;
+  --surface:#0d1220;
+  --surface2:#131829;
+  --border:rgba(255,255,255,0.06);
+  --accent:#00e5d4;
+  --accent2:#0abfb0;
+  --accent-dim:rgba(0,229,212,0.12);
+  --glow:rgba(0,229,212,0.18);
+  --text:#e8edf5;
+  --muted:#3d4f6e;
+  --success:#00d68f;
+  --error:#ff4d72;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Space Grotesk',sans-serif;
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  overflow:hidden;
+}
+
+/* ── LEFT PANEL ── */
+.left-panel{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:44px 52px;
+  background:#070910;
+  overflow:hidden;
+}
+
+/* Animated mesh background */
+.left-panel::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 40%, rgba(0,229,212,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 70% at 80% 80%, rgba(0,100,180,0.05) 0%, transparent 60%);
+  pointer-events:none;
+}
+
+/* Fine grid */
+.left-panel::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(0,229,212,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,212,0.03) 1px, transparent 1px);
+  background-size:48px 48px;
+  pointer-events:none;
+}
+
+.brand{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.brand-icon{
+  width:46px;height:46px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:13px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  box-shadow:0 0 36px var(--glow);
+  animation:pulseIcon 4s ease-in-out infinite;
+  flex-shrink:0;
+}
+@keyframes pulseIcon{
+  0%,100%{box-shadow:0 0 36px var(--glow);}
+  50%{box-shadow:0 0 56px rgba(0,229,212,0.35), 0 0 100px rgba(0,229,212,0.1);}
+}
+.brand-text{display:flex;flex-direction:column;gap:2px}
+.brand-name{font-size:15px;font-weight:700;letter-spacing:0.5px;color:var(--text)}
+.brand-sub{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted)}
+
+/* Hero copy */
+.hero{
+  position:relative;
+  z-index:2;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--accent-dim);
+  border:1px solid rgba(0,229,212,0.2);
+  border-radius:99px;
+  padding:5px 14px;
+  font-size:11px;font-weight:600;
+  letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:24px;
+}
+.hero-eyebrow::before{
+  content:'';
+  width:6px;height:6px;
+  background:var(--accent);
+  border-radius:50%;
+  animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.hero h2{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(38px,3.5vw,56px);
+  font-weight:400;
+  line-height:1.1;
+  color:#fff;
+  margin-bottom:20px;
+}
+.hero h2 em{
+  font-style:italic;
+  background:linear-gradient(135deg,var(--accent) 0%,#60efff 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero p{
+  font-size:14px;
+  line-height:1.8;
+  color:var(--muted);
+  max-width:360px;
+}
+
+/* Feature dots */
+.features{
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.feat{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:13px;
+  color:#6a7f9e;
+}
+.feat-dot{
+  width:6px;height:6px;
+  background:var(--accent);
+  border-radius:50%;
+  opacity:.6;
+  flex-shrink:0;
+}
+
+/* Waveform */
+.waveform{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:80px;
+  display:flex;
+  align-items:flex-end;
+  gap:2px;
+  padding:0 0 0 0;
+  opacity:0.2;
+  z-index:1;
+}
+.bar{
+  flex:1;
+  background:linear-gradient(to top,var(--accent),transparent);
+  border-radius:2px 2px 0 0;
+  animation:wave var(--dur) ease-in-out infinite alternate;
+  animation-delay:var(--delay);
+}
+@keyframes wave{from{height:4px}to{height:var(--h)}}
+
+/* ── RIGHT PANEL ── */
+.right-panel{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--surface);
+  border-left:1px solid var(--border);
+  padding:48px 40px;
+  position:relative;
+}
+
+/* Subtle noise texture */
+.right-panel::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity:0.4;
+  pointer-events:none;
+}
+
+.form-wrap{
+  width:100%;
+  max-width:380px;
+  position:relative;
+  z-index:2;
+  animation:slideIn 0.6s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes slideIn{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.form-header{
+  margin-bottom:40px;
+}
+.form-header h1{
+  font-size:26px;
+  font-weight:700;
+  letter-spacing:-0.5px;
+  margin-bottom:8px;
+}
+.form-header p{
+  font-size:13px;
+  color:var(--muted);
+  line-height:1.6;
+}
+
+.form-field{
+  margin-bottom:18px;
+}
+.field-label{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:8px;
+}
+.field-label span{
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:#4d607e;
+}
+
+.input-wrap{
+  position:relative;
+}
+.input-icon{
+  position:absolute;
+  left:14px;top:50%;
+  transform:translateY(-50%);
+  font-size:15px;
+  opacity:0.4;
+  pointer-events:none;
+}
+input[type=text],input[type=password]{
+  width:100%;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 14px 14px 42px;
+  color:var(--text);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:15px;
+  outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;
+}
+input[type=text]:focus,input[type=password]:focus{
+  background:#161d30;
+  border-color:rgba(0,229,212,0.45);
+  box-shadow:0 0 0 4px rgba(0,229,212,0.08);
+}
+input::placeholder{color:var(--muted);font-size:14px}
+
+.btn-login{
+  width:100%;
+  margin-top:8px;
+  padding:16px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;
+  border-radius:12px;
+  color:#040709;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:1px;
+  cursor:pointer;
+  transition:transform 0.15s,box-shadow 0.2s,opacity 0.2s;
+  box-shadow:0 4px 28px var(--glow);
+  position:relative;
+  overflow:hidden;
+}
+.btn-login::after{
+  content:'';
+  position:absolute;
+  top:0;left:-120%;
+  width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent);
+  transform:skewX(-20deg);
+  transition:left 0.45s;
+}
+.btn-login:hover::after{left:160%}
+.btn-login:hover{box-shadow:0 8px 40px rgba(0,229,212,0.4);transform:translateY(-1px)}
+.btn-login:active{transform:scale(0.98)}
+.btn-login:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-login:disabled::after{display:none}
+
+.divider{
+  display:flex;align-items:center;gap:12px;
+  margin:24px 0;
+}
+.divider::before,.divider::after{
+  content:'';flex:1;height:1px;
+  background:var(--border);
+}
+.divider span{font-size:11px;color:var(--muted)}
+
+.msg{
+  margin-top:16px;
+  padding:13px 16px;
+  border-radius:10px;
+  font-size:13px;
+  text-align:center;
+  display:none;
+  animation:fadeMsg 0.25s ease;
+}
+@keyframes fadeMsg{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.msg.error{background:rgba(255,77,114,0.1);border:1px solid rgba(255,77,114,0.2);color:#ff7096;display:block}
+.msg.success{background:rgba(0,214,143,0.1);border:1px solid rgba(0,214,143,0.2);color:#2dffb4;display:block}
+
+.form-footer{
+  margin-top:28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.version{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  color:var(--muted);
+  letter-spacing:0.5px;
+}
+.version strong{color:rgba(0,229,212,0.6)}
+
+@media(max-width:768px){
+  body{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .left-panel{padding:28px 24px 32px;min-height:auto}
+  .hero h2{font-size:32px}
+  .features{display:none}
+  .right-panel{padding:32px 24px}
+}
+</style>
+</head>
+<body>
+
+<!-- LEFT: Brand/Hero panel -->
+<div class="left-panel">
+  <div class="waveform" id="waveform"></div>
+
+  <div class="brand">
+    <div class="brand-icon">🎙️</div>
+    <div class="brand-text">
+      <span class="brand-name">Studio Voz IA</span>
+      <span class="brand-sub">Irvison Dark Studio</span>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-eyebrow">Plataforma TTS</div>
+    <h2>Transforme texto<br>em <em>voz natural</em><br>com IA</h2>
+    <p>Gere áudios de alta qualidade com centenas de vozes em múltiplos idiomas. Rápido, preciso e sem complicações.</p>
+  </div>
+
+  <div class="features">
+    <div class="feat"><span class="feat-dot"></span>Centenas de vozes multilíngues</div>
+    <div class="feat"><span class="feat-dot"></span>Processamento em massa via .txt</div>
+    <div class="feat"><span class="feat-dot"></span>Histórico e download em MP3</div>
+  </div>
+</div>
+
+<!-- RIGHT: Login form -->
+<div class="right-panel">
+  <div class="form-wrap">
+    <div class="form-header">
+      <h1>Bem-vindo de volta</h1>
+      <p>Acesse sua conta para continuar produzindo.</p>
+    </div>
+
+    <div class="form-field">
+      <div class="field-label"><span>Usuário</span></div>
+      <div class="input-wrap">
+        <span class="input-icon">👤</span>
+        <input type="text" id="username" placeholder="seu_usuario" autocomplete="username" />
+      </div>
+    </div>
+
+    <div class="form-field">
+      <div class="field-label"><span>Senha</span></div>
+      <div class="input-wrap">
+        <span class="input-icon">🔒</span>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+    </div>
+
+    <button class="btn-login" id="btn-login" onclick="doLogin()">
+      Entrar na plataforma →
+    </button>
+
+    <div class="msg" id="msg"></div>
+
+    <div class="form-footer">
+      <div class="version">v1.0 · <strong>Dark Studio</strong></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://studio-voz-ia-irvison-s-projects.vercel.app';
+
+// Waveform
+const wf = document.getElementById('waveform');
+for (let i = 0; i < 120; i++) {
+  const b = document.createElement('div');
+  b.className = 'bar';
+  const h = (Math.random() * 65 + 10).toFixed(0);
+  b.style.cssText = `--h:${h}px;--dur:${(Math.random()*0.9+0.5).toFixed(2)}s;--delay:${(Math.random()*0.8).toFixed(2)}s`;
+  wf.appendChild(b);
+}
+
+async function sha256(msg) {
+  const buf = new TextEncoder().encode(msg);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function parseJWT(token) {
+  try { return JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); }
+  catch { return null; }
+}
+
+function showMsg(text, type = 'error') {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg ' + type;
+}
+
+// Auto-redirect
+const saved = localStorage.getItem('svia_token');
+if (saved) {
+  const u = parseJWT(saved);
+  if (u) window.location.href = u.role === 'admin' ? 'admin.html' : 'dashboard.html';
+}
+
+// Enter key
+document.getElementById('username').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('password').focus(); });
+document.getElementById('password').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
+
+async function doLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('btn-login');
+  if (!username || !password) { showMsg('Preencha usuário e senha.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Autenticando...';
+
+  try {
+    const pw = await sha256(password);
+    const res = await fetch(`${API}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, pw })
+    });
+    const data = await res.json();
+    if (!res.ok) { showMsg(data.error || 'Credenciais inválidas.'); return; }
+
+    localStorage.setItem('svia_token', data.token);
+    const user = parseJWT(data.token);
+    showMsg('Acesso liberado! Redirecionando...', 'success');
+    setTimeout(() => {
+      window.location.href = user?.role === 'admin' ? 'admin.html' : 'dashboard.html';
+    }, 900);
+  } catch (err) {
+    showMsg('Erro de conexão. Verifique sua internet.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Entrar na plataforma →';
+  }
+}
+</script>
+</body>
+</html>
