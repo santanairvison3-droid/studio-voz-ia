@@ -35,28 +35,21 @@ module.exports = async (req, res) => {
           'Content-Type': 'application/json'
         }
       });
-      const data = await r.json();
+      const rawText = await r.text();
+      console.log('[status] HTTP', r.status, '→', rawText.substring(0, 300));
+      let data;
+      try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
 
-      // Normaliza o status para o que o frontend espera (done / error)
-      let normalized = { ...data };
-      if (data.status) {
-        const s = String(data.status).toLowerCase();
-        if (s === 'completed' || s === 'done' || s === 'success' || s === 'finished') {
-          normalized.status = 'done';
-        } else if (s === 'failed' || s === 'error' || s === 'cancelled') {
-          normalized.status = 'error';
-        } else {
-          normalized.status = 'processing';
-        }
-      }
+      // Normaliza status
+      const s = String(data.status || '').toLowerCase();
+      if (s === 'completed' || s === 'done' || s === 'success' || s === 'finished') data.status = 'done';
+      else if (s === 'failed' || s === 'error' || s === 'cancelled') data.status = 'error';
+      else data.status = 'processing';
 
-      // Garante que audio_url aparece se tiver url/download_url/file_url
-      if (!normalized.audio_url) {
-        normalized.audio_url =
-          data.url || data.download_url || data.file_url || data.audio || null;
-      }
+      if (!data.audio_url)
+        data.audio_url = data.url || data.download_url || data.file_url || data.audio || null;
 
-      return res.status(r.status).json(normalized);
+      return res.status(200).json(data);
     } catch (err) {
       return res.status(500).json({ error: 'Erro ao verificar status', detail: err.message });
     }
@@ -68,7 +61,7 @@ module.exports = async (req, res) => {
     if (!text || !voice_id)
       return res.status(400).json({ error: 'text e voice_id são obrigatórios' });
 
-    // Limite: 5 áudios por dia por usuário
+    // Limite diário
     const today = new Date().toISOString().split('T')[0];
     const { count } = await supabase
       .from('audio_log')
@@ -83,39 +76,65 @@ module.exports = async (req, res) => {
     if (text.length > 150000)
       return res.status(400).json({ error: 'Texto muito longo. Máximo 150.000 caracteres.' });
 
-    try {
-      const r = await fetch('https://app.darkplanner.com.br/api/v1/audio/generate', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'X-API-Key': apiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ text, voice_id })
-      });
-
-      const data = await r.json();
-
-      // Log no Supabase
-      await supabase.from('audio_log').insert({
-        user_id:  user.sub || user.id,
-        text:     text.substring(0, 500),
-        voice_id,
-        job_id:   data.job_id || null,
-        status:   data.job_id ? 'pendente' : 'erro'
-      }).catch(() => {});
-
-      // Normaliza audio_url caso venha com outro nome
-      let normalized = { ...data };
-      if (!normalized.audio_url) {
-        normalized.audio_url =
-          data.url || data.download_url || data.file_url || data.audio || null;
+    // Tenta 3 formatos de autenticação diferentes que o DarkPlanner pode aceitar
+    const ATTEMPTS = [
+      {
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+      },
+      {
+        headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' }
+      },
+      {
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'X-API-Key': apiKey, 'Content-Type': 'application/json' }
       }
+    ];
 
-      return res.status(r.status).json(normalized);
-    } catch (err) {
-      return res.status(500).json({ error: 'Erro ao gerar áudio', detail: err.message });
+    let lastStatus = 0;
+    let lastBody = '';
+
+    for (const attempt of ATTEMPTS) {
+      try {
+        const r = await fetch('https://app.darkplanner.com.br/api/v1/audio/generate', {
+          method: 'POST',
+          headers: attempt.headers,
+          body: JSON.stringify({ text, voice_id })
+        });
+
+        const rawText = await r.text();
+        console.log('[generate] headers:', JSON.stringify(Object.keys(attempt.headers)), 'HTTP', r.status, '→', rawText.substring(0, 400));
+        lastStatus = r.status;
+        lastBody = rawText;
+
+        if (r.status >= 200 && r.status < 300) {
+          let data;
+          try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
+
+          // Log no Supabase
+          await supabase.from('audio_log').insert({
+            user_id: user.sub || user.id,
+            text: text.substring(0, 500),
+            voice_id,
+            job_id: data.job_id || null,
+            status: data.job_id ? 'pendente' : 'erro'
+          }).catch(() => {});
+
+          if (!data.audio_url)
+            data.audio_url = data.url || data.download_url || data.file_url || data.audio || null;
+
+          return res.status(200).json(data);
+        }
+      } catch (err) {
+        lastBody = err.message;
+      }
     }
+
+    // Todos falharam — retorna diagnóstico visível no frontend
+    let parsedBody = {};
+    try { parsedBody = JSON.parse(lastBody); } catch { parsedBody = { raw: lastBody }; }
+    return res.status(502).json({
+      error: `DarkPlanner recusou (HTTP ${lastStatus})`,
+      detail: parsedBody
+    });
   }
 
   return res.status(405).json({ error: 'Método não permitido' });
