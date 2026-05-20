@@ -89,83 +89,82 @@ module.exports = async (req, res) => {
 
     // ══════════════════════════════════════════════
     // BLOQUEIO REAL DE LIMITE DIÁRIO (via Supabase)
+    // Admin ignora o limite completamente
     // ══════════════════════════════════════════════
+    const isAdmin = user.role === 'admin';
+    let uid = user.sub || user.id;
     let supabase;
-    let uid;
-    try {
-      const { createClient } = require('@supabase/supabase-js');
-      supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_KEY
-      );
-      uid = user.sub || user.id;
-      const today = new Date().toISOString().split('T')[0];
 
-      // Busca dados atuais do usuário no banco
-      const { data: dbUser, error: userErr } = await supabase
-        .from('users')
-        .select('lim_day, daily_used, last_reset, status, plan')
-        .eq('id', uid)
-        .single();
+    if (!isAdmin) {
+      try {
+        const { createClient } = require('@supabase/supabase-js');
+        supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_KEY
+        );
+        const today = new Date().toISOString().split('T')[0];
 
-      if (userErr || !dbUser) {
-        return res.status(401).json({ error: 'Usuário não encontrado.' });
-      }
-
-      // Bloqueia usuário suspenso
-      if (dbUser.status === 'suspenso' || dbUser.status === 'suspended' || dbUser.status === 'blocked') {
-        return res.status(403).json({ error: 'Conta suspensa. Entre em contato com o suporte.' });
-      }
-
-      const limDay = dbUser.lim_day || 5;
-      const lastReset = dbUser.last_reset ? String(dbUser.last_reset).split('T')[0] : null;
-
-      // Zera contador se o dia mudou
-      if (lastReset !== today) {
-        await supabase
+        const { data: dbUser, error: userErr } = await supabase
           .from('users')
-          .update({ daily_used: 0, last_reset: today })
+          .select('lim_day, daily_used, last_reset, status, plan')
+          .eq('id', uid)
+          .single();
+
+        if (userErr || !dbUser) {
+          return res.status(401).json({ error: 'Usuário não encontrado.' });
+        }
+
+        if (dbUser.status === 'suspenso' || dbUser.status === 'suspended' || dbUser.status === 'blocked') {
+          return res.status(403).json({ error: 'Conta suspensa. Entre em contato com o suporte.' });
+        }
+
+        const limDay = dbUser.lim_day || 5;
+        const lastReset = dbUser.last_reset ? String(dbUser.last_reset).split('T')[0] : null;
+
+        // Zera contador se o dia mudou
+        if (lastReset !== today) {
+          await supabase.from('users')
+            .update({ daily_used: 0, last_reset: today })
+            .eq('id', uid);
+          dbUser.daily_used = 0;
+        }
+
+        const usedToday = dbUser.daily_used || 0;
+
+        if (usedToday >= limDay) {
+          return res.status(429).json({
+            error: `Limite diário atingido. Você usou ${usedToday} de ${limDay} áudios hoje.`,
+            used: usedToday,
+            limit: limDay,
+            reset: 'meia-noite'
+          });
+        }
+
+        // Incrementa ANTES de chamar a API
+        await supabase.from('users')
+          .update({ daily_used: usedToday + 1, last_reset: today })
           .eq('id', uid);
-        dbUser.daily_used = 0;
+
+        // Log no audio_log (não-bloqueante)
+        supabase.from('audio_log').insert({
+          user_id: uid,
+          text: text.substring(0, 500),
+          voice_id,
+          status: 'pendente'
+        }).catch(() => {});
+
+      } catch (e) {
+        console.warn('[supabase limite] erro:', e.message);
+        return res.status(500).json({ error: 'Erro ao verificar limite. Tente novamente.' });
       }
-
-      const usedToday = dbUser.daily_used || 0;
-
-      // BLOQUEIO: não deixa passar se atingiu o limite
-      if (usedToday >= limDay) {
-        return res.status(429).json({
-          error: `Limite diário atingido. Você usou ${usedToday} de ${limDay} áudios hoje.`,
-          used: usedToday,
-          limit: limDay,
-          reset: 'meia-noite'
-        });
-      }
-
-      // Incrementa ANTES de chamar a API (evita chamadas duplas em paralelo)
-      await supabase
-        .from('users')
-        .update({ daily_used: usedToday + 1, last_reset: today })
-        .eq('id', uid);
-
-      // Log no audio_log
-      supabase.from('audio_log').insert({
-        user_id: uid,
-        text: text.substring(0, 500),
-        voice_id,
-        status: 'pendente'
-      }).catch(() => {});
-
-    } catch (e) {
-      console.warn('[supabase limite] erro:', e.message);
-      // Se o Supabase falhar, NÃO deixa gerar (proteção conservadora)
-      return res.status(500).json({ error: 'Erro ao verificar limite. Tente novamente.' });
     }
+    // Admin: sem verificação de limite, vai direto para o DarkPlanner
 
     // ══════════════════════════════════════════════
     // Chama DarkPlanner
     // ══════════════════════════════════════════════
     try {
-      console.log('[generate] POST voice_id:', voice_id, 'chars:', text.length, 'user:', uid);
+      console.log('[generate] POST voice_id:', voice_id, 'chars:', text.length, 'user:', uid, 'admin:', isAdmin);
 
       const r = await fetch(`${DP_BASE}/generate`, {
         method: 'POST',
@@ -180,19 +179,15 @@ module.exports = async (req, res) => {
       try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
 
       if (!r.ok) {
-        // Se a API falhou, desconta o crédito de volta
-        try {
-          const { createClient } = require('@supabase/supabase-js');
-          const supabaseRollback = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL,
-            process.env.SUPABASE_SERVICE_KEY
-          );
-          const today = new Date().toISOString().split('T')[0];
-          const { data: cur } = await supabaseRollback.from('users').select('daily_used').eq('id', uid).single();
-          if (cur && cur.daily_used > 0) {
-            await supabaseRollback.from('users').update({ daily_used: cur.daily_used - 1 }).eq('id', uid);
-          }
-        } catch {}
+        // Se a API falhou e não é admin, desconta o crédito de volta
+        if (!isAdmin && supabase) {
+          try {
+            const { data: cur } = await supabase.from('users').select('daily_used').eq('id', uid).single();
+            if (cur && cur.daily_used > 0) {
+              await supabase.from('users').update({ daily_used: cur.daily_used - 1 }).eq('id', uid);
+            }
+          } catch {}
+        }
 
         return res.status(r.status).json({
           error: `DarkPlanner retornou ${r.status}`,
