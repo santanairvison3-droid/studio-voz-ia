@@ -1,89 +1,72 @@
 const jwt = require('jsonwebtoken');
 
-module.exports = async (req, res) => {
-  // Auth check
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token não fornecido' });
-  }
-  const token = authHeader.split(' ')[1];
-  try {
-    jwt.verify(token, process.env.JWT_SECRET);
-  } catch {
-    return res.status(401).json({ error: 'Token inválido' });
-  }
+const DP_BASE = 'https://app.darkplanner.com.br/api/v1/audio';
 
-  // ── GET: polling de status do job ──────────────────────────────
+module.exports = async (req, res) => {
+  // Auth — aceita header ou query string (para <audio src="...">)
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : (req.query.token || '');
+  if (!token) return res.status(401).json({ error: 'Token não fornecido' });
+  try { jwt.verify(token, process.env.JWT_SECRET); }
+  catch { return res.status(401).json({ error: 'Token inválido' }); }
+
+  const dpHeaders = {
+    'X-API-Key': process.env.DP_API_KEY,
+    'Content-Type': 'application/json'
+  };
+
+  // ── GET: checar status do job ─────────────────────────────────────
   if (req.method === 'GET') {
     const jobId = req.query.job_id;
     if (!jobId) return res.status(400).json({ error: 'job_id obrigatório' });
 
     try {
-      // Tenta o endpoint de status do DarkPlanner
-      const r = await fetch(`https://app.darkplanner.com.br/api/v1/audio/status/${jobId}`, {
-        headers: { 'X-API-Key': process.env.DP_API_KEY }
-      });
-      const raw = await r.text();
-      let data;
-      try { data = JSON.parse(raw); } catch { data = { raw }; }
+      // Passo 1: checar status
+      const statusRes = await fetch(`${DP_BASE}/status/${jobId}`, { headers: dpHeaders });
+      const statusData = await statusRes.json();
 
-      // Normaliza campos de status
-      const rawStatus = data.status || data.state || '';
-      const isDone = ['done','completed','finished','success'].includes(rawStatus.toLowerCase());
-      const isFail = ['error','failed','cancelled'].includes(rawStatus.toLowerCase());
+      if (statusData.status === 'completed') {
+        // Passo 2: buscar URL do áudio
+        const dlRes = await fetch(`${DP_BASE}/download/${jobId}`, { headers: dpHeaders });
+        const dlData = await dlRes.json();
 
-      // Normaliza URL do áudio
-      const audioUrl = data.audio_url || data.url || data.output || data.link || data.download_url || null;
-
-      return res.status(200).json({
-        status: isDone ? 'done' : isFail ? 'error' : 'processing',
-        audio_url: audioUrl,
-        job_id: jobId,
-        _raw: rawStatus
-      });
+        return res.status(200).json({
+          status: 'done',
+          audio_url: dlData.audio_url || null,
+          srt_url: dlData.srt_url || null,
+          job_id: jobId
+        });
+      } else if (statusData.status === 'failed' || statusData.status === 'error') {
+        return res.status(200).json({ status: 'error', job_id: jobId });
+      } else {
+        // ainda processando
+        return res.status(200).json({ status: 'processing', job_id: jobId });
+      }
     } catch (err) {
       return res.status(500).json({ error: 'Erro ao checar status: ' + err.message });
     }
   }
 
-  // ── POST: gerar áudio ──────────────────────────────────────────
+  // ── POST: gerar áudio ─────────────────────────────────────────────
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { text, voice_id } = req.body || {};
-  if (!text || !voice_id) {
-    return res.status(400).json({ error: 'text e voice_id são obrigatórios' });
-  }
+  if (!text || !voice_id) return res.status(400).json({ error: 'text e voice_id são obrigatórios' });
 
   try {
-    const response = await fetch('https://app.darkplanner.com.br/api/v1/audio/generate', {
+    const response = await fetch(`${DP_BASE}/generate`, {
       method: 'POST',
-      headers: {
-        'X-API-Key': process.env.DP_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ text, voice_id, id: voice_id })
+      headers: dpHeaders,
+      body: JSON.stringify({ text, voice_id })
     });
 
-    const raw = await response.text();
-    let data;
-    try { data = JSON.parse(raw); } catch { data = { raw }; }
-
-    // Normaliza campos de retorno
-    const audioUrl = data.audio_url || data.url || data.output || data.link || data.download_url || null;
-    const jobId    = data.job_id || data.task_id || data.request_id || (typeof data.id === 'string' ? data.id : null);
-    const rawStatus = data.status || '';
-    const isDone = ['done','completed','finished','success'].includes((rawStatus||'').toLowerCase());
-
-    if (audioUrl) {
-      return res.status(200).json({ audio_url: audioUrl, job_id: jobId });
-    } else if (isDone && jobId) {
-      return res.status(200).json({ audio_url: `https://app.darkplanner.com.br/api/v1/audio/download/${jobId}`, job_id: jobId });
-    } else if (jobId) {
-      return res.status(200).json({ job_id: jobId, status: rawStatus });
+    const data = await response.json();
+    // Resposta esperada: { success, job_id, status: "processing" }
+    if (data.job_id) {
+      return res.status(200).json({ job_id: data.job_id, status: data.status });
     } else {
       return res.status(200).json({
-        error: `DarkPlanner (HTTP ${response.status}) sem audio_url nem job_id`,
-        campos: Object.keys(data),
+        error: 'Sem job_id na resposta',
         resposta: data
       });
     }
