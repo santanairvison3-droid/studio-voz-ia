@@ -1,14 +1,9 @@
 const jwt = require('jsonwebtoken');
-const { createClient } = require('@supabase/supabase-js');
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
 
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // ── Auth ──
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer '))
     return res.status(401).json({ error: 'Token não fornecido' });
@@ -20,21 +15,30 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: 'Token inválido' });
   }
 
+  // ── Verifica DP_API_KEY ──
   const apiKey = process.env.DP_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({
+      error: 'DP_API_KEY não configurada no Vercel',
+      detail: 'Vá em Settings > Environment Variables e adicione DP_API_KEY'
+    });
+  }
+
   const DP_BASE = 'https://app.darkplanner.com.br/api/v1/audio';
   const dpHeaders = { 'X-API-Key': apiKey, 'Content-Type': 'application/json' };
 
-  // ── GET: status do job ──
+  // ── GET: polling de status ──
   if (req.method === 'GET') {
     const { job_id } = req.query;
     if (!job_id) return res.status(400).json({ error: 'job_id obrigatório' });
 
     try {
-      // 1. Verificar status
       const statusRes = await fetch(`${DP_BASE}/status/${job_id}`, { headers: dpHeaders });
       const statusText = await statusRes.text();
-      let statusData;
-      try { statusData = JSON.parse(statusText); } catch { statusData = { raw: statusText }; }
+      let statusData = {};
+      try { statusData = JSON.parse(statusText); } catch {}
+
+      console.log('[status]', job_id, '->', statusRes.status, statusText.substring(0, 200));
 
       const s = String(statusData.status || '').toLowerCase();
 
@@ -43,27 +47,22 @@ module.exports = async (req, res) => {
       }
 
       if (['completed', 'done', 'success', 'finished'].includes(s)) {
-        // 2. Buscar URL de download
-        try {
-          const dlRes = await fetch(`${DP_BASE}/download/${job_id}`, { headers: dpHeaders });
-          const dlText = await dlRes.text();
-          let dlData;
-          try { dlData = JSON.parse(dlText); } catch { dlData = {}; }
+        // Busca URL real de download
+        const dlRes = await fetch(`${DP_BASE}/download/${job_id}`, { headers: dpHeaders });
+        const dlText = await dlRes.text();
+        let dlData = {};
+        try { dlData = JSON.parse(dlText); } catch {}
 
-          const audioUrl = dlData.audio_url || dlData.url || dlData.download_url || dlData.file_url || null;
-          return res.status(200).json({
-            status: 'done',
-            job_id,
-            audio_url: audioUrl,
-            srt_url: dlData.srt_url || null,
-            srt_veo_url: dlData.srt_veo_url || null
-          });
-        } catch (dlErr) {
-          return res.status(200).json({ status: 'done', job_id, audio_url: null, error_download: dlErr.message });
-        }
+        console.log('[download]', job_id, '->', dlRes.status, dlText.substring(0, 200));
+
+        return res.status(200).json({
+          status: 'done',
+          job_id,
+          audio_url: dlData.audio_url || dlData.url || null,
+          srt_url: dlData.srt_url || null
+        });
       }
 
-      // Ainda processando
       return res.status(200).json({ status: 'processing', job_id });
 
     } catch (err) {
@@ -73,16 +72,24 @@ module.exports = async (req, res) => {
 
   // ── POST: gerar áudio ──
   if (req.method === 'POST') {
-    const { text, voice_id } = req.body;
+    const { text, voice_id } = req.body || {};
+
     if (!text || !voice_id)
-      return res.status(400).json({ error: 'text e voice_id são obrigatórios' });
+      return res.status(400).json({
+        error: 'text e voice_id são obrigatórios',
+        recebido: { text: !!text, voice_id: !!voice_id }
+      });
 
     if (text.length > 150000)
-      return res.status(400).json({ error: 'Texto muito longo. Máximo 150.000 caracteres.' });
+      return res.status(400).json({ error: 'Texto muito longo (máx 150.000 chars).' });
 
-    // Verifica limite diário
-    let usedToday = 0;
+    // Limite diário via Supabase (opcional — não trava se falhar)
     try {
+      const { createClient } = require('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_KEY
+      );
       const today = new Date().toISOString().split('T')[0];
       const { count } = await supabase
         .from('audio_log')
@@ -90,13 +97,25 @@ module.exports = async (req, res) => {
         .eq('user_id', user.sub || user.id)
         .gte('created_at', `${today}T00:00:00`)
         .lte('created_at', `${today}T23:59:59`);
-      usedToday = count || 0;
-    } catch (e) {}
+      const usedToday = count || 0;
+      if (usedToday >= (user.lim_day || 5))
+        return res.status(429).json({ error: `Limite diário atingido (${usedToday}/${user.lim_day || 5}).` });
 
-    if (usedToday >= (user.lim_day || 5))
-      return res.status(429).json({ error: 'Limite diário atingido.' });
+      // Log assíncrono (não bloqueia)
+      supabase.from('audio_log').insert({
+        user_id: user.sub || user.id,
+        text: text.substring(0, 500),
+        voice_id,
+        status: 'pendente'
+      }).catch(() => {});
+    } catch (e) {
+      console.warn('[supabase] ignorado:', e.message);
+    }
 
+    // Chama DarkPlanner
     try {
+      console.log('[generate] POST voice_id:', voice_id, 'chars:', text.length);
+
       const r = await fetch(`${DP_BASE}/generate`, {
         method: 'POST',
         headers: dpHeaders,
@@ -106,29 +125,26 @@ module.exports = async (req, res) => {
       const rawText = await r.text();
       console.log('[generate] HTTP', r.status, rawText.substring(0, 400));
 
-      let data;
+      let data = {};
       try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
 
-      const jobId = data.job_id || data.id || data.task_id || null;
-
-      // Log no Supabase
-      supabase.from('audio_log').insert({
-        user_id: user.sub || user.id,
-        text: text.substring(0, 500),
-        voice_id,
-        job_id: jobId,
-        status: jobId ? 'pendente' : 'erro'
-      }).catch(() => {});
+      if (!r.ok) {
+        return res.status(r.status).json({
+          error: `DarkPlanner retornou ${r.status}`,
+          detail: rawText.substring(0, 300)
+        });
+      }
 
       return res.status(200).json({
-        success: data.success || !!jobId,
-        job_id: jobId,
+        success: true,
+        job_id: data.job_id || data.id || null,
         status: data.status || 'processing',
-        message: data.message || 'Áudio em processamento'
+        message: data.message || 'Em processamento'
       });
 
     } catch (err) {
-      return res.status(500).json({ error: 'Erro ao gerar áudio', detail: err.message });
+      console.error('[generate] EXCEPTION:', err.message);
+      return res.status(500).json({ error: 'Erro ao contactar DarkPlanner', detail: err.message });
     }
   }
 
