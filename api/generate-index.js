@@ -146,25 +146,10 @@ module.exports = async (req, res) => {
           });
         }
 
-        // ── Incremento atômico — evita race condition de cliques simultâneos ──
-        // Só atualiza se daily_used ainda estiver abaixo do limite no banco.
-        // Se dois requests chegarem juntos, apenas um consegue o slot.
-        const { count: slotsAtualizados } = await supabase
-          .from('users')
+        // Incrementa ANTES de chamar a API (reserva o slot)
+        await supabase.from('users')
           .update({ daily_used: usedToday + 1, last_reset: today })
-          .eq('id', uid)
-          .lt('daily_used', limDay)
-          .select('id', { count: 'exact', head: true });
-
-        if (!slotsAtualizados || slotsAtualizados === 0) {
-          // Outro request paralelo já ocupou o último slot
-          return res.status(429).json({
-            error: `Limite diário atingido (${limDay} áudios/dia). Resgate um voucher para mais créditos.`,
-            used: limDay,
-            limit: limDay,
-            reset: 'meia-noite'
-          });
-        }
+          .eq('id', uid);
 
         // Log no audio_log (não-bloqueante)
         supabase.from('audio_log').insert({
