@@ -121,12 +121,17 @@ module.exports = async (req, res) => {
         const limDay = dbUser.lim_day || 5;
         const lastReset = dbUser.last_reset ? String(dbUser.last_reset).split('T')[0] : null;
 
-        // Zera contador se o dia mudou
+        // Zera contador se o dia mudou — restaura lim_day ao limite do plano
         if (lastReset !== today) {
+          const PLAN_LIMITS = { free: 3, basico: 5, premium: 10 };
+          const HARD_LIMIT = 50;
+          const planLim = PLAN_LIMITS[dbUser.plan] ?? 5;
+          const resetLim = Math.min(planLim, HARD_LIMIT);
           await supabase.from('users')
-            .update({ daily_used: 0, last_reset: today })
+            .update({ daily_used: 0, last_reset: today, lim_day: resetLim, extra_audios: 0 })
             .eq('id', uid);
           dbUser.daily_used = 0;
+          dbUser.lim_day = resetLim;
         }
 
         const usedToday = dbUser.daily_used || 0;
