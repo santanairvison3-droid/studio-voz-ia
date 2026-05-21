@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
 
+const HARD_LIMIT = 50; // limite máximo absoluto por dia para qualquer usuário
+
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
@@ -31,12 +33,50 @@ module.exports = async (req, res) => {
 
   const userId = user.sub || user.id;
 
-  // ── Vouchers hardcoded de créditos ──
-  const STATIC_VOUCHERS = {
-    'BETA2025':   { credits: 300,  type: 'credits' },
-    'PREMIUM500': { credits: 500,  type: 'credits' },
-    'VIP1000':    { credits: 1000, type: 'credits' },
-  };
+  // ── Helper: busca dados atuais do usuário com segurança ──
+  async function getUserData() {
+    if (!supabase) return null;
+    const { data, error } = await supabase
+      .from('users')
+      .select('credits, lim_day, daily_used, extra_audios')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error) { console.warn('[voucher-redeem] getUserData error:', error.message); return null; }
+    return data;
+  }
+
+  // ── Helper: adiciona créditos ao usuário ──
+  async function addCredits(amount) {
+    if (!supabase || !amount) return;
+    try {
+      const userData = await getUserData();
+      const current = userData?.credits || 0;
+      await supabase.from('users').update({ credits: current + amount }).eq('id', userId);
+    } catch(e) {
+      console.warn('[voucher-redeem] addCredits error:', e.message);
+    }
+  }
+
+  // ── Helper: adiciona áudios extras ao usuário (limite hard: 50/dia) ──
+  async function addExtraAudios(amount) {
+    if (!supabase || !amount) return 0;
+    try {
+      const userData = await getUserData();
+      const currentLim = userData?.lim_day || 5;
+      const currentExtra = userData?.extra_audios || 0;
+      // Novo limite = atual + extras, mas nunca passa de HARD_LIMIT
+      const newLim = Math.min(currentLim + amount, HARD_LIMIT);
+      const actualAdded = newLim - currentLim;
+      await supabase.from('users').update({
+        lim_day: newLim,
+        extra_audios: currentExtra + actualAdded
+      }).eq('id', userId);
+      return actualAdded;
+    } catch(e) {
+      console.warn('[voucher-redeem] addExtraAudios error:', e.message);
+      return 0;
+    }
+  }
 
   // ── Código de acesso 30 dias ──
   const isAccess30 = upperCode.startsWith('ACC') || upperCode.startsWith('TRIAL') || upperCode.startsWith('FREE');
@@ -49,7 +89,7 @@ module.exports = async (req, res) => {
       .select('*')
       .eq('code', upperCode)
       .eq('used', false)
-      .single();
+      .maybeSingle();
 
     if (accErr || !accCode)
       return res.status(404).json({ error: 'Código inválido ou já utilizado.' });
@@ -59,6 +99,7 @@ module.exports = async (req, res) => {
 
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + 30);
+    const planLimit = Math.min(accCode.monthly_limit || 5, HARD_LIMIT);
 
     await supabase.from('access_codes').update({
       used: true, used_by: userId, used_at: new Date().toISOString()
@@ -67,74 +108,53 @@ module.exports = async (req, res) => {
     await supabase.from('users').update({
       plan: 'trial30',
       valid_until: validUntil.toISOString(),
-      monthly_limit: accCode.monthly_limit || 5
+      lim_day: planLimit,
+      monthly_limit: planLimit
     }).eq('id', userId).catch(() => {});
 
-    const payload = { ...user, plan: 'trial30', valid_until: validUntil.toISOString(), lim_day: 5, monthly_limit: accCode.monthly_limit || 5 };
+    const payload = { ...user, plan: 'trial30', valid_until: validUntil.toISOString(), lim_day: planLimit };
     delete payload.iat; delete payload.exp;
     const newToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '35d' });
 
     return res.status(200).json({
       ok: true,
-      message: `✅ Acesso de 30 dias ativado! Válido até ${validUntil.toLocaleDateString('pt-BR')}.`,
+      message: `✅ Acesso de 30 dias ativado! Válido até ${validUntil.toLocaleDateString('pt-BR')}. Limite: ${planLimit} áudios/dia.`,
       plan: 'trial30',
       valid_until: validUntil.toISOString(),
+      lim_day: planLimit,
       new_token: newToken
     });
   }
 
-  // ── Vouchers estáticos de créditos ──
+  // ── Vouchers hardcoded de créditos ──
+  const STATIC_VOUCHERS = {
+    'BETA2025':   { credits: 300,  type: 'credits' },
+    'PREMIUM500': { credits: 500,  type: 'credits' },
+    'VIP1000':    { credits: 1000, type: 'credits' },
+  };
+
   if (STATIC_VOUCHERS[upperCode]) {
     const v = STATIC_VOUCHERS[upperCode];
 
-    // Verifica se já usou — com tratamento de erro robusto
     if (supabase) {
-      try {
-        const { data: usedVoucher, error: uvErr } = await supabase
-          .from('used_vouchers')
-          .select('id')
-          .eq('code', upperCode)
-          .eq('user_id', userId)
-          .maybeSingle(); // maybeSingle: não lança erro se não achar
+      // Verifica se já usou
+      const { data: usedVoucher, error: uvErr } = await supabase
+        .from('used_vouchers')
+        .select('id')
+        .eq('code', upperCode)
+        .eq('user_id', userId)
+        .maybeSingle();
 
-        if (uvErr) {
-          // Tabela pode não existir — loga e ignora (não bloqueia o resgate)
-          console.warn('[voucher-redeem] used_vouchers check error (ignorado):', uvErr.message);
-        } else if (usedVoucher) {
-          return res.status(400).json({ error: 'Você já usou este voucher.' });
-        }
-      } catch(e) {
-        console.warn('[voucher-redeem] used_vouchers exception (ignorado):', e.message);
-      }
+      if (!uvErr && usedVoucher)
+        return res.status(400).json({ error: 'Você já usou este voucher.' });
 
-      // Registra uso — com try/catch para não quebrar se tabela não existir
-      try {
-        await supabase.from('used_vouchers').insert({
-          code: upperCode,
-          user_id: userId,
-          credits: v.credits,
-          used_at: new Date().toISOString()
-        });
-      } catch(e) {
-        console.warn('[voucher-redeem] used_vouchers insert error (ignorado):', e.message);
-      }
+      // Registra uso
+      await supabase.from('used_vouchers').insert({
+        code: upperCode, user_id: userId, credits: v.credits, used_at: new Date().toISOString()
+      }).catch(e => console.warn('[voucher-redeem] used_vouchers insert:', e.message));
 
-      // Adiciona créditos ao usuário na tabela users
-      try {
-        // Busca créditos atuais
-        const { data: userData } = await supabase
-          .from('users')
-          .select('credits')
-          .eq('id', userId)
-          .single();
-
-        const currentCredits = userData?.credits || 0;
-        await supabase.from('users').update({
-          credits: currentCredits + v.credits
-        }).eq('id', userId);
-      } catch(e) {
-        console.warn('[voucher-redeem] credits update error:', e.message);
-      }
+      // Adiciona créditos
+      await addCredits(v.credits);
     }
 
     return res.status(200).json({
@@ -145,52 +165,63 @@ module.exports = async (req, res) => {
   }
 
   // ── Vouchers dinâmicos no Supabase ──
-  if (supabase) {
-    try {
-      const { data: voucher, error: vErr } = await supabase
-        .from('vouchers')
-        .select('*')
-        .eq('code', upperCode)
-        .eq('used', false)
-        .maybeSingle();
+  if (!supabase)
+    return res.status(500).json({ error: 'Banco de dados não configurado.' });
 
-      if (vErr) {
-        console.error('[voucher-redeem] vouchers query error:', vErr.message);
-        return res.status(500).json({ error: 'Erro ao verificar voucher: ' + vErr.message });
-      }
+  const { data: voucher, error: vErr } = await supabase
+    .from('vouchers')
+    .select('*')
+    .eq('code', upperCode)
+    .eq('used', false)
+    .maybeSingle();
 
-      if (voucher) {
-        // Marca como usado
-        await supabase.from('vouchers').update({
-          used: true, used_by: userId, used_at: new Date().toISOString()
-        }).eq('id', voucher.id);
-
-        // Atualiza plano do usuário — usa campo correto do banco
-        // O campo pode ser 'plan', 'plano', 'tier' — tenta os três
-        const planValue = voucher.plan || voucher.plano || voucher.tier || null;
-        if (planValue) {
-          await supabase.from('users').update({ plan: planValue }).eq('id', userId).catch(() => {});
-        }
-
-        // Se tiver créditos no voucher, adiciona
-        if (voucher.credits) {
-          const { data: userData } = await supabase.from('users').select('credits').eq('id', userId).single().catch(()=>({data:null}));
-          const currentCredits = userData?.credits || 0;
-          await supabase.from('users').update({ credits: currentCredits + voucher.credits }).eq('id', userId).catch(()=>{});
-        }
-
-        return res.status(200).json({
-          ok: true,
-          message: `✅ Voucher resgatado! ${planValue ? `Plano ${planValue} ativado.` : `+${voucher.credits||0} créditos adicionados.`}`,
-          plan: planValue,
-          credits: voucher.credits || 0
-        });
-      }
-    } catch(e) {
-      console.error('[voucher-redeem] exception:', e.message);
-      return res.status(500).json({ error: 'Erro interno ao processar voucher.' });
-    }
+  if (vErr) {
+    console.error('[voucher-redeem] vouchers query error:', vErr.message);
+    return res.status(500).json({ error: 'Erro ao verificar voucher: ' + vErr.message });
   }
 
-  return res.status(404).json({ error: 'Código inválido ou já utilizado.' });
+  if (!voucher)
+    return res.status(404).json({ error: 'Código inválido ou já utilizado.' });
+
+  // Marca como usado
+  await supabase.from('vouchers').update({
+    used: true, used_by: userId, used_at: new Date().toISOString()
+  }).eq('id', voucher.id);
+
+  let responseMsg = '✅ Voucher resgatado!';
+  let responsePlan = null;
+  let responseCredits = 0;
+  let responseExtraAudios = 0;
+
+  // Atualiza plano se tiver
+  const planValue = voucher.plan || voucher.plano || voucher.tier || null;
+  if (planValue) {
+    const planLimits = { free: 3, basico: 5, premium: 10 };
+    const newLim = Math.min(planLimits[planValue] ?? 5, HARD_LIMIT);
+    await supabase.from('users').update({ plan: planValue, lim_day: newLim }).eq('id', userId).catch(() => {});
+    responsePlan = planValue;
+    responseMsg += ` Plano ${planValue} ativado (${newLim} áudios/dia).`;
+  }
+
+  // Adiciona créditos se tiver
+  if (voucher.credits && voucher.credits > 0) {
+    await addCredits(voucher.credits);
+    responseCredits = voucher.credits;
+    responseMsg += ` +${voucher.credits} créditos adicionados.`;
+  }
+
+  // Adiciona áudios extras se tiver (campo extra_audios no voucher)
+  if (voucher.extra_audios && voucher.extra_audios > 0) {
+    responseExtraAudios = await addExtraAudios(voucher.extra_audios);
+    if (responseExtraAudios > 0)
+      responseMsg += ` +${responseExtraAudios} áudio(s) extra(s) liberado(s) hoje.`;
+  }
+
+  return res.status(200).json({
+    ok: true,
+    message: responseMsg,
+    plan: responsePlan,
+    credits: responseCredits,
+    extra_audios: responseExtraAudios
+  });
 };
