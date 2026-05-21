@@ -906,27 +906,15 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
 
         <div>
           <div class="card">
-            <div class="card-title">🎤 Vozes <span id="v-count-lbl"></span></div>
-            <!-- Tabs Favoritas / Todas -->
-            <div style="display:flex;gap:6px;margin-bottom:10px">
-              <button id="btn-gen-fav" onclick="setGenVoiceMode('fav')" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;flex:1">
-                ⭐ Favoritas <span id="gen-fav-count" style="font-size:10px;background:rgba(255,180,0,.12);color:#ffb400;padding:1px 7px;border-radius:99px;border:1px solid rgba(255,180,0,.25)"></span>
-              </button>
-              <button id="btn-gen-all" onclick="setGenVoiceMode('all')" style="padding:7px 12px;border-radius:8px;background:rgba(0,229,212,.1);border:1px solid rgba(0,229,212,.3);color:var(--accent);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s">
-                Todas
-              </button>
+            <div class="card-title">🎤 Vozes <span id="v-count-lbl"></span>
+              <button onclick="goTab('voices',document.querySelectorAll('.nav-item')[1]);setTimeout(function(){setGenderFilter('fav',document.querySelector('.vf-btn[data-gender=fav]'))},150)" style="background:rgba(255,180,0,.12);border:1px solid rgba(255,180,0,.3);color:#ffb400;border-radius:7px;padding:3px 10px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">⭐ Favoritas<span id="gen-fav-count"></span></button>
             </div>
-            <!-- Grid de favoritas (modo fav) -->
-            <div id="gen-fav-grid" style="display:none;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-a) transparent;flex-direction:column;gap:4px"></div>
-            <!-- Search + grid normal (modo all) -->
-            <div id="gen-all-wrap">
-              <div class="voice-search-wrap">
-                <span class="voice-search-icon">🔍</span>
-                <input class="voice-search" id="voice-search" type="text" placeholder="Buscar voz..." oninput="filterVoices()">
-              </div>
-              <div class="voices-grid" id="voices-grid">
-                <div class="voice-loading">Carregando vozes...</div>
-              </div>
+            <div class="voice-search-wrap">
+              <span class="voice-search-icon">🔍</span>
+              <input class="voice-search" id="voice-search" type="text" placeholder="Buscar voz..." oninput="filterVoices()">
+            </div>
+            <div class="voices-grid" id="voices-grid">
+              <div class="voice-loading">Carregando vozes...</div>
             </div>
             <div style="font-size:9px;color:var(--muted);margin-top:8px;text-align:right;font-family:'JetBrains Mono',monospace" id="v-count"></div>
           </div>
@@ -1601,7 +1589,7 @@ async function generateAllTxt(){
       if(d.audio_url){
         txtFiles[idx].status='done';
         txtFiles[idx].audioUrl=d.audio_url;
-        saveHistory({url:d.audio_url,jobId:d.job_id,title:f.audioName||f.name.replace(/\.txt$/i,''),text:f.text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||voiceId),ts:new Date().toISOString()});
+        saveHistory({url:d.audio_url,jobId:d.job_id,text:f.text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||voiceId),ts:new Date().toISOString()});
         incrementLocalStats(); // atualiza contador IMEDIATAMENTE
       } else if(d.job_id){
         // polling
@@ -1609,7 +1597,7 @@ async function generateAllTxt(){
         if(url){
           txtFiles[idx].status='done';
           txtFiles[idx].audioUrl=url;
-          saveHistory({url,jobId:d.job_id,title:f.audioName||f.name.replace(/\.txt$/i,''),text:f.text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||voiceId),ts:new Date().toISOString()});
+          saveHistory({url,jobId:d.job_id,text:f.text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||voiceId),ts:new Date().toISOString()});
           incrementLocalStats(); // atualiza contador IMEDIATAMENTE
         } else {
           txtFiles[idx].status='error';txtFiles[idx].error='Timeout';
@@ -1715,11 +1703,11 @@ function renderHistory(){
     </label>
     <div class="hi-icon">🎵</div>
     <div class="hi-info">
-      <div class="hi-text">${escHtml(item.title||item.text||'Áudio')}${item.title?'':'...'}</div>
+      <div class="hi-text">${escHtml(item.text||'Áudio')}...</div>
       <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · <span style="color:#00e5d4;font-weight:600">${escHtml(item.voice||'—')}</span></div>
     </div>
     <div class="hi-act">${item.url
-      ?`<a href="${item.url}" target="_blank" download="${escHtml(item.title||item.voice||'audio')}.mp3">⬇ Baixar</a>
+      ?`<a href="${item.url}" target="_blank" download="${escHtml((item.voice||'audio')+'-'+i)}.mp3">⬇ Baixar</a>
          <a href="${item.url}" target="_blank" style="margin-left:6px;font-size:11px;color:var(--muted)">▶ Ouvir</a>`
       :`<span style="font-size:10px;color:var(--muted)">ID: ${item.jobId||'—'}</span>`}
     </div>
@@ -1816,127 +1804,14 @@ function goTab(name,el){
 let libFilter='all', libGender='all';
 let favorites=JSON.parse(localStorage.getItem('svia_favs')||'[]');
 
-// ── GERAR ÁUDIO: modo Favoritas / Todas ──
-let genVoiceMode='all';
-
-function setGenVoiceMode(mode){
-  genVoiceMode=mode;
-  const favBtn=document.getElementById('btn-gen-fav');
-  const allBtn=document.getElementById('btn-gen-all');
-  const favGrid=document.getElementById('gen-fav-grid');
-  const allWrap=document.getElementById('gen-all-wrap');
-  if(mode==='fav'){
-    favBtn.style.background='rgba(255,180,0,.12)';favBtn.style.borderColor='rgba(255,180,0,.3)';favBtn.style.color='#ffb400';
-    allBtn.style.background='var(--surface2)';allBtn.style.borderColor='var(--border)';allBtn.style.color='var(--muted)';
-    favGrid.style.display='flex';favGrid.style.flexDirection='column';
-    allWrap.style.display='none';
-    renderGenFavGrid();
-  } else {
-    allBtn.style.background='rgba(0,229,212,.1)';allBtn.style.borderColor='rgba(0,229,212,.3)';allBtn.style.color='var(--accent)';
-    favBtn.style.background='var(--surface2)';favBtn.style.borderColor='var(--border)';favBtn.style.color='var(--muted)';
-    favGrid.style.display='none';
-    allWrap.style.display='block';
-  }
-}
-
-function renderGenFavGrid(){
-  const grid=document.getElementById('gen-fav-grid');
-  if(!grid)return;
-  const favVoices=allVoices.filter(v=>isFav(v.voice_id||v.id));
-  if(!favVoices.length){
-    grid.innerHTML=`<div style="font-size:12px;color:var(--muted);padding:10px;text-align:center">Nenhuma favorita ainda.<br><span style="font-size:10px">Favorite vozes na Biblioteca de Vozes.</span></div>`;
-    return;
-  }
-  grid.innerHTML=favVoices.map(v=>{
-    const vid=v.voice_id||v.id;
-    const isSel=selectedVoice===vid;
-    return `<div onclick="selectVoiceFromGen('${escHtml(vid)}','${escHtml(v.name)}')"
-      style="padding:10px 13px;border-radius:9px;border:1px solid ${isSel?'var(--accent)':'var(--border)'};background:${isSel?'rgba(0,229,212,.07)':'var(--surface2)'};cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s;margin-bottom:4px">
-      <span style="font-size:14px">${isSel?'✓':'⭐'}</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isSel?'var(--accent)':'var(--text)'}">${escHtml(v.name)}</div>
-        <div style="font-size:10px;color:var(--muted);letter-spacing:.5px">${escHtml(v.labels?.language||v.language||'—')}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function selectVoiceFromGen(vid,vname){
-  selectedVoice=vid;
-  // atualiza grade normal também
-  document.querySelectorAll('.vc').forEach(c=>c.classList.remove('sel'));
-  const vcEl=document.querySelector(`.vc[data-vid="${vid}"]`);
-  if(vcEl)vcEl.classList.add('sel');
-  // atualiza barra de voz selecionada
-  const bar=document.getElementById('voz-selecionada-bar');
-  const nomeEl=document.getElementById('voz-selecionada-nome');
-  if(bar&&nomeEl){nomeEl.textContent=vname;bar.style.display='flex';}
-  // re-renderiza grid de favoritas para mostrar checkmark
-  renderGenFavGrid();
-}
-
-// ── GERAR ÁUDIO: modo Favoritas / Todas ──
-let genVoiceMode='all';
-
-function setGenVoiceMode(mode){
-  genVoiceMode=mode;
-  const favBtn=document.getElementById('btn-gen-fav');
-  const allBtn=document.getElementById('btn-gen-all');
-  const favGrid=document.getElementById('gen-fav-grid');
-  const allWrap=document.getElementById('gen-all-wrap');
-  if(mode==='fav'){
-    favBtn.style.background='rgba(255,180,0,.12)';favBtn.style.borderColor='rgba(255,180,0,.3)';favBtn.style.color='#ffb400';
-    allBtn.style.background='var(--surface2)';allBtn.style.borderColor='var(--border)';allBtn.style.color='var(--muted)';
-    favGrid.style.display='flex';favGrid.style.flexDirection='column';
-    allWrap.style.display='none';
-    renderGenFavGrid();
-  } else {
-    allBtn.style.background='rgba(0,229,212,.1)';allBtn.style.borderColor='rgba(0,229,212,.3)';allBtn.style.color='var(--accent)';
-    favBtn.style.background='var(--surface2)';favBtn.style.borderColor='var(--border)';favBtn.style.color='var(--muted)';
-    favGrid.style.display='none';
-    allWrap.style.display='block';
-  }
-}
-
-function renderGenFavGrid(){
-  const grid=document.getElementById('gen-fav-grid');
-  if(!grid)return;
-  const favVoices=allVoices.filter(v=>isFav(v.voice_id||v.id));
-  if(!favVoices.length){
-    grid.innerHTML='<div style="font-size:12px;color:var(--muted);padding:10px;text-align:center">Nenhuma favorita ainda.<br><span style=\"font-size:10px\">Favorite vozes na Biblioteca de Vozes.</span></div>';
-    return;
-  }
-  grid.innerHTML=favVoices.map(v=>{
-    const vid=v.voice_id||v.id;
-    const isSel=selectedVoice===vid;
-    const bg=isSel?'rgba(0,229,212,.07)':'var(--surface2)';
-    const border=isSel?'var(--accent)':'var(--border)';
-    const clr=isSel?'var(--accent)':'var(--text)';
-    const lang=escHtml(v.labels&&v.labels.language||v.language||'—');
-    return '<div onclick="selectVoiceFromGen(\'' + escHtml(vid) + '\',\'' + escHtml(v.name) + '\')" style="padding:10px 13px;border-radius:9px;border:1px solid '+border+';background:'+bg+';cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s;margin-bottom:4px"><span style=\"font-size:14px\">'+(isSel?'✓':'⭐')+'</span><div style=\"flex:1;min-width:0\"><div style=\"font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:'+clr+'\">'+escHtml(v.name)+'</div><div style=\"font-size:10px;color:var(--muted);letter-spacing:.5px\">'+lang+'</div></div></div>';
-  }).join('');
-}
-
-function selectVoiceFromGen(vid,vname){
-  selectedVoice=vid;
-  document.querySelectorAll('.vc').forEach(c=>c.classList.remove('sel'));
-  const vcEl=document.querySelector('.vc[data-vid="'+vid+'"]');
-  if(vcEl)vcEl.classList.add('sel');
-  const bar=document.getElementById('voz-selecionada-bar');
-  const nomeEl=document.getElementById('voz-selecionada-nome');
-  if(bar&&nomeEl){nomeEl.textContent=vname;bar.style.display='flex';bar.style.alignItems='center';}
-  renderGenFavGrid();
-}
-
 function saveFavorites(){
   localStorage.setItem('svia_favs',JSON.stringify(favorites));
   const c=favorites.length;
   const b=document.getElementById('gen-fav-count');
-  if(b)b.textContent=c?c:'';
+  if(b)b.textContent=c?' ('+c+')':'';
   const fc=document.getElementById('txt-fav-count');
   if(fc)fc.textContent=c||'';
   if(txtFavMode)renderTxtFavGrid();
-  if(genVoiceMode==='fav')renderGenFavGrid();
 }
 function isFav(vid){return favorites.includes(vid);}
 function toggleFav(vid,btn,e){
