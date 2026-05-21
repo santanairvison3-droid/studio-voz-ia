@@ -364,12 +364,15 @@ tbody td{padding:12px 18px;font-size:13px;vertical-align:middle}
       <input type="text" id="v-code" placeholder="BETA2025" style="font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase">
     </div>
     <div class="form-group">
-      <label>Plano que libera</label>
+      <label>Plano que libera <span style="font-size:10px;color:var(--muted);font-weight:400">(opcional)</span></label>
       <select id="v-plan">
+        <option value="" selected>— Sem alterar plano —</option>
+        <option value="avulso">Avulso (só áudios extras, sem mudar plano)</option>
         <option value="free">Free</option>
-        <option value="basico" selected>Básico</option>
+        <option value="basico">Básico</option>
         <option value="premium">Premium</option>
       </select>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">Deixe vazio para entregar apenas áudios/créditos sem alterar o plano do usuário</div>
     </div>
     <div class="form-group">
       <label>🎙️ Créditos (pontos)</label>
@@ -635,7 +638,7 @@ function renderVouchers(vouchers){
 
 async function createVoucher(){
   const code=document.getElementById('v-code').value.trim().toUpperCase();
-  const plan=document.getElementById('v-plan').value||'basico';
+  const plan=document.getElementById('v-plan').value||'';
   const credits=parseInt(document.getElementById('v-credits').value)||0;
   const extra_audios=parseInt(document.getElementById('v-extra-audios').value)||0;
   if(!code){showMsg('msg-voucher','Digite um código para o voucher.');return;}
