@@ -1322,7 +1322,7 @@ async function generateSingle(){
       btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');
     }
   }catch(e){
-    showStatus('Erro de conexão.','error');
+    showStatus('Erro: '+(e.message||'Falha de conexão.'),'error');
     btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');
   }
 }
@@ -1782,7 +1782,7 @@ async function redeemVoucher(){
     const d=await r.json();
     if(r.ok){msg.textContent=`✅ ${d.message||`Voucher resgatado! +${d.credits||''} créditos.`}`;msg.className='vchr-msg ok';document.getElementById('vchr-in').value='';refreshStats();}
     else{msg.textContent=`❌ ${d.error||'Voucher inválido.'}`;msg.className='vchr-msg err';}
-  }catch(e){msg.textContent='❌ Erro de conexão.';msg.className='vchr-msg err';}
+  }catch(e){msg.textContent='❌ '+(e.message||'Erro de conexão.');msg.className='vchr-msg err';}
   finally{btn.disabled=false;btn.textContent='Resgatar';}
 }
 
@@ -1951,7 +1951,7 @@ async function generateFromLib(vid, vname, btnEl, e){
       },3000);
       return;
     }
-  }catch(err){alert('❌ Erro de conexão.');}
+  }catch(err){alert('❌ '+(err.message||'Erro de conexão.'));}
   btnEl.textContent='🎵 Gerar';btnEl.disabled=false;
 }
 
