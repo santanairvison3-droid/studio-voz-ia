@@ -1085,6 +1085,8 @@ function logout(){localStorage.removeItem('svia_token');window.location.href='in
 const token=getToken();if(!token){window.location.href='index.html';}
 let me=parseJWT(token)||{};
 let allVoices=[],selectedVoice=null;
+// Conta gerações feitas NESTA sessão — só aplica anti-regressão após a primeira geração
+let sessionIncrements=0;
 
 async function init(){
   document.getElementById('sb-name').textContent=me.name||me.username||'Usuário';
@@ -1131,6 +1133,7 @@ function updateStatsUI(td, rem, lim, cr, tot){
 // sem esperar o servidor, garantindo feedback instantâneo ao usuário.
 function incrementLocalStats(){
   // daily_used é o campo real do banco (coluna plana no Supabase)
+  sessionIncrements++; // marca que houve geração nesta sessão
   me.daily_used=(me.daily_used||0)+1;
   if(!me.daily)me.daily={audios:0};
   me.daily.audios=me.daily_used;
@@ -1138,14 +1141,12 @@ function incrementLocalStats(){
   const lim=me.lim_day??5;
   const td=me.daily_used;
   const rem=Math.max(0,lim-td);
-  // Marca o dia atual para detecção de reset diário no refreshStats
-  localStorage.setItem('svia_last_active_date',new Date().toISOString().slice(0,10));
   updateStatsUI(td,rem,lim,me.credits??0,me.total_audios??0);
 }
 
 // refreshStats — busca o backend com cache-busting e até 2 tentativas.
-// Respeita reset diário: se o backend retornar valor menor, confia no backend
-// (indica virada de dia ou reset administrativo).
+// Só aplica anti-regressão se o usuário já gerou algo nesta sessão (sessionIncrements > 0),
+// garantindo que o reset diário seja sempre refletido ao abrir o dashboard.
 async function refreshStats(retries=2,delay=900){
   for(let attempt=0;attempt<=retries;attempt++){
     try{
@@ -1157,48 +1158,24 @@ async function refreshStats(retries=2,delay=900){
       if(!r.ok){if(r.status===401)logout();return;}
       const d=await r.json();
       const u=d.user||{};
-      // Salva o valor otimista LOCAL ANTES do spread sobrescrever
+      // Captura valor otimista local ANTES do spread
       const localTd=me.daily_used??me.daily?.audios??0;
-      // Mescla no objeto me (pode sobrescrever daily_used com valor do backend)
       me={...me,...u};
       const cr=u.credits??me.credits??0;
-      // daily_used é o campo real do Supabase — aceita também aliases legados
       const backendTd=u.daily_used??u.daily?.audios??u.audios_today??u.today_count??0;
       const lim=u.lim_day??u.daily_limit??me.lim_day??5;
       const tot=u.total_audios??u.total??me.total_audios??0;
-
-      // Detecta reset diário: compara a data de hoje com a data do último uso local.
-      const todayStr=new Date().toISOString().slice(0,10); // "YYYY-MM-DD"
-      const lastActiveDate=localStorage.getItem('svia_last_active_date')||'';
-      const isNewDay=lastActiveDate && lastActiveDate!==todayStr;
-
-      let finalTd;
-      if(isNewDay){
-        // Virada de dia detectada — confia no backend (pode ser 0 após reset)
-        finalTd=backendTd;
-        localStorage.setItem('svia_last_active_date',todayStr);
-      } else if(backendTd===0 && localTd>0 && lastActiveDate===todayStr){
-        // Backend zerou no mesmo dia (reset admin) — só confia se local foi gerado hoje
-        // e o backend explicitamente devolveu 0 com campo presente
-        const hasField='daily_used' in u||'daily' in u||'audios_today' in u||'today_count' in u;
-        finalTd=hasField?0:localTd;
-      } else {
-        // Mesma sessão — não regredir abaixo do valor otimista (evita race condition)
-        finalTd=Math.max(backendTd,localTd);
-      }
-
-      // Atualiza data de atividade
-      if(!lastActiveDate)localStorage.setItem('svia_last_active_date',todayStr);
-
+      // Anti-regressão só se o usuário gerou áudio nesta sessão (evita race condition).
+      // Em carga inicial ou após reset diário, confia 100% no backend.
+      const finalTd=sessionIncrements>0?Math.max(backendTd,localTd):backendTd;
       const rem=Math.max(0,lim-finalTd);
-      // Atualiza me com os valores finais — sempre via daily_used
       me.daily_used=finalTd;
       me.daily={...(me.daily||{}),audios:finalTd};
       me.lim_day=lim;
       me.total_audios=tot;
       me.credits=cr;
       updateStatsUI(finalTd,rem,lim,cr,tot);
-      return; // sucesso — sai do loop
+      return;
     }catch(e){
       if(attempt===retries)console.warn('[refreshStats] falhou após',retries+1,'tentativas:',e);
     }
