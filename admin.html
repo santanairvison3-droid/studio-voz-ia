@@ -372,9 +372,14 @@ tbody td{padding:12px 18px;font-size:13px;vertical-align:middle}
       </select>
     </div>
     <div class="form-group">
-      <label>🎙️ Créditos (áudios)</label>
-      <input type="number" id="v-credits" placeholder="Ex: 30" min="0" value="30">
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">Quantidade de créditos concedidos ao resgatar o voucher</div>
+      <label>🎙️ Créditos (pontos)</label>
+      <input type="number" id="v-credits" placeholder="Ex: 30" min="0" value="0">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">Créditos em pontos adicionados à conta do usuário</div>
+    </div>
+    <div class="form-group">
+      <label>🎵 Áudios extras no dia do resgate</label>
+      <input type="number" id="v-extra-audios" placeholder="Ex: 2" min="0" max="50" value="0">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">Libera N áudios extras naquele dia (limite máx: 50/dia para qualquer usuário)</div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-voucher')">Cancelar</button>
@@ -477,6 +482,7 @@ function renderUsers(users){
       <td><div style="display:flex;gap:5px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" onclick="toggleStatus('${u.id}','${u.status}')">${u.status==='ativo'||u.status==='active'?'Suspender':'Ativar'}</button>
         <button class="btn btn-ghost btn-sm" onclick="openChangePlan('${u.id}','${esc(u.name||u.username)}','${u.plan||'free'}')">🔄 Plano</button>
+        <button class="btn btn-ghost btn-sm" onclick="openGiveAudios('${u.id}','${esc(u.name||u.username)}','${u.lim_day||5}')">🎵 +Áudios</button>
         <button class="btn btn-ghost btn-sm" onclick="openResetPw('${u.id}','${esc(u.name||u.username)}')">🔑 Senha</button>
       </div></td>
     </tr>`).join('');
@@ -631,12 +637,13 @@ async function createVoucher(){
   const code=document.getElementById('v-code').value.trim().toUpperCase();
   const plan=document.getElementById('v-plan').value||'basico';
   const credits=parseInt(document.getElementById('v-credits').value)||0;
+  const extra_audios=parseInt(document.getElementById('v-extra-audios').value)||0;
   if(!code){showMsg('msg-voucher','Digite um código para o voucher.');return;}
   try{
     const res=await fetch(`${API}/api/admin-users?resource=vouchers`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({action:'create',code,plan,credits})
+      body:JSON.stringify({action:'create',code,plan,credits,extra_audios})
     });
     const data=await res.json();
     if(!res.ok){showMsg('msg-voucher',data.error||'Erro ao criar voucher.');return;}
@@ -795,6 +802,59 @@ async function sha256(msg){
 }
 
 loadUsers();
+
+/* ══════════════════════════════
+   DAR ÁUDIOS AVULSOS
+══════════════════════════════ */
+function openGiveAudios(userId, userName, currentLim){
+  document.getElementById('give-userid').value=userId;
+  document.getElementById('give-sub').textContent='Adicionar áudios para: '+userName;
+  document.getElementById('give-current').value=currentLim+' áudios/dia';
+  document.getElementById('give-amount').value=1;
+  document.getElementById('msg-give').className='msg';
+  openModal('modal-give-audios');
+}
+
+async function giveAudios(){
+  const userId=document.getElementById('give-userid').value;
+  const amount=parseInt(document.getElementById('give-amount').value);
+  if(!amount||amount<1){showMsg('msg-give','Digite uma quantidade válida.');return;}
+  try{
+    const r=await fetch(`${API}/api/admin-users?resource=vouchers`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({action:'give_audios',user_id:userId,amount})
+    });
+    const d=await r.json();
+    if(!r.ok){showMsg('msg-give',d.error||'Erro ao liberar áudios.');return;}
+    showMsg('msg-give',d.message||'Áudios liberados!','success');
+    setTimeout(()=>{closeModal('modal-give-audios');loadUsers();},1400);
+  }catch(e){showMsg('msg-give','Erro de conexão.');}
+}
 </script>
+
+<!-- MODAL: DAR ÁUDIOS AVULSOS -->
+<div class="modal-overlay" id="modal-give-audios">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-give-audios')">✕</button>
+    <h3>🎵 Liberar Áudios Extras</h3>
+    <p class="modal-sub" id="give-sub">Adicionar áudios ao limite diário do usuário</p>
+    <div class="msg" id="msg-give"></div>
+    <input type="hidden" id="give-userid">
+    <div class="form-group">
+      <label>Limite atual</label>
+      <input type="text" id="give-current" disabled style="opacity:.5">
+    </div>
+    <div class="form-group">
+      <label>Quantidade a adicionar</label>
+      <input type="number" id="give-amount" placeholder="Ex: 2" min="1" max="50" value="1">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">Limite máximo absoluto: <strong style="color:var(--accent)">50 áudios/dia</strong> — vale para qualquer usuário, inclusive admin</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-give-audios')">Cancelar</button>
+      <button class="btn btn-accent" onclick="giveAudios()">Liberar Áudios</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
