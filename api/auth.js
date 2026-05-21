@@ -1,6 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
 const jwt = require('jsonwebtoken');
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+// Usa timezone do Brasil (America/Sao_Paulo) para evitar reset no horário errado
+function getTodayBR() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+}
+
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -28,54 +34,55 @@ module.exports = async (req, res) => {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_KEY
     );
-    const today = new Date().toISOString().split('T')[0];
+
+    // ── Data no horário do Brasil (UTC-3) ──────────────────────────────────
+    const today = getTodayBR();
     const uid = decoded.sub || decoded.id;
 
-    // ── Busca dados do usuário na tabela users ──────────────────────────────
-    // O generate-index incrementa users.daily_used (não escreve em audio_log),
-    // por isso lemos daily_used aqui como fonte primária de verdade.
+    // ── Busca dados frescos do banco (fonte de verdade) ────────────────────
     const { data: userData, error: userErr } = await supabase
       .from('users')
-      .select('daily_used, last_reset, lim_day, credits')
+      .select('daily_used, last_reset, lim_day, credits, plan')
       .eq('id', uid)
       .single();
 
     if (!userErr && userData) {
-      // daily_used só vale para hoje — se last_reset for de outro dia, está zerado
-      const isTodayReset = userData.last_reset === today;
-      const userDailyUsed = isTodayReset ? (userData.daily_used || 0) : 0;
-
       // lim_day do banco tem precedência sobre o JWT (admin pode ter alterado)
       if (userData.lim_day != null) limDay = userData.lim_day;
 
-      // ── RESET AUTOMÁTICO: se last_reset não é hoje, zera no banco ──────────
-      // Garante que generate-index também verá daily_used = 0 (novo dia)
-      if (!isTodayReset) {
+      const lastReset = userData.last_reset
+        ? String(userData.last_reset).split('T')[0]
+        : null;
+
+      if (lastReset !== today) {
+        // ── RESET DIÁRIO: novo dia detectado ──────────────────────────────
+        // Restaura lim_day ao limite correto do plano
+        const PLAN_LIMITS = { free: 3, basico: 5, premium: 10 };
+        const planLim = PLAN_LIMITS[userData.plan] ?? 5;
+        limDay = Math.min(planLim, 50);
+
         await supabase
           .from('users')
-          .update({ daily_used: 0, last_reset: today })
+          .update({ daily_used: 0, last_reset: today, lim_day: limDay })
           .eq('id', uid);
-      }
 
-      audiosHoje = userDailyUsed;
+        audiosHoje = 0; // reset confirmado
+        console.log(`[auth] Reset diário aplicado para uid=${uid}, novo limDay=${limDay}`);
+      } else {
+        audiosHoje = userData.daily_used || 0;
+      }
     }
 
-    // ── Contagem via audio_log (fallback / complemento) ────────────────────
-    // Se o backend registrar em audio_log, usamos o maior entre os dois.
+    // ── Contagem via audio_log (mensal/total) ──────────────────────────────
     try {
-      const [{ count: ah }, { count: am }, { count: ta }] = await Promise.all([
+      const monthStart = `${today.substring(0, 7)}-01T00:00:00`;
+      const [{ count: am }, { count: ta }] = await Promise.all([
         supabase.from('audio_log').select('id', { count: 'exact', head: true })
           .eq('user_id', uid)
-          .gte('created_at', `${today}T00:00:00`)
-          .lte('created_at', `${today}T23:59:59`),
-        supabase.from('audio_log').select('id', { count: 'exact', head: true })
-          .eq('user_id', uid)
-          .gte('created_at', `${today.substring(0,7)}-01T00:00:00`),
+          .gte('created_at', monthStart),
         supabase.from('audio_log').select('id', { count: 'exact', head: true })
           .eq('user_id', uid)
       ]);
-      // Usa o maior entre daily_used e contagem do log
-      audiosHoje    = Math.max(audiosHoje, ah || 0);
       audiosEsseMes = am || 0;
       totalAudios   = ta || 0;
     } catch (e) {
@@ -97,9 +104,7 @@ module.exports = async (req, res) => {
       valid_until:   decoded.valid_until || null,
       monthly_limit: monthlyLimit,
       lim_day:       limDay,
-      // fonte primária: daily_used (campo plano do Supabase)
       daily_used:    audiosHoje,
-      // mantém o objeto aninhado para compatibilidade
       daily:         { audios: audiosHoje },
       monthly:       { audios: audiosEsseMes },
       total_audios:  totalAudios,
