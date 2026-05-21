@@ -118,7 +118,6 @@ module.exports = async (req, res) => {
           return res.status(403).json({ error: 'Conta suspensa. Entre em contato com o suporte.' });
         }
 
-        const limDay = dbUser.lim_day || 5;
         const lastReset = dbUser.last_reset ? String(dbUser.last_reset).split('T')[0] : null;
 
         // Zera contador se o dia mudou — restaura lim_day ao limite do plano
@@ -134,6 +133,8 @@ module.exports = async (req, res) => {
           dbUser.lim_day = resetLim;
         }
 
+        // limDay lido APÓS o possível reset (valor atualizado)
+        const limDay = dbUser.lim_day || 5;
         const usedToday = dbUser.daily_used || 0;
 
         if (usedToday >= limDay) {
@@ -145,10 +146,25 @@ module.exports = async (req, res) => {
           });
         }
 
-        // Incrementa ANTES de chamar a API
-        await supabase.from('users')
+        // ── Incremento atômico — evita race condition de cliques simultâneos ──
+        // Só atualiza se daily_used ainda estiver abaixo do limite no banco.
+        // Se dois requests chegarem juntos, apenas um consegue o slot.
+        const { count: slotsAtualizados } = await supabase
+          .from('users')
           .update({ daily_used: usedToday + 1, last_reset: today })
-          .eq('id', uid);
+          .eq('id', uid)
+          .lt('daily_used', limDay)
+          .select('id', { count: 'exact', head: true });
+
+        if (!slotsAtualizados || slotsAtualizados === 0) {
+          // Outro request paralelo já ocupou o último slot
+          return res.status(429).json({
+            error: `Limite diário atingido (${limDay} áudios/dia). Resgate um voucher para mais créditos.`,
+            used: limDay,
+            limit: limDay,
+            reset: 'meia-noite'
+          });
+        }
 
         // Log no audio_log (não-bloqueante)
         supabase.from('audio_log').insert({
@@ -184,7 +200,7 @@ module.exports = async (req, res) => {
       try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
 
       if (!r.ok) {
-        // Se a API falhou e não é admin, desconta o crédito de volta
+        // Se a API falhou e não é admin, devolve o crédito
         if (!isAdmin && supabase) {
           try {
             const { data: cur } = await supabase.from('users').select('daily_used').eq('id', uid).single();
