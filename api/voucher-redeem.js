@@ -1,9 +1,12 @@
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
 
-const HARD_LIMIT = 50; // limite máximo absoluto por dia para qualquer usuário
+const HARD_LIMIT = 50;
 
 module.exports = async (req, res) => {
+  // ── Garante que QUALQUER exceção retorna JSON — nunca HTML 500 do Vercel ──
+  try {
+
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
 
@@ -33,7 +36,6 @@ module.exports = async (req, res) => {
 
   const userId = user.sub || user.id;
 
-  // ── Helper: busca dados atuais do usuário com segurança ──
   async function getUserData() {
     if (!supabase) return null;
     const { data, error } = await supabase
@@ -45,7 +47,6 @@ module.exports = async (req, res) => {
     return data;
   }
 
-  // ── Helper: adiciona créditos ao usuário ──
   async function addCredits(amount) {
     if (!supabase || !amount) return;
     try {
@@ -57,14 +58,12 @@ module.exports = async (req, res) => {
     }
   }
 
-  // ── Helper: adiciona áudios extras ao usuário (limite hard: 50/dia) ──
   async function addExtraAudios(amount) {
     if (!supabase || !amount) return 0;
     try {
       const userData = await getUserData();
       const currentLim = userData?.lim_day || 5;
       const currentExtra = userData?.extra_audios || 0;
-      // Novo limite = atual + extras, mas nunca passa de HARD_LIMIT
       const newLim = Math.min(currentLim + amount, HARD_LIMIT);
       const actualAdded = newLim - currentLim;
       await supabase.from('users').update({
@@ -137,7 +136,6 @@ module.exports = async (req, res) => {
     const v = STATIC_VOUCHERS[upperCode];
 
     if (supabase) {
-      // Verifica se já usou
       const { data: usedVoucher, error: uvErr } = await supabase
         .from('used_vouchers')
         .select('id')
@@ -148,12 +146,10 @@ module.exports = async (req, res) => {
       if (!uvErr && usedVoucher)
         return res.status(400).json({ error: 'Você já usou este voucher.' });
 
-      // Registra uso
       await supabase.from('used_vouchers').insert({
         code: upperCode, user_id: userId, credits: v.credits, used_at: new Date().toISOString()
       }).catch(e => console.warn('[voucher-redeem] used_vouchers insert:', e.message));
 
-      // Adiciona créditos
       await addCredits(v.credits);
     }
 
@@ -193,9 +189,10 @@ module.exports = async (req, res) => {
   let responseCredits = 0;
   let responseExtraAudios = 0;
 
-  // Atualiza plano se tiver
+  // Atualiza plano SOMENTE se não for vazio e não for "avulso"
+  // "avulso" = entrega áudios extras sem alterar o plano do usuário
   const planValue = voucher.plan || voucher.plano || voucher.tier || null;
-  if (planValue) {
+  if (planValue && planValue !== 'avulso') {
     const planLimits = { free: 3, basico: 5, premium: 10 };
     const newLim = Math.min(planLimits[planValue] ?? 5, HARD_LIMIT);
     await supabase.from('users').update({ plan: planValue, lim_day: newLim }).eq('id', userId).catch(() => {});
@@ -210,7 +207,7 @@ module.exports = async (req, res) => {
     responseMsg += ` +${voucher.credits} créditos adicionados.`;
   }
 
-  // Adiciona áudios extras se tiver (campo extra_audios no voucher)
+  // Adiciona áudios extras se tiver
   if (voucher.extra_audios && voucher.extra_audios > 0) {
     responseExtraAudios = await addExtraAudios(voucher.extra_audios);
     if (responseExtraAudios > 0)
@@ -224,4 +221,10 @@ module.exports = async (req, res) => {
     credits: responseCredits,
     extra_audios: responseExtraAudios
   });
+
+  // ── Catch global: evita HTML 500 do Vercel ──
+  } catch(err) {
+    console.error('[voucher-redeem] UNCAUGHT ERROR:', err.message, err.stack);
+    return res.status(500).json({ error: 'Erro interno: ' + (err.message || 'desconhecido') });
+  }
 };
