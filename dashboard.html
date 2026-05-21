@@ -1138,11 +1138,14 @@ function incrementLocalStats(){
   const lim=me.lim_day??5;
   const td=me.daily_used;
   const rem=Math.max(0,lim-td);
+  // Marca o dia atual para detecção de reset diário no refreshStats
+  localStorage.setItem('svia_last_active_date',new Date().toISOString().slice(0,10));
   updateStatsUI(td,rem,lim,me.credits??0,me.total_audios??0);
 }
 
 // refreshStats — busca o backend com cache-busting e até 2 tentativas.
-// Nunca deixa o contador regredir abaixo do valor otimista local.
+// Respeita reset diário: se o backend retornar valor menor, confia no backend
+// (indica virada de dia ou reset administrativo).
 async function refreshStats(retries=2,delay=900){
   for(let attempt=0;attempt<=retries;attempt++){
     try{
@@ -1163,8 +1166,30 @@ async function refreshStats(retries=2,delay=900){
       const backendTd=u.daily_used??u.daily?.audios??u.audios_today??u.today_count??0;
       const lim=u.lim_day??u.daily_limit??me.lim_day??5;
       const tot=u.total_audios??u.total??me.total_audios??0;
-      // Nunca regredir abaixo do valor otimista já exibido (localTd capturado ANTES do spread)
-      const finalTd=Math.max(backendTd,localTd);
+
+      // Detecta reset diário: compara a data de hoje com a data do último uso local.
+      const todayStr=new Date().toISOString().slice(0,10); // "YYYY-MM-DD"
+      const lastActiveDate=localStorage.getItem('svia_last_active_date')||'';
+      const isNewDay=lastActiveDate && lastActiveDate!==todayStr;
+
+      let finalTd;
+      if(isNewDay){
+        // Virada de dia detectada — confia no backend (pode ser 0 após reset)
+        finalTd=backendTd;
+        localStorage.setItem('svia_last_active_date',todayStr);
+      } else if(backendTd===0 && localTd>0 && lastActiveDate===todayStr){
+        // Backend zerou no mesmo dia (reset admin) — só confia se local foi gerado hoje
+        // e o backend explicitamente devolveu 0 com campo presente
+        const hasField='daily_used' in u||'daily' in u||'audios_today' in u||'today_count' in u;
+        finalTd=hasField?0:localTd;
+      } else {
+        // Mesma sessão — não regredir abaixo do valor otimista (evita race condition)
+        finalTd=Math.max(backendTd,localTd);
+      }
+
+      // Atualiza data de atividade
+      if(!lastActiveDate)localStorage.setItem('svia_last_active_date',todayStr);
+
       const rem=Math.max(0,lim-finalTd);
       // Atualiza me com os valores finais — sempre via daily_used
       me.daily_used=finalTd;
