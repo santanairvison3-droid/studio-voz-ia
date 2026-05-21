@@ -48,6 +48,15 @@ module.exports = async (req, res) => {
       // lim_day do banco tem precedência sobre o JWT (admin pode ter alterado)
       if (userData.lim_day != null) limDay = userData.lim_day;
 
+      // ── RESET AUTOMÁTICO: se last_reset não é hoje, zera no banco ──────────
+      // Garante que generate-index também verá daily_used = 0 (novo dia)
+      if (!isTodayReset) {
+        await supabase
+          .from('users')
+          .update({ daily_used: 0, last_reset: today })
+          .eq('id', uid);
+      }
+
       audiosHoje = userDailyUsed;
     }
 
