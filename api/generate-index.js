@@ -173,13 +173,17 @@ module.exports = async (req, res) => {
           return res.status(500).json({ error: 'Erro ao registrar uso. Tente novamente.' });
         }
 
-        // Log no audio_log (não-bloqueante)
-        supabase.from('audio_log').insert({
-          user_id: uid,
-          text: text.substring(0, 500),
-          voice_id,
-          status: 'pendente'
-        }).catch(() => {});
+        // Log no audio_log (não-bloqueante) — sem .catch() direto (quebra no Supabase v2)
+        (async () => {
+          try {
+            await supabase.from('audio_log').insert({
+              user_id: uid,
+              text: text.substring(0, 500),
+              voice_id,
+              status: 'pendente'
+            });
+          } catch (_) {}
+        })();
 
       } catch (e) {
         console.warn('[supabase limite] erro:', e.message);
