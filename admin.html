@@ -371,6 +371,11 @@ tbody td{padding:12px 18px;font-size:13px;vertical-align:middle}
         <option value="premium">Premium</option>
       </select>
     </div>
+    <div class="form-group">
+      <label>🎙️ Créditos (áudios)</label>
+      <input type="number" id="v-credits" placeholder="Ex: 30" min="0" value="30">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">Quantidade de créditos concedidos ao resgatar o voucher</div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-voucher')">Cancelar</button>
       <button class="btn btn-accent" onclick="createVoucher()">Criar Voucher</button>
@@ -608,7 +613,7 @@ function renderVouchers(vouchers){
     const used=v.used||!!v.used_at;
     return `<tr>
       <td style="font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:1px;color:var(--accent)">${esc(v.code)}</td>
-      <td style="font-size:12px;color:var(--muted)">${esc(v.plan||'—')}</td>
+      <td style="font-size:12px;color:var(--muted)">${esc(v.plan||'—')}${v.credits?` <span style="font-size:10px;background:var(--accent-dim);color:var(--accent);padding:2px 7px;border-radius:99px;margin-left:4px">+${v.credits} cr.</span>`:''}</td>
       <td><span class="badge badge-${used?'used':'free'}">${used?'Usado':'Disponível'}</span></td>
       <td style="font-size:11px;color:var(--muted)">${v.used_by||'—'}</td>
       <td style="font-size:11px;color:var(--muted)">${v.used_at?new Date(v.used_at).toLocaleDateString('pt-BR'):'—'}</td>
@@ -625,12 +630,13 @@ function renderVouchers(vouchers){
 async function createVoucher(){
   const code=document.getElementById('v-code').value.trim().toUpperCase();
   const plan=document.getElementById('v-plan').value||'basico';
+  const credits=parseInt(document.getElementById('v-credits').value)||0;
   if(!code){showMsg('msg-voucher','Digite um código para o voucher.');return;}
   try{
     const res=await fetch(`${API}/api/admin-users?resource=vouchers`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({action:'create',code,plan})
+      body:JSON.stringify({action:'create',code,plan,credits})
     });
     const data=await res.json();
     if(!res.ok){showMsg('msg-voucher',data.error||'Erro ao criar voucher.');return;}
