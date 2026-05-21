@@ -6,7 +6,6 @@
 <title>Irvison Dark — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -437,98 +436,12 @@ audio{width:100%;border-radius:7px}
 .pw-msg.error{background:rgba(255,77,114,.1);border:1px solid rgba(255,77,114,.22);color:#ff7096;display:block}
 .pw-msg.success{background:rgba(0,214,143,.1);border:1px solid rgba(0,214,143,.22);color:#2dffb4;display:block}
 
-/* ── VIDEO MODE TOGGLE ── */
-.mode-toggle{display:flex;gap:0;margin-bottom:18px;background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:4px;width:fit-content}
-.mode-btn{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:var(--muted);background:transparent;transition:all .2s;display:flex;align-items:center;gap:6px}
-.mode-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.3)}
-.mode-btn.active.video{background:linear-gradient(135deg,rgba(255,100,50,.15),rgba(255,60,120,.1));color:#ff7a50;border:1px solid rgba(255,100,50,.25)}
-.mode-btn.premium-lock{opacity:.65}
-
-.video-mode-banner{
-  background:linear-gradient(135deg,rgba(255,100,50,.08),rgba(255,60,120,.06));
-  border:1px solid rgba(255,100,50,.2);
-  border-radius:11px;padding:12px 16px;
-  display:none;align-items:center;gap:12px;
-  margin-bottom:14px;font-size:12px;
-}
-.video-mode-banner.show{display:flex}
-.vmb-icon{font-size:22px;flex-shrink:0}
-.vmb-text{flex:1}
-.vmb-text strong{color:#ff7a50;display:block;font-size:13px;margin-bottom:2px}
-.vmb-text span{color:var(--muted)}
-
-.total-chars-bar{
-  margin-top:14px;padding:12px 16px;
-  background:var(--surface2);border-radius:9px;
-  border:1px solid var(--border);
-  display:none;align-items:center;gap:10px;
-}
-.total-chars-bar.show{display:flex}
-.tcb-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
-.tcb-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--accent)}
-.tcb-val.warn{color:var(--warning)}
-.tcb-val.over{color:var(--error)}
-.tcb-limit{font-size:10px;color:var(--muted);margin-left:auto}
-.tcb-progress{flex:1;height:4px;background:var(--border);border-radius:99px;overflow:hidden;min-width:60px}
-.tcb-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .3s,background .3s}
-.tcb-fill.warn{background:linear-gradient(90deg,var(--warning),#ff8c00)}
-.tcb-fill.over{background:linear-gradient(90deg,var(--error),#ff6090)}
-
-.video-char-warning{
-  margin-top:10px;padding:10px 14px;
-  background:rgba(255,77,114,.08);
-  border:1px solid rgba(255,77,114,.2);
-  border-radius:9px;
-  font-size:12px;color:var(--error);
-  display:none;
-}
-.video-char-warning.show{display:block}
-
-.btn-video-gen{
-  width:100%;padding:15px;
-  background:linear-gradient(135deg,#ff7a50,#ff3c78);
-  border:none;border-radius:10px;
-  color:#fff;font-family:'Space Grotesk',sans-serif;
-  font-size:15px;font-weight:700;letter-spacing:.5px;
-  cursor:pointer;margin-top:14px;
-  transition:transform .1s,box-shadow .2s,opacity .2s;
-  box-shadow:0 4px 24px rgba(255,100,50,.25);
-  position:relative;overflow:hidden;display:none;
-}
-.btn-video-gen.show{display:block}
-.btn-video-gen::after{content:'';position:absolute;top:0;left:-110%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:skewX(-20deg);transition:left .4s}
-.btn-video-gen:hover::after{left:160%}
-.btn-video-gen:hover{box-shadow:0 6px 36px rgba(255,100,50,.4);transform:translateY(-1px)}
-.btn-video-gen:active{transform:scale(.98)}
-.btn-video-gen:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.btn-video-gen:disabled::after{display:none}
-
-.video-results-bar{
-  margin-top:14px;padding:14px 16px;
-  background:rgba(255,100,50,.06);
-  border:1px solid rgba(255,100,50,.18);
-  border-radius:11px;display:none;
-}
-.video-results-bar.show{display:block}
-.vrb-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#ff7a50;margin-bottom:10px}
-.vrb-list{display:flex;flex-direction:column;gap:6px}
-.vrb-item{display:flex;align-items:center;gap:10px;font-size:12px}
-.vrb-item a{color:var(--success);font-weight:600;text-decoration:none}
-.vrb-item a:hover{text-decoration:underline}
-.vrb-zip-btn{
-  width:100%;margin-top:12px;padding:10px;
-  background:linear-gradient(135deg,#ff7a50,#ff3c78);
-  border:none;border-radius:9px;color:#fff;
-  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;
-  cursor:pointer;transition:opacity .2s;
-}
-.vrb-zip-btn:hover{opacity:.85}
-
-
 @media(max-width:860px){
   .txt-layout{grid-template-columns:1fr}
 }
 
+select{
+  width:100%;background:var(--surface2);
   border:1px solid var(--border);
   border-radius:9px;padding:11px 12px;
   color:var(--text);font-family:'Space Grotesk',sans-serif;
@@ -1011,49 +924,19 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
 
     <!-- ARQUIVOS TXT -->
     <div class="tab-pane" id="tab-massa">
-
-      <!-- MODE TOGGLE -->
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap">
-        <div class="mode-toggle">
-          <button class="mode-btn active" id="mode-btn-normal" onclick="switchTxtMode('normal')">📁 Normal</button>
-          <button class="mode-btn" id="mode-btn-video" onclick="switchTxtMode('video')">🎬 Vídeo Curto <span style="font-size:9px;background:rgba(255,100,50,.18);color:#ff7a50;padding:1px 6px;border-radius:99px;border:1px solid rgba(255,100,50,.3);margin-left:2px">Premium</span></button>
-        </div>
-        <div id="txt-mode-desc" style="font-size:11px;color:var(--muted)">Gera 1 áudio por arquivo — cada arquivo consome 1 crédito.</div>
-      </div>
-
-      <!-- VIDEO MODE BANNER -->
-      <div class="video-mode-banner" id="video-mode-banner">
-        <div class="vmb-icon">🎬</div>
-        <div class="vmb-text">
-          <strong>Modo Vídeo Curto ativo</strong>
-          <span>Carregue até 10 arquivos. Total máx. 150.000 caracteres. Consome apenas 1 crédito para todos os áudios.</span>
-        </div>
-      </div>
-
       <div class="txt-layout">
 
         <!-- LEFT: upload + file list -->
         <div>
           <div class="card" style="margin-bottom:14px">
-            <div class="card-title">📁 Selecionar Arquivos .TXT <span id="txt-limit-lbl">máximo 5 arquivos</span></div>
+            <div class="card-title">📁 Selecionar Arquivos .TXT <span>máximo 5 arquivos</span></div>
 
             <div class="drop-multi" id="drop-multi">
               <input type="file" id="txt-file-input" accept=".txt" multiple onchange="addTxtFiles(this.files)">
               <div class="dm-icon">📂</div>
               <div class="dm-title">Arraste ou clique para selecionar</div>
-              <div class="dm-sub" id="drop-sub">Cada arquivo .txt = uma geração de áudio</div>
-              <span class="dm-limit" id="drop-limit-badge">até 5 arquivos</span>
-            </div>
-
-            <!-- Total chars bar (video mode) -->
-            <div class="total-chars-bar" id="total-chars-bar">
-              <span class="tcb-label">Total</span>
-              <span class="tcb-val" id="tcb-val">0</span>
-              <div class="tcb-progress"><div class="tcb-fill" id="tcb-fill" style="width:0%"></div></div>
-              <span class="tcb-limit">/ 150.000 car.</span>
-            </div>
-            <div class="video-char-warning" id="video-char-warning">
-              ⚠️ Total de caracteres ultrapassa 150.000. Remova um arquivo para poder gerar.
+              <div class="dm-sub">Cada arquivo .txt = uma geração de áudio</div>
+              <span class="dm-limit">até 5 arquivos</span>
             </div>
 
             <div class="txt-files-list" id="txt-files-list">
@@ -1093,7 +976,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
               <span id="txt-sel-vname" style="font-weight:700;color:var(--accent)">—</span>
             </div>
 
-            <div style="margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--muted);line-height:1.6" id="txt-mode-tip">
+            <div style="margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--muted);line-height:1.6">
               💡 Cada arquivo .txt será convertido em um áudio separado. Nomeie cada arquivo na lista ao lado.
             </div>
           </div>
@@ -1101,17 +984,6 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
           <button class="btn-primary" id="btn-txt-gen" onclick="generateAllTxt()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px var(--glow);transition:opacity .2s,box-shadow .2s">
             🎙️ Gerar Todos os Áudios
           </button>
-
-          <button class="btn-video-gen" id="btn-video-gen" onclick="generateVideoShort()">
-            🎬 Gerar Vídeo Curto (1 Crédito)
-          </button>
-
-          <!-- Video results (ZIP download) -->
-          <div class="video-results-bar" id="video-results-bar">
-            <div class="vrb-title">🎬 Áudios do Vídeo Curto</div>
-            <div class="vrb-list" id="vrb-list"></div>
-            <button class="vrb-zip-btn" id="vrb-zip-btn" onclick="downloadVideoZip()">📦 Baixar todos como ZIP</button>
-          </div>
 
           <div id="txt-gen-status" style="margin-top:12px;display:none;padding:12px;background:var(--surface2);border-radius:9px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-align:center"></div>
         </div>
@@ -1583,17 +1455,12 @@ function selectTxtFavVoice(vid,vname){
 
 /* ── TXT FILES ── */
 let txtFiles=[]; // [{file, name, text, audioName, status, audioUrl}]
-let videoMode=false;
-let videoCollectedUrls=[]; // stores [{url, name}] for ZIP download
-const MAX_TXT_NORMAL=5;
-const MAX_TXT_VIDEO=10;
-function getTxtMax(){return videoMode?MAX_TXT_VIDEO:MAX_TXT_NORMAL;}
+const MAX_TXT=5;
 
 function addTxtFiles(fileList){
   const arr=Array.from(fileList).filter(f=>f.name.endsWith('.txt'));
-  const max=getTxtMax();
-  const available=max-txtFiles.length;
-  if(available<=0){showTxtStatus(`Máximo de ${max} arquivos já adicionados.`);return;}
+  const available=MAX_TXT-txtFiles.length;
+  if(available<=0){showTxtStatus('Máximo de 5 arquivos já adicionados.');return;}
   arr.slice(0,available).forEach(f=>{
     // avoid duplicates by name
     if(txtFiles.find(x=>x.file.name===f.name))return;
@@ -1601,7 +1468,6 @@ function addTxtFiles(fileList){
     reader.onload=e=>{
       txtFiles.push({file:f,name:f.name,text:e.target.result,audioName:f.name.replace(/\.txt$/i,''),status:'ready',audioUrl:null});
       renderTxtFiles();
-      if(videoMode)updateTotalCharsUI();
     };
     reader.readAsText(f,'UTF-8');
   });
@@ -1625,7 +1491,6 @@ function addTxtFiles(fileList){
 function removeTxtFile(idx){
   txtFiles.splice(idx,1);
   renderTxtFiles();
-  if(videoMode)updateTotalCharsUI();
 }
 
 function renderTxtFiles(){
@@ -1659,10 +1524,9 @@ function renderTxtFiles(){
   // update drop-multi hint
   const dm=document.getElementById('drop-multi');
   if(dm){
-    const max=getTxtMax();
-    const rem=max-txtFiles.length;
-    const sub=dm.querySelector('#drop-sub');
-    if(sub)sub.textContent=rem>0?`${txtFiles.length}/${max} arquivo${txtFiles.length!==1?'s':''} — ainda cabe${rem>1?'m':''} mais ${rem}`:`Limite de ${max} arquivos atingido`;
+    const rem=MAX_TXT-txtFiles.length;
+    const sub=dm.querySelector('.dm-sub');
+    if(sub)sub.textContent=rem>0?`${txtFiles.length}/5 arquivo${txtFiles.length!==1?'s':''} — ainda cabe${rem>1?'m':''} mais ${rem}`:'Limite de 5 arquivos atingido';
   }
 }
 
@@ -2210,238 +2074,6 @@ function selectVoiceFromLib(id,name,lang){
   document.getElementById('svb-name').textContent=name;
   document.getElementById('svb-lang').textContent=lang;
   document.getElementById('svb').classList.add('show');
-}
-
-/* ── VIDEO CURTO MODE ── */
-function isPremiumUser(){
-  return me.plan==='premium'||me.role==='premium'||me.role==='admin';
-}
-
-function switchTxtMode(mode){
-  if(mode==='video'&&!isPremiumUser()){
-    alert('⭐ O modo Vídeo Curto é exclusivo para assinantes Premium.\n\nFaça upgrade do seu plano para acessar essa funcionalidade.');
-    return;
-  }
-  videoMode=(mode==='video');
-  // Toggle mode buttons
-  document.getElementById('mode-btn-normal').classList.toggle('active',!videoMode);
-  document.getElementById('mode-btn-video').classList.toggle('active',videoMode);
-  document.getElementById('mode-btn-video').classList.toggle('video',videoMode);
-  // Banner
-  const banner=document.getElementById('video-mode-banner');
-  if(banner)banner.classList.toggle('show',videoMode);
-  // Mode description
-  const desc=document.getElementById('txt-mode-desc');
-  if(desc)desc.textContent=videoMode?'Gera múltiplos áudios e entrega em ZIP — conta como 1 crédito (apenas Premium).':'Gera 1 áudio por arquivo — cada arquivo consome 1 crédito.';
-  // Card limit label
-  const lbl=document.getElementById('txt-limit-lbl');
-  if(lbl)lbl.textContent=videoMode?'máximo 10 arquivos':'máximo 5 arquivos';
-  // Drop badge
-  const badge=document.getElementById('drop-limit-badge');
-  if(badge)badge.textContent=videoMode?'até 10 arquivos':'até 5 arquivos';
-  // Tip
-  const tip=document.getElementById('txt-mode-tip');
-  if(tip)tip.innerHTML=videoMode?'🎬 Todos os arquivos serão convertidos e entregues em um único ZIP. Total máx. de 150.000 caracteres entre todos os arquivos.':'💡 Cada arquivo .txt será convertido em um áudio separado. Nomeie cada arquivo na lista ao lado.';
-  // Generate buttons
-  const btnNormal=document.getElementById('btn-txt-gen');
-  const btnVideo=document.getElementById('btn-video-gen');
-  if(btnNormal)btnNormal.style.display=videoMode?'none':'block';
-  if(btnVideo)btnVideo.classList.toggle('show',videoMode);
-  // Total chars bar
-  const tcBar=document.getElementById('total-chars-bar');
-  if(tcBar)tcBar.classList.toggle('show',videoMode);
-  // Video results bar — hide on mode switch
-  const vrBar=document.getElementById('video-results-bar');
-  if(vrBar)vrBar.classList.remove('show');
-  // Enforce file limit — remove extras if switching back to normal
-  if(!videoMode&&txtFiles.length>MAX_TXT_NORMAL){
-    txtFiles=txtFiles.slice(0,MAX_TXT_NORMAL);
-  }
-  renderTxtFiles();
-  if(videoMode)updateTotalCharsUI();
-}
-
-function getTotalChars(){
-  return txtFiles.reduce((acc,f)=>acc+(f.text?f.text.length:0),0);
-}
-
-function updateTotalCharsUI(){
-  const total=getTotalChars();
-  const max=150000;
-  const pct=Math.min(100,(total/max)*100);
-  const isOver=total>max;
-  const isWarn=total>130000&&!isOver;
-
-  const valEl=document.getElementById('tcb-val');
-  const fillEl=document.getElementById('tcb-fill');
-  const warningEl=document.getElementById('video-char-warning');
-  const btnVideo=document.getElementById('btn-video-gen');
-
-  if(valEl){
-    valEl.textContent=total.toLocaleString('pt-BR');
-    valEl.className='tcb-val'+(isOver?' over':isWarn?' warn':'');
-  }
-  if(fillEl){
-    fillEl.style.width=pct+'%';
-    fillEl.className='tcb-fill'+(isOver?' over':isWarn?' warn':'');
-  }
-  if(warningEl)warningEl.classList.toggle('show',isOver);
-  if(btnVideo)btnVideo.disabled=isOver;
-}
-
-async function generateVideoShort(){
-  if(!isPremiumUser()){
-    alert('⭐ O modo Vídeo Curto é exclusivo para assinantes Premium.');
-    return;
-  }
-  const voiceId=getTxtSelectedVoice();
-  if(!voiceId){alert('⚠️ Selecione uma voz antes de gerar.');return;}
-  const pending=txtFiles.filter(f=>f.status==='ready'||f.status==='error');
-  if(!pending.length){alert('⚠️ Nenhum arquivo pronto para gerar. Adicione arquivos .txt.');return;}
-
-  const totalChars=getTotalChars();
-  if(totalChars>150000){
-    alert('⚠️ Total de caracteres excede 150.000. Remova um arquivo para gerar.');
-    return;
-  }
-
-  // Check 1 credit available
-  if(me.role!=='admin'){
-    const lim=me.lim_day??5;
-    const td=me.daily_used??0;
-    if(lim-td<=0){
-      showTxtStatus('❌ Limite diário atingido. Resgate um voucher para mais créditos.');
-      document.getElementById('txt-gen-status').style.display='block';
-      document.getElementById('txt-gen-status').style.color='var(--error)';
-      return;
-    }
-  }
-
-  const btn=document.getElementById('btn-video-gen');
-  btn.disabled=true;btn.textContent='⏳ Gerando áudios...';
-  const vrBar=document.getElementById('video-results-bar');
-  if(vrBar)vrBar.classList.remove('show');
-  videoCollectedUrls=[];
-
-  const vname=allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||voiceId;
-  let genCount=0;
-  const total=pending.length;
-  showTxtStatus(`Iniciando geração de ${total} áudio(s)...`);
-
-  for(const f of pending){
-    const idx=txtFiles.indexOf(f);
-    txtFiles[idx].status='generating';
-    txtFiles[idx].error=null;
-    renderTxtFiles();
-    showTxtStatus(`Gerando ${genCount+1} de ${total}: "${f.audioName||f.name}"...`);
-
-    try{
-      const r=await fetch(`${API}/api/generate-index`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body:JSON.stringify({text:f.text,voice_id:voiceId})
-      });
-      if(r.status===401){logout();return;}
-      const d=await r.json();
-      if(!r.ok)throw new Error(d.error||'Erro na API');
-
-      let url=d.audio_url||null;
-      if(!url&&d.job_id){
-        url=await pollJobUrl(d.job_id);
-      }
-
-      if(url){
-        txtFiles[idx].status='done';
-        txtFiles[idx].audioUrl=url;
-        const dlName=(f.audioName||f.name.replace(/\.txt$/i,''))+'.mp3';
-        videoCollectedUrls.push({url,name:dlName});
-      } else {
-        txtFiles[idx].status='error';
-        txtFiles[idx].error='Timeout';
-      }
-    }catch(e){
-      txtFiles[idx].status='error';
-      txtFiles[idx].error=e.message;
-    }
-    renderTxtFiles();
-    genCount++;
-    await new Promise(res=>setTimeout(res,500));
-  }
-
-  // Consume apenas 1 crédito independente de quantos arquivos
-  incrementLocalStats();
-  saveHistory({
-    url:videoCollectedUrls[0]?.url||'',
-    jobId:'video-curto',
-    text:`[Vídeo Curto] ${total} arquivo(s)`,
-    title:`Vídeo Curto — ${total} partes`,
-    voice:vname,
-    ts:new Date().toISOString()
-  });
-  refreshStats(1,1200);
-
-  btn.disabled=false;btn.textContent='🎬 Gerar Vídeo Curto (1 Crédito)';
-  const errs=txtFiles.filter(f=>f.status==='error').length;
-  const dones=videoCollectedUrls.length;
-
-  if(dones>0){
-    showTxtStatus(`✅ ${dones} áudio(s) gerado(s)! Pronto para baixar o ZIP.`);
-    renderVideoResults();
-  } else {
-    showTxtStatus('❌ Nenhum áudio gerado com sucesso.');
-  }
-}
-
-function renderVideoResults(){
-  const bar=document.getElementById('video-results-bar');
-  const list=document.getElementById('vrb-list');
-  if(!bar||!list)return;
-  list.innerHTML=videoCollectedUrls.map((item,i)=>`
-    <div class="vrb-item">
-      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);width:18px">${i+1}.</span>
-      <span style="flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(item.name)}</span>
-      <a href="${item.url}" target="_blank" download="${escHtml(item.name)}">⬇ Baixar</a>
-    </div>`).join('');
-  bar.classList.add('show');
-}
-
-async function downloadVideoZip(){
-  if(!videoCollectedUrls.length){alert('Nenhum áudio para baixar.');return;}
-  const btn=document.getElementById('vrb-zip-btn');
-  btn.disabled=true;btn.textContent='⏳ Preparando ZIP...';
-  try{
-    if(typeof JSZip==='undefined')throw new Error('JSZip não disponível');
-    const zip=new JSZip();
-    for(const {url,name} of videoCollectedUrls){
-      try{
-        const resp=await fetch(url);
-        if(!resp.ok)throw new Error('Fetch falhou');
-        const blob=await resp.blob();
-        zip.file(name,blob);
-      }catch(e){
-        console.warn('[downloadVideoZip] Falha ao buscar',name,e.message);
-        // skip — still add what we can
-      }
-    }
-    const content=await zip.generateAsync({type:'blob'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(content);
-    a.download='video-curto-audios.zip';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    btn.textContent='✅ ZIP Baixado!';
-    setTimeout(()=>{btn.disabled=false;btn.textContent='📦 Baixar todos como ZIP';},2500);
-  }catch(e){
-    // Fallback: sequential individual downloads
-    btn.textContent='⏳ Baixando individualmente...';
-    for(const {url,name} of videoCollectedUrls){
-      const a=document.createElement('a');
-      a.href=url;a.download=name;a.target='_blank';
-      document.body.appendChild(a);a.click();document.body.removeChild(a);
-      await new Promise(res=>setTimeout(res,800));
-    }
-    btn.disabled=false;btn.textContent='📦 Baixar todos como ZIP';
-    showTxtStatus(`✅ ${videoCollectedUrls.length} áudio(s) enviado(s) para download!`);
-  }
 }
 
 init();
