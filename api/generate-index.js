@@ -1,5 +1,11 @@
 const jwt = require('jsonwebtoken');
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+// Usa timezone do Brasil (America/Sao_Paulo) para evitar reset no horário errado
+function getTodayBR() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+}
+
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -88,11 +94,11 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Texto muito longo (máx 150.000 chars).' });
 
     // ══════════════════════════════════════════════
-    // BLOQUEIO REAL DE LIMITE DIÁRIO (via Supabase)
+    // VERIFICAÇÃO DE LIMITE DIÁRIO (via Supabase)
     // Admin ignora o limite completamente
     // ══════════════════════════════════════════════
     const isAdmin = user.role === 'admin';
-    let uid = user.sub || user.id;
+    const uid = user.sub || user.id;
     let supabase;
 
     if (!isAdmin) {
@@ -102,7 +108,9 @@ module.exports = async (req, res) => {
           process.env.NEXT_PUBLIC_SUPABASE_URL,
           process.env.SUPABASE_SERVICE_KEY
         );
-        const today = new Date().toISOString().split('T')[0];
+
+        // Data no horário do Brasil (UTC-3) — mesma lógica do auth.js
+        const today = getTodayBR();
 
         const { data: dbUser, error: userErr } = await supabase
           .from('users')
@@ -114,42 +122,56 @@ module.exports = async (req, res) => {
           return res.status(401).json({ error: 'Usuário não encontrado.' });
         }
 
-        if (dbUser.status === 'suspenso' || dbUser.status === 'suspended' || dbUser.status === 'blocked') {
+        if (['suspenso', 'suspended', 'blocked'].includes(dbUser.status)) {
           return res.status(403).json({ error: 'Conta suspensa. Entre em contato com o suporte.' });
         }
 
-        const lastReset = dbUser.last_reset ? String(dbUser.last_reset).split('T')[0] : null;
+        const lastReset = dbUser.last_reset
+          ? String(dbUser.last_reset).split('T')[0]
+          : null;
 
-        // Zera contador se o dia mudou — restaura lim_day ao limite do plano
+        // ── Reset automático: novo dia detectado ──
         if (lastReset !== today) {
           const PLAN_LIMITS = { free: 3, basico: 5, premium: 10 };
-          const HARD_LIMIT = 50;
           const planLim = PLAN_LIMITS[dbUser.plan] ?? 5;
-          const resetLim = Math.min(planLim, HARD_LIMIT);
+          const resetLim = Math.min(planLim, 50);
+
           await supabase.from('users')
-            .update({ daily_used: 0, last_reset: today, lim_day: resetLim, extra_audios: 0 })
+            .update({ daily_used: 0, last_reset: today, lim_day: resetLim })
             .eq('id', uid);
+
           dbUser.daily_used = 0;
           dbUser.lim_day = resetLim;
+          console.log(`[generate] Reset diário para uid=${uid}, limDay=${resetLim}`);
         }
 
-        // limDay lido APÓS o possível reset (valor atualizado)
+        // limDay lido DEPOIS do possível reset
         const limDay = dbUser.lim_day || 5;
         const usedToday = dbUser.daily_used || 0;
 
+        // ── Verifica limite ──
         if (usedToday >= limDay) {
           return res.status(429).json({
             error: `Limite diário atingido. Você usou ${usedToday} de ${limDay} áudios hoje.`,
             used: usedToday,
             limit: limDay,
-            reset: 'meia-noite'
+            reset: 'meia-noite (horário de Brasília)'
           });
         }
 
-        // Incrementa ANTES de chamar a API (reserva o slot)
-        await supabase.from('users')
+        // ── Incremento simples e confiável ──────────────────────────────────
+        // NOTA: Não usar incremento atômico com .lt() + count — o Supabase
+        // não retorna contagem correta em updates com filtro encadeado,
+        // causando consumo de crédito sem gerar áudio.
+        const { error: updateErr } = await supabase
+          .from('users')
           .update({ daily_used: usedToday + 1, last_reset: today })
           .eq('id', uid);
+
+        if (updateErr) {
+          console.error('[generate] Erro ao incrementar daily_used:', updateErr.message);
+          return res.status(500).json({ error: 'Erro ao registrar uso. Tente novamente.' });
+        }
 
         // Log no audio_log (não-bloqueante)
         supabase.from('audio_log').insert({
@@ -185,14 +207,23 @@ module.exports = async (req, res) => {
       try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
 
       if (!r.ok) {
-        // Se a API falhou e não é admin, devolve o crédito
+        // API falhou — devolve o crédito consumido
         if (!isAdmin && supabase) {
           try {
-            const { data: cur } = await supabase.from('users').select('daily_used').eq('id', uid).single();
+            const { data: cur } = await supabase
+              .from('users')
+              .select('daily_used')
+              .eq('id', uid)
+              .single();
             if (cur && cur.daily_used > 0) {
-              await supabase.from('users').update({ daily_used: cur.daily_used - 1 }).eq('id', uid);
+              await supabase.from('users')
+                .update({ daily_used: cur.daily_used - 1 })
+                .eq('id', uid);
+              console.log(`[generate] Crédito devolvido para uid=${uid} após erro da API`);
             }
-          } catch {}
+          } catch (e) {
+            console.warn('[generate] Falha ao devolver crédito:', e.message);
+          }
         }
 
         return res.status(r.status).json({
@@ -210,6 +241,23 @@ module.exports = async (req, res) => {
 
     } catch (err) {
       console.error('[generate] EXCEPTION:', err.message);
+
+      // Exceção na chamada — devolve o crédito
+      if (!isAdmin && supabase) {
+        try {
+          const { data: cur } = await supabase
+            .from('users')
+            .select('daily_used')
+            .eq('id', uid)
+            .single();
+          if (cur && cur.daily_used > 0) {
+            await supabase.from('users')
+              .update({ daily_used: cur.daily_used - 1 })
+              .eq('id', uid);
+          }
+        } catch {}
+      }
+
       return res.status(500).json({ error: 'Erro ao contactar DarkPlanner', detail: err.message });
     }
   }
