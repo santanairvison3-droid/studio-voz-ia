@@ -136,7 +136,7 @@ module.exports = async (req, res) => {
             .eq('id', uid);
 
           // extra_audios separado e não-bloqueante — se coluna não existir, não quebra o fluxo
-          supabase.from('users').update({ extra_audios: 0 }).eq('id', uid).catch(() => {});
+          void (async () => { try { await supabase.from('users').update({ extra_audios: 0 }).eq('id', uid); } catch {} })();
 
           dbUser.daily_used = 0;
           dbUser.lim_day = resetLim;
@@ -159,12 +159,7 @@ module.exports = async (req, res) => {
           .eq('id', uid);
 
         // Log não-bloqueante
-        supabase.from('audio_log').insert({
-          user_id: uid,
-          text: text.substring(0, 500),
-          voice_id,
-          status: 'pendente'
-        }).catch(() => {});
+        void (async () => { try { await supabase.from('audio_log').insert({ user_id: uid, text: text.substring(0, 500), voice_id, status: 'pendente' }); } catch {} })();
 
       } catch (e) {
         console.warn('[supabase limite] erro:', e.message);
