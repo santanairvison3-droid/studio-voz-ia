@@ -31,7 +31,9 @@ module.exports = async (req, res) => {
     if (req.method === 'POST') {
       const { action, code, plan, id } = req.body;
       if (action === 'create') {
-        const { data, error } = await supabase.from('vouchers').insert({ code, plan }).select().single();
+        const { credits } = req.body;
+        const insertData = { code, plan, credits: credits ?? 0 };
+        const { data, error } = await supabase.from('vouchers').insert(insertData).select().single();
         if (error) return res.status(500).json({ error: error.message });
         return res.status(201).json(data);
       }
