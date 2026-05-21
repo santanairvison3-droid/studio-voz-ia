@@ -405,7 +405,8 @@ input::placeholder{color:var(--muted);font-size:14px}
       <div class="field-label"><span>Senha</span></div>
       <div class="input-wrap">
         <span class="input-icon">🔒</span>
-        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" style="padding-right:44px" />
+        <button type="button" onclick="toggleSenha()" id="btn-eye" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;opacity:0.45;transition:opacity .15s;padding:4px;" onmouseenter="this.style.opacity='.9'" onmouseleave="this.style.opacity='.45'" title="Mostrar/ocultar senha">👁️</button>
       </div>
     </div>
 
@@ -434,7 +435,14 @@ for (let i = 0; i < 120; i++) {
   wf.appendChild(b);
 }
 
-async function sha256(msg) {
+function toggleSenha() {
+  const inp = document.getElementById('password');
+  const btn = document.getElementById('btn-eye');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁️'; }
+}
+
+
   const buf = new TextEncoder().encode(msg);
   const hash = await crypto.subtle.digest('SHA-256', buf);
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
