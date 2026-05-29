@@ -56,18 +56,22 @@ module.exports = async (req, res) => {
 
       if (lastReset !== today) {
         // ── RESET DIÁRIO: novo dia detectado ──────────────────────────────
-        // Restaura lim_day ao limite correto do plano
+        // FIX: Não sobrescreve lim_day customizado — preserva valor definido pelo admin.
+        // Usa limite do plano apenas como fallback se não houver lim_day no banco.
         const PLAN_LIMITS = { free: 3, basico: 5, premium: 10 };
         const planLim = PLAN_LIMITS[userData.plan] ?? 5;
-        limDay = Math.min(planLim, 50);
+        if (userData.lim_day == null) {
+          limDay = Math.min(planLim, 50);
+        }
+        // limDay já definido acima com o valor do banco quando userData.lim_day != null
 
         await supabase
           .from('users')
-          .update({ daily_used: 0, last_reset: today, lim_day: limDay })
+          .update({ daily_used: 0, last_reset: today })  // NÃO sobrescreve lim_day
           .eq('id', uid);
 
         audiosHoje = 0; // reset confirmado
-        console.log(`[auth] Reset diário aplicado para uid=${uid}, novo limDay=${limDay}`);
+        console.log(`[auth] Reset diário aplicado para uid=${uid}, limDay mantido=${limDay}`);
       } else {
         audiosHoje = userData.daily_used || 0;
       }
