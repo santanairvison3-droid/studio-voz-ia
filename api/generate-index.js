@@ -132,17 +132,19 @@ module.exports = async (req, res) => {
 
         // ── Reset automático: novo dia detectado ──
         if (lastReset !== today) {
+          // FIX: Não sobrescreve lim_day customizado — só reseta o contador diário.
+          // lim_day definido pelo admin é preservado; usa limite do plano só como fallback.
           const PLAN_LIMITS = { free: 3, basico: 5, premium: 10 };
           const planLim = PLAN_LIMITS[dbUser.plan] ?? 5;
-          const resetLim = Math.min(planLim, 50);
+          const resetLim = dbUser.lim_day ?? Math.min(planLim, 50);
 
           await supabase.from('users')
-            .update({ daily_used: 0, last_reset: today, lim_day: resetLim })
+            .update({ daily_used: 0, last_reset: today })
             .eq('id', uid);
 
           dbUser.daily_used = 0;
           dbUser.lim_day = resetLim;
-          console.log(`[generate] Reset diário para uid=${uid}, limDay=${resetLim}`);
+          console.log(`[generate] Reset diário para uid=${uid}, limDay mantido=${resetLim}`);
         }
 
         // limDay lido DEPOIS do possível reset
@@ -159,18 +161,25 @@ module.exports = async (req, res) => {
           });
         }
 
-        // ── Incremento simples e confiável ──────────────────────────────────
-        // NOTA: Não usar incremento atômico com .lt() + count — o Supabase
-        // não retorna contagem correta em updates com filtro encadeado,
-        // causando consumo de crédito sem gerar áudio.
-        const { error: updateErr } = await supabase
+        // ── Incremento atômico — bloqueia duplo disparo simultâneo ──────────
+        // Só atualiza se daily_used ainda for o valor lido (evita consumo duplo
+        // em caso de clique duplo ou duas requisições paralelas do mesmo usuário).
+        const { data: updated, error: updateErr } = await supabase
           .from('users')
           .update({ daily_used: usedToday + 1, last_reset: today })
-          .eq('id', uid);
+          .eq('id', uid)
+          .eq('daily_used', usedToday)   // condição atômica: só passa UMA requisição
+          .select('daily_used')
+          .single();
 
-        if (updateErr) {
-          console.error('[generate] Erro ao incrementar daily_used:', updateErr.message);
-          return res.status(500).json({ error: 'Erro ao registrar uso. Tente novamente.' });
+        if (updateErr || !updated) {
+          // Outra requisição simultânea já incrementou — rejeita esta
+          console.warn(`[generate] Duplo disparo bloqueado para uid=${uid}`);
+          return res.status(429).json({
+            error: 'Requisição duplicada detectada. Aguarde um instante e tente novamente.',
+            used: usedToday,
+            limit: limDay
+          });
         }
 
         // Log no audio_log (não-bloqueante) — sem .catch() direto (quebra no Supabase v2)
@@ -211,20 +220,18 @@ module.exports = async (req, res) => {
       try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
 
       if (!r.ok) {
-        // API falhou — devolve o crédito consumido
+        // API falhou — devolve o crédito consumido de forma atômica
+        // FIX: decremento direto sem SELECT intermediário, evita race condition na devolução
         if (!isAdmin && supabase) {
           try {
-            const { data: cur } = await supabase
-              .from('users')
-              .select('daily_used')
-              .eq('id', uid)
-              .single();
-            if (cur && cur.daily_used > 0) {
+            const usedBefore = (dbUser && dbUser.daily_used != null) ? dbUser.daily_used : null;
+            if (usedBefore !== null) {
               await supabase.from('users')
-                .update({ daily_used: cur.daily_used - 1 })
-                .eq('id', uid);
-              console.log(`[generate] Crédito devolvido para uid=${uid} após erro da API`);
+                .update({ daily_used: usedBefore })
+                .eq('id', uid)
+                .eq('daily_used', usedBefore + 1); // só reverte se nada mais mudou
             }
+            console.log(`[generate] Crédito devolvido para uid=${uid} após erro da API`);
           } catch (e) {
             console.warn('[generate] Falha ao devolver crédito:', e.message);
           }
@@ -246,18 +253,16 @@ module.exports = async (req, res) => {
     } catch (err) {
       console.error('[generate] EXCEPTION:', err.message);
 
-      // Exceção na chamada — devolve o crédito
+      // Exceção na chamada — devolve o crédito de forma atômica
+      // FIX: mesma abordagem: reverte para o valor anterior sem SELECT extra
       if (!isAdmin && supabase) {
         try {
-          const { data: cur } = await supabase
-            .from('users')
-            .select('daily_used')
-            .eq('id', uid)
-            .single();
-          if (cur && cur.daily_used > 0) {
+          const usedBefore = (dbUser && dbUser.daily_used != null) ? dbUser.daily_used : null;
+          if (usedBefore !== null) {
             await supabase.from('users')
-              .update({ daily_used: cur.daily_used - 1 })
-              .eq('id', uid);
+              .update({ daily_used: usedBefore })
+              .eq('id', uid)
+              .eq('daily_used', usedBefore + 1);
           }
         } catch {}
       }
