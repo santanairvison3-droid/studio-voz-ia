@@ -57,11 +57,21 @@ module.exports = async (req, res) => {
       if (lastReset !== today) {
         // ── RESET DIÁRIO: novo dia detectado ──────────────────────────────
         // FIX: Não sobrescreve lim_day customizado — preserva valor definido pelo admin.
-        // Usa limite do plano apenas como fallback se não houver lim_day no banco.
-        const PLAN_LIMITS = { free: 3, basico: 5, premium: 10 };
-        const planLim = PLAN_LIMITS[userData.plan] ?? 5;
+        // Busca limite do plano na tabela plans (editável pelo admin sem mexer no código).
         if (userData.lim_day == null) {
-          limDay = Math.min(planLim, 50);
+          try {
+            const { data: planData } = await supabase
+              .from('plans')
+              .select('lim_day')
+              .eq('slug', userData.plan || 'free')
+              .eq('active', true)
+              .single();
+            limDay = Math.min(planData?.lim_day ?? 5, 50);
+          } catch (_) {
+            // fallback hardcoded se a tabela plans não responder
+            const PLAN_LIMITS = { free: 3, basico: 5, premium: 10 };
+            limDay = Math.min(PLAN_LIMITS[userData.plan] ?? 5, 50);
+          }
         }
         // limDay já definido acima com o valor do banco quando userData.lim_day != null
 
