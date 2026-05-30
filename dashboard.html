@@ -1050,7 +1050,7 @@ function logout(){localStorage.removeItem('svia_token');window.location.href='in
 const token=getToken();if(!token){window.location.href='index.html';}
 let me=parseJWT(token)||{};
 let allVoices=[],selectedVoice=null;
-let voicesLoading=false;
+let voicesLoading=false; // guard: evita chamadas simultâneas ao voices-index
 
 async function init(){
   document.getElementById('sb-name').textContent=me.name||me.username||'Usuário';
@@ -1060,33 +1060,31 @@ async function init(){
   renderHistory();renderQueue();
 }
 
-async function refreshStats(forceRefresh){
+async function refreshStats(force){
   try{
-    // Cache de 60s — evita spam de chamadas ao /api/auth
-    if(!forceRefresh){
+    // Cache de 60s — evita spam de /api/auth (Fix: loop excessivo nos logs)
+    if(!force){
       const cached=sessionStorage.getItem('auth_cache');
       const cachedAt=sessionStorage.getItem('auth_cache_ts');
       if(cached&&cachedAt&&(Date.now()-Number(cachedAt))<60000){
-        const u=JSON.parse(cached);
-        _applyStats(u);
-        return;
+        _applyStats(JSON.parse(cached));return;
       }
     }
     const r=await fetch(`${API}/api/auth`,{headers:{Authorization:`Bearer ${token}`}});
     if(!r.ok){if(r.status===401)logout();return;}
     const d=await r.json();const u=d.user||{};
     sessionStorage.setItem('auth_cache',JSON.stringify(u));
-    sessionStorage.setItem('auth_cache_ts',Date.now());
+    sessionStorage.setItem('auth_cache_ts',String(Date.now()));
     _applyStats(u);
   }catch(e){}
 }
 
 function _applyStats(u){
-  const cr=u.credits??0,td=u.daily?.audios??0,lim=u.lim_day??5,tot=u.total_audios??0;
+  const cr=u.credits??0,td=u.daily?.audios??u.daily_used??0,lim=u.lim_day??5,tot=u.total_audios??0;
   const rem=Math.max(0,lim-td);
-  document.getElementById('s-cr') && (document.getElementById('s-cr').textContent=cr);
+  document.getElementById('s-cr')&&(document.getElementById('s-cr').textContent=cr);
   document.getElementById('top-credits').textContent=`${rem} restantes hoje`;
-  document.getElementById('sb-credits').textContent=`${rem}/5`;
+  document.getElementById('sb-credits').textContent=`${rem}/${lim}`;
   document.getElementById('s-td').textContent=td;
   document.getElementById('s-lim').textContent=`de ${lim} áudios`;
   document.getElementById('s-rem').textContent=rem;
@@ -1105,47 +1103,44 @@ async function loadVoices(){
   const libGrid=document.getElementById('vlib-grid');
   grid.innerHTML='<div class="voice-loading">Carregando vozes...</div>';
 
-  try{
-    let lastErr='';
-    for(const ep of VOICE_ENDPOINTS){
-      try{
-        const r=await fetch(`${API}${ep}`,{headers:{Authorization:`Bearer ${token}`}});
-        if(r.status===401){logout();return;}
-        if(!r.ok){lastErr=`${ep} → ${r.status}`;continue;}
-        const raw=await r.text();
-        let d;
-        try{d=JSON.parse(raw);}catch(e){lastErr=`${ep} → JSON inválido`;continue;}
-        const voices=Array.isArray(d)?d:(d.voices||d.data||d.items||d.result||[]);
-        if(!voices.length){
-          // Modo debug — backend retornou raw para diagnóstico
-          if(d.debug){
-            const msg=`Debug do backend — URL: ${d.url_used}<br>Chaves: ${Object.keys(d.raw||{}).join(', ')}<br>Raw: ${JSON.stringify(d.raw).substring(0,300)}`;
-            grid.innerHTML=`<div class="voice-loading" style="color:var(--warning);line-height:1.7">${msg}</div>`;
-            libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">🔍</div><p>${msg}</p></div>`;
-            return;
-          }
-          lastErr=`${ep} → array vazio (chaves: ${Object.keys(d).join(',')})`;continue;
+  let lastErr='';
+  for(const ep of VOICE_ENDPOINTS){
+    try{
+      const r=await fetch(`${API}${ep}`,{headers:{Authorization:`Bearer ${token}`}});
+      if(r.status===401){logout();return;}
+      if(!r.ok){lastErr=`${ep} → ${r.status}`;continue;}
+      const raw=await r.text();
+      let d;
+      try{d=JSON.parse(raw);}catch(e){lastErr=`${ep} → JSON inválido`;continue;}
+      const voices=Array.isArray(d)?d:(d.voices||d.data||d.items||d.result||[]);
+      if(!voices.length){
+        // Modo debug — backend retornou raw para diagnóstico
+        if(d.debug){
+          const msg=`Debug do backend — URL: ${d.url_used}<br>Chaves: ${Object.keys(d.raw||{}).join(', ')}<br>Raw: ${JSON.stringify(d.raw).substring(0,300)}`;
+          grid.innerHTML=`<div class="voice-loading" style="color:var(--warning);line-height:1.7">${msg}</div>`;
+          libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">🔍</div><p>${msg}</p></div>`;
+          voicesLoading=false; return;
         }
-        // SUCESSO
-        allVoices=voices;
-        console.log('[voices] OK via',ep,'count:',voices.length,'sample:',voices[0]);
-        renderVoices(allVoices);
-        renderLibVoices();
-        const sel=document.getElementById('bulk-voice-sel');
-        if(sel)sel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
-        const txtSel=document.getElementById('txt-voice-sel');
-        if(txtSel)txtSel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
-        document.getElementById('v-count-lbl').textContent=`${allVoices.length} vozes`;
-        return;
-      }catch(e){lastErr=`${ep} → ${e.message}`;}
-    }
-    // Todos falharam — mostra diagnóstico
-    const msg=`Nenhum endpoint respondeu.<br><small style="font-family:monospace;font-size:10px;line-height:1.8">${VOICE_ENDPOINTS.map(ep=>`${ep}`).join('<br>')}</small><br><br>Último erro: ${lastErr}`;
-    grid.innerHTML=`<div class="voice-loading" style="color:var(--error);line-height:1.7">${msg}</div>`;
-    libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">⚠️</div><p>${msg}</p></div>`;
-  }finally{
-    voicesLoading=false; // sempre libera a flag, mesmo em erro
+        lastErr=`${ep} → array vazio (chaves: ${Object.keys(d).join(',')})`;continue;
+      }
+      // SUCESSO
+      allVoices=voices;
+      console.log('[voices] OK via',ep,'count:',voices.length,'sample:',voices[0]);
+      renderVoices(allVoices);
+      renderLibVoices();
+      const sel=document.getElementById('bulk-voice-sel');
+      if(sel)sel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
+      const txtSel=document.getElementById('txt-voice-sel');
+      if(txtSel)txtSel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
+      document.getElementById('v-count-lbl').textContent=`${allVoices.length} vozes`;
+      voicesLoading=false; return;
+    }catch(e){lastErr=`${ep} → ${e.message}`;}
   }
+  // Todos falharam — mostra diagnóstico
+  const msg=`Nenhum endpoint respondeu.<br><small style="font-family:monospace;font-size:10px;line-height:1.8">${VOICE_ENDPOINTS.map(ep=>`${ep}`).join('<br>')}</small><br><br>Último erro: ${lastErr}`;
+  grid.innerHTML=`<div class="voice-loading" style="color:var(--error);line-height:1.7">${msg}</div>`;
+  libGrid.innerHTML=`<div class="vlib-empty"><div class="ve-icon">⚠️</div><p>${msg}</p></div>`;
+  voicesLoading=false;
 }
 
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -1723,7 +1718,7 @@ async function downloadFavoritesZip(){
   }
   btn.disabled=false;btn.textContent='⬇ ZIP Favoritas';
   alert(`✅ ${urls.length} áudio(s) baixado(s)!`);
-  refreshStats();
+  sessionStorage.removeItem('auth_cache');refreshStats(true);
 }
 
 function renderLibVoices(){
