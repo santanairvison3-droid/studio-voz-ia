@@ -1,4 +1,21 @@
 {
+  "functions": {
+    "api/*.js": {
+      "memory": 512,
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/api/auth",                 "destination": "/api/auth.js" },
+    { "source": "/api/login",                "destination": "/api/login.js" },
+    { "source": "/api/generate-index",       "destination": "/api/generate-index.js" },
+    { "source": "/api/voices-index",         "destination": "/api/voices-index.js" },
+    { "source": "/api/voucher-redeem",       "destination": "/api/voucher-redeem.js" },
+    { "source": "/api/admin-users",          "destination": "/api/admin-users.js" },
+    { "source": "/api/audio-proxy",          "destination": "/api/audio-proxy.js" },
+    { "source": "/api/generate-access-code", "destination": "/api/generate-access-code.js" },
+    { "source": "/api/reset-daily",          "destination": "/api/reset-daily.js" }
+  ],
   "crons": [
     {
       "path": "/api/reset-daily",
