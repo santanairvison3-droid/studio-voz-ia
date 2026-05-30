@@ -950,7 +950,30 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
         <div>
           <div class="card" style="margin-bottom:14px">
             <div class="card-title">🎤 Voz para todos</div>
-            <select id="txt-voice-sel" style="margin-bottom:0"><option value="">Carregando vozes...</option></select>
+
+            <!-- Favoritas toggle -->
+            <div style="display:flex;gap:6px;margin-bottom:10px">
+              <button id="btn-txt-fav" onclick="toggleTxtFavMode()" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;flex:1">
+                ⭐ <span id="txt-fav-label">Ver Favoritas</span> <span id="txt-fav-count" style="font-size:10px;background:rgba(255,180,0,.12);color:#ffb400;padding:1px 7px;border-radius:99px;border:1px solid rgba(255,180,0,.25)"></span>
+              </button>
+              <button onclick="clearTxtFavMode()" id="btn-txt-all" style="display:none;padding:7px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s">
+                Todas
+              </button>
+            </div>
+
+            <!-- select normal (visível por padrão) -->
+            <div id="txt-select-wrap">
+              <select id="txt-voice-sel" style="margin-bottom:0"><option value="">Carregando vozes...</option></select>
+            </div>
+
+            <!-- grid de favoritas (oculto por padrão) -->
+            <div id="txt-fav-grid" style="display:none;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-a) transparent;flex-direction:column;gap:4px"></div>
+
+            <div id="txt-selected-voice-bar" style="display:none;margin-top:10px;padding:9px 13px;background:rgba(0,229,212,.07);border:1px solid rgba(0,229,212,.2);border-radius:9px;font-size:12px;align-items:center;gap:8px">
+              <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Selecionada:</span>
+              <span id="txt-sel-vname" style="font-weight:700;color:var(--accent)">—</span>
+            </div>
+
             <div style="margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--muted);line-height:1.6">
               💡 Cada arquivo .txt será convertido em um áudio separado. Nomeie cada arquivo na lista ao lado.
             </div>
@@ -1280,6 +1303,73 @@ function pollAudio(jobId){
   },3000);
 }
 
+/* ── TXT VOICE FAV MODE ── */
+let txtFavMode=false;
+let txtSelectedVoiceId='';
+
+function getTxtSelectedVoice(){
+  if(txtFavMode)return txtSelectedVoiceId;
+  return document.getElementById('txt-voice-sel')?.value||'';
+}
+
+function toggleTxtFavMode(){
+  if(!favorites.length){
+    alert('⭐ Você ainda não marcou nenhuma voz como favorita.\nVá à Biblioteca de Vozes e favorite algumas vozes primeiro!');
+    return;
+  }
+  txtFavMode=true;txtSelectedVoiceId='';
+  document.getElementById('txt-select-wrap').style.display='none';
+  document.getElementById('txt-fav-grid').style.display='flex';
+  document.getElementById('btn-txt-all').style.display='block';
+  const btn=document.getElementById('btn-txt-fav');
+  btn.style.background='var(--accent-dim)';btn.style.borderColor='rgba(0,229,212,.3)';btn.style.color='var(--accent)';
+  document.getElementById('txt-fav-label').textContent='Favoritas ativas';
+  renderTxtFavGrid();
+}
+
+function clearTxtFavMode(){
+  txtFavMode=false;txtSelectedVoiceId='';
+  document.getElementById('txt-select-wrap').style.display='block';
+  document.getElementById('txt-fav-grid').style.display='none';
+  document.getElementById('btn-txt-all').style.display='none';
+  const btn=document.getElementById('btn-txt-fav');
+  btn.style.background='var(--surface2)';btn.style.borderColor='var(--border)';btn.style.color='var(--muted)';
+  document.getElementById('txt-fav-label').textContent='Ver Favoritas';
+  document.getElementById('txt-selected-voice-bar').style.display='none';
+}
+
+function renderTxtFavGrid(){
+  const grid=document.getElementById('txt-fav-grid');
+  if(!grid)return;
+  const favVoices=allVoices.filter(v=>isFav(v.voice_id||v.id));
+  const cnt=document.getElementById('txt-fav-count');
+  if(cnt)cnt.textContent=favVoices.length||'';
+  if(!favVoices.length){
+    grid.innerHTML=`<div style="font-size:12px;color:var(--muted);padding:10px;text-align:center">Nenhuma favorita. Favorite vozes na Biblioteca primeiro.</div>`;
+    return;
+  }
+  grid.innerHTML=favVoices.map(v=>{
+    const vid=v.voice_id||v.id;
+    const isSel=txtSelectedVoiceId===vid;
+    return `<div onclick="selectTxtFavVoice('${escHtml(vid)}','${escHtml(v.name)}')"
+      style="padding:10px 13px;border-radius:9px;border:1px solid ${isSel?'var(--accent)':'var(--border)'};background:${isSel?'rgba(0,229,212,.07)':'var(--surface2)'};cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s;margin-bottom:4px">
+      <span style="font-size:14px">${isSel?'✓':'⭐'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isSel?'var(--accent)':'var(--text)'}">${escHtml(v.name)}</div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:.5px">${escHtml(v.labels?.language||v.language||'—')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectTxtFavVoice(vid,vname){
+  txtSelectedVoiceId=vid;
+  renderTxtFavGrid();
+  const bar=document.getElementById('txt-selected-voice-bar');
+  const nm=document.getElementById('txt-sel-vname');
+  if(bar&&nm){nm.textContent=vname;bar.style.display='flex';}
+}
+
 /* ── TXT FILES ── */
 let txtFiles=[]; // [{file, name, text, audioName, status, audioUrl}]
 const MAX_TXT=5;
@@ -1365,7 +1455,7 @@ function showTxtStatus(msg,show=true){
 }
 
 async function generateAllTxt(){
-  const voiceId=document.getElementById('txt-voice-sel').value;
+  const voiceId=getTxtSelectedVoice();
   if(!voiceId){alert('⚠️ Selecione uma voz antes de gerar.');return;}
   const pending=txtFiles.filter(f=>f.status==='ready'||f.status==='error');
   if(!pending.length){alert('⚠️ Nenhum arquivo pronto para gerar. Adicione arquivos .txt.');return;}
@@ -1626,6 +1716,9 @@ let favorites=JSON.parse(localStorage.getItem('svia_favs')||'[]');
 
 function saveFavorites(){
   localStorage.setItem('svia_favs',JSON.stringify(favorites));
+  const fc=document.getElementById('txt-fav-count');
+  if(fc)fc.textContent=favorites.length||'';
+  if(typeof txtFavMode!=='undefined'&&txtFavMode)renderTxtFavGrid();
   const c=favorites.length;
   const b=document.getElementById('gen-fav-count');
   if(b)b.textContent=c?' ('+c+')':'';
