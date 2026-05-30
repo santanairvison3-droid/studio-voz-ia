@@ -846,6 +846,9 @@ select option{background:var(--surface2)}
 
   <div class="content">
 
+    <!-- AVISOS DO ADMIN -->
+    <div id="notices-wrap" style="display:none;margin-bottom:10px"></div>
+
     <!-- GERAR -->
     <div class="tab-pane active" id="tab-generate">
       <div class="stats-row">
@@ -1094,6 +1097,34 @@ async function init(){
   if(fc&&favorites.length)fc.textContent=favorites.length;
   await Promise.all([refreshStats(),loadVoices()]);
   renderHistory();
+  // Carrega dados da nuvem em background (não bloqueia o carregamento)
+  loadCloudHistory();
+  loadCloudFavorites();
+  loadNotices();
+}
+
+async function loadNotices(){
+  try{
+    const r=await fetch(`${API}/api/notices`,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok)return;
+    const d=await r.json();
+    if(!d.notices||!d.notices.length)return;
+    const wrap=document.getElementById('notices-wrap');
+    if(!wrap)return;
+    const colors={info:'rgba(0,229,212,.08)',warning:'rgba(255,171,0,.08)',success:'rgba(0,214,143,.08)',error:'rgba(255,77,114,.08)'};
+    const borders={info:'rgba(0,229,212,.25)',warning:'rgba(255,171,0,.25)',success:'rgba(0,214,143,.25)',error:'rgba(255,77,114,.25)'};
+    const textc={info:'var(--accent)',warning:'var(--warning)',success:'var(--success)',error:'var(--error)'};
+    wrap.innerHTML=d.notices.map(n=>`
+      <div style="background:${colors[n.type]||colors.info};border:1px solid ${borders[n.type]||borders.info};border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;animation:fadeUp .3s ease">
+        <span style="font-size:16px">${n.type==='warning'?'⚠️':n.type==='success'?'✅':n.type==='error'?'❌':'📢'}</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:${textc[n.type]||textc.info};margin-bottom:2px">${escHtml(n.title)}</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5">${escHtml(n.message)}</div>
+        </div>
+        <button onclick="this.closest('div[style]').remove()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:4px;flex-shrink:0">✕</button>
+      </div>`).join('');
+    wrap.style.display='block';
+  }catch(_){}
 }
 
 async function refreshStats(force){
@@ -1583,8 +1614,55 @@ async function sha256Dash(msg){
 
 /* ── HISTORY ── */
 function getHistory(){try{return JSON.parse(localStorage.getItem('svia_history')||'[]');}catch{return[];}}
-function saveHistory(item){const h=getHistory();h.unshift(item);if(h.length>100)h.pop();localStorage.setItem('svia_history',JSON.stringify(h));}
-function clearHistory(){if(!confirm('Limpar histórico?'))return;localStorage.removeItem('svia_history');renderHistory();}
+
+function saveHistory(item){
+  // Salva local imediatamente (feedback instantâneo)
+  const h=getHistory();h.unshift(item);if(h.length>100)h.pop();
+  localStorage.setItem('svia_history',JSON.stringify(h));
+  // Sincroniza com Supabase em background (não-bloqueante)
+  (async()=>{
+    try{
+      await fetch(`${API}/api/save-history`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({
+          voice_id:  item.voiceId||null,
+          voice_name:item.voice||null,
+          text_preview:item.text||null,
+          audio_url: item.url||null,
+          job_id:    item.jobId||null,
+          characters:item.characters||0
+        })
+      });
+    }catch(_){}
+  })();
+}
+
+async function loadCloudHistory(){
+  try{
+    const r=await fetch(`${API}/api/history`,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok)return;
+    const d=await r.json();
+    if(!d.items||!d.items.length)return;
+    // Mescla: nuvem tem precedência, localStorage é fallback
+    const local=getHistory();
+    const cloudIds=new Set(d.items.map(x=>x.job_id||x.audio_url));
+    const onlyLocal=local.filter(x=>!cloudIds.has(x.jobId||x.url));
+    const merged=[...d.items.map(x=>({
+      url:x.audio_url,jobId:x.job_id,
+      text:x.text_preview,voice:x.voice_name,
+      ts:x.created_at,characters:x.characters
+    })),...onlyLocal];
+    merged.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+    localStorage.setItem('svia_history',JSON.stringify(merged.slice(0,100)));
+    renderHistory();
+  }catch(_){}
+}
+
+function clearHistory(){
+  if(!confirm('Limpar histórico local?'))return;
+  localStorage.removeItem('svia_history');renderHistory();
+}
 function exportHistory(){
   const h=getHistory();
   const csv='data,voz,texto,url\n'+h.map(i=>`"${i.ts}","${i.voice||''}","${(i.text||'').replace(/"/g,"'")}","${i.url||''}"`).join('\n');
@@ -1725,6 +1803,33 @@ function saveFavorites(){
   const c=favorites.length;
   const b=document.getElementById('gen-fav-count');
   if(b)b.textContent=c?' ('+c+')':'';
+  // Sincroniza favoritas com Supabase em background
+  (async()=>{
+    try{
+      await fetch(`${API}/api/save-favorites`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({favorites})
+      });
+    }catch(_){}
+  })();
+}
+
+async function loadCloudFavorites(){
+  try{
+    const r=await fetch(`${API}/api/save-favorites`,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok)return;
+    const d=await r.json();
+    if(!d.favorites||!d.favorites.length)return;
+    // Mescla favoritas da nuvem com as locais
+    const merged=[...new Set([...d.favorites,...favorites])];
+    favorites=merged;
+    localStorage.setItem('svia_favs',JSON.stringify(favorites));
+    const fc=document.getElementById('txt-fav-count');
+    if(fc)fc.textContent=favorites.length||'';
+    const b=document.getElementById('gen-fav-count');
+    if(b)b.textContent=favorites.length?' ('+favorites.length+')':'';
+  }catch(_){}
 }
 function isFav(vid){return favorites.includes(vid);}
 function toggleFav(vid,btn,e){
