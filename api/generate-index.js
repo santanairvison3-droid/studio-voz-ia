@@ -65,11 +65,27 @@ module.exports = async (req, res) => {
 
         console.log('[download]', job_id, '->', dlRes.status, dlText.substring(0, 200));
 
+        const audioUrl = dlData.audio_url || dlData.url || null;
+
+        // Atualiza audio_log com audio_url e status final
+        if (audioUrl) {
+          try {
+            const { createClient } = require('@supabase/supabase-js');
+            const sb = createClient(
+              process.env.NEXT_PUBLIC_SUPABASE_URL,
+              process.env.SUPABASE_SERVICE_KEY
+            );
+            await sb.from('audio_log')
+              .update({ audio_url: audioUrl, status: 'concluido' })
+              .eq('job_id', job_id);
+          } catch (_) {}
+        }
+
         return res.status(200).json({
-          status: 'done',
+          status:    'done',
           job_id,
-          audio_url: dlData.audio_url || dlData.url || null,
-          srt_url: dlData.srt_url || null
+          audio_url: audioUrl,
+          srt_url:   dlData.srt_url || null
         });
       }
 
@@ -182,14 +198,16 @@ module.exports = async (req, res) => {
           });
         }
 
-        // Log no audio_log (não-bloqueante) — sem .catch() direto (quebra no Supabase v2)
+        // Log no audio_log — salva geração completa (não-bloqueante)
         (async () => {
           try {
             await supabase.from('audio_log').insert({
-              user_id: uid,
-              text: text.substring(0, 500),
-              voice_id,
-              status: 'pendente'
+              user_id:      uid,
+              voice_id:     voice_id,
+              voice_name:   req.body.voice_name || null,
+              text_preview: text.substring(0, 120),
+              characters:   text.length,
+              status:       'pendente'
             });
           } catch (_) {}
         })();
@@ -243,10 +261,26 @@ module.exports = async (req, res) => {
         });
       }
 
+      const jobId = data.job_id || data.id || null;
+
+      // Atualiza audio_log com job_id para rastreamento posterior
+      if (!isAdmin && supabase && jobId) {
+        (async () => {
+          try {
+            await supabase.from('audio_log')
+              .update({ job_id: jobId, status: 'processando' })
+              .eq('user_id', uid)
+              .is('job_id', null)
+              .order('created_at', { ascending: false })
+              .limit(1);
+          } catch (_) {}
+        })();
+      }
+
       return res.status(200).json({
         success: true,
-        job_id: data.job_id || data.id || null,
-        status: data.status || 'processing',
+        job_id:  jobId,
+        status:  data.status || 'processing',
         message: data.message || 'Em processamento'
       });
 
