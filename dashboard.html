@@ -1089,8 +1089,11 @@ async function init(){
   document.getElementById('sb-name').textContent=me.name||me.username||'Usuário';
   document.getElementById('sb-role').textContent=me.role||'user';
   document.getElementById('sb-av').textContent=(me.name||me.username||'U')[0].toUpperCase();
+  // Inicializa contador de favoritas no botão ⭐ do painel .TXT
+  const fc=document.getElementById('txt-fav-count');
+  if(fc&&favorites.length)fc.textContent=favorites.length;
   await Promise.all([refreshStats(),loadVoices()]);
-  renderHistory();renderQueue();
+  renderHistory();
 }
 
 async function refreshStats(force){
