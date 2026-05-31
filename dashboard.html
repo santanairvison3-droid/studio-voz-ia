@@ -1133,7 +1133,7 @@ async function init(){
 
 async function loadNotices(){
   try{
-    const r=await fetch(`${API}/api/notices`,{headers:{Authorization:`Bearer ${token}`}});
+    const r=await fetch(`${API}/api/user-data?action=notices`,{headers:{Authorization:`Bearer ${token}`}});
     if(!r.ok)return;
     const d=await r.json();
     if(!d.notices||!d.notices.length)return;
@@ -1650,7 +1650,7 @@ function saveHistory(item){
   // Sincroniza com Supabase em background (não-bloqueante)
   (async()=>{
     try{
-      await fetch(`${API}/api/save-history`,{
+      await fetch(`${API}/api/user-data?action=history`,{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
         body:JSON.stringify({
@@ -1829,7 +1829,7 @@ async function loadStats(){
   const labels=document.getElementById('chart-7days-labels');
   const voices=document.getElementById('top-voices-list');
   try{
-    const r=await fetch(`${API}/api/stats`,{headers:{Authorization:`Bearer ${token}`}});
+    const r=await fetch(`${API}/api/user-data?action=stats`,{headers:{Authorization:`Bearer ${token}`}});
     if(!r.ok){
       if(total)total.textContent='—';
       return;
@@ -1900,7 +1900,7 @@ function saveFavorites(){
   // Sincroniza favoritas com Supabase em background
   (async()=>{
     try{
-      await fetch(`${API}/api/save-favorites`,{
+      await fetch(`${API}/api/user-data?action=favorites`,{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
         body:JSON.stringify({favorites})
@@ -1911,7 +1911,7 @@ function saveFavorites(){
 
 async function loadCloudFavorites(){
   try{
-    const r=await fetch(`${API}/api/save-favorites`,{headers:{Authorization:`Bearer ${token}`}});
+    const r=await fetch(`${API}/api/user-data?action=favorites`,{headers:{Authorization:`Bearer ${token}`}});
     if(!r.ok)return;
     const d=await r.json();
     if(!d.favorites||!d.favorites.length)return;
