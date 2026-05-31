@@ -777,6 +777,9 @@ select option{background:var(--surface2)}
       <span class="nav-badge">.txt</span>
     </div>
     <div class="nav-section">Conta</div>
+    <div class="nav-item" onclick="goTab('stats',this)">
+      <span class="nav-ic">📊</span>Estatísticas
+    </div>
     <div class="nav-item" onclick="goTab('history',this)">
       <span class="nav-ic">📋</span>Histórico
     </div>
@@ -1041,6 +1044,31 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     </div>
 
     <!-- BIBLIOTECA DE VOZES -->
+    <!-- ESTATÍSTICAS -->
+    <div class="tab-pane" id="tab-stats">
+      <div class="stats-row" id="stats-cards" style="margin-bottom:22px">
+        <div class="sc"><div class="sc-label">Total de Áudios</div><div class="sc-value t" id="stat-total">—</div><div class="sc-sub">desde o início</div></div>
+        <div class="sc"><div class="sc-label">Este Mês</div><div class="sc-value g" id="stat-month">—</div><div class="sc-sub">áudios gerados</div></div>
+        <div class="sc"><div class="sc-label">Caracteres</div><div class="sc-value" id="stat-chars">—</div><div class="sc-sub">total processado</div></div>
+        <div class="sc"><div class="sc-label">Hoje</div><div class="sc-value w" id="stat-today">—</div><div class="sc-sub">áudios gerados</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="card-title">📅 Últimos 7 dias</div>
+          <div id="chart-7days" style="display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:10px">
+            <div style="color:var(--muted);font-size:12px;text-align:center;width:100%">Carregando...</div>
+          </div>
+          <div id="chart-7days-labels" style="display:flex;gap:6px;margin-top:6px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🎤 Vozes Mais Usadas</div>
+          <div id="top-voices-list" style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+            <div style="color:var(--muted);font-size:12px">Carregando...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="tab-pane" id="tab-voices">
       <div class="selected-voice-banner" id="svb">
         <span>🎤</span>
@@ -1778,7 +1806,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -1787,8 +1815,74 @@ function goTab(name,el){
   document.getElementById('pg-title').textContent=TAB_TITLES[name]||name;
   if(name==='history')renderHistory();
   if(name==='voices')renderLibVoices();
+  if(name==='stats')loadStats();
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
+}
+
+async function loadStats(){
+  const total=document.getElementById('stat-total');
+  const month=document.getElementById('stat-month');
+  const chars=document.getElementById('stat-chars');
+  const today=document.getElementById('stat-today');
+  const chart=document.getElementById('chart-7days');
+  const labels=document.getElementById('chart-7days-labels');
+  const voices=document.getElementById('top-voices-list');
+  try{
+    const r=await fetch(`${API}/api/stats`,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok){
+      if(total)total.textContent='—';
+      return;
+    }
+    const d=await r.json();
+    const s=d.stats||{};
+    // Cards
+    if(total)total.textContent=s.total_audios||0;
+    if(month)month.textContent=s.audios_last_30d||0;
+    if(today)today.textContent=s.audios_today||0;
+    if(chars){
+      const c=s.total_characters||0;
+      chars.textContent=c>=1000000?(c/1000000).toFixed(1)+'M':c>=1000?(c/1000).toFixed(1)+'K':c;
+    }
+    // Gráfico 7 dias
+    const days=s.last_7_days||[];
+    if(chart&&days.length){
+      const max=Math.max(...days.map(x=>x.count),1);
+      chart.innerHTML=days.map(x=>{
+        const pct=Math.round((x.count/max)*100);
+        const h=Math.max(pct*1.1,4);
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">${x.count}</span>
+          <div style="width:100%;height:${h}px;background:linear-gradient(to top,var(--accent),var(--accent2));border-radius:4px 4px 0 0;min-height:4px;transition:height .3s ease"></div>
+        </div>`;
+      }).join('');
+      if(labels)labels.innerHTML=days.map(x=>{
+        const dt=new Date(x.day+'T12:00:00');
+        return `<div style="flex:1;text-align:center;font-size:9px;color:var(--muted)">${dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</div>`;
+      }).join('');
+    } else if(chart){
+      chart.innerHTML='<div style="color:var(--muted);font-size:12px;text-align:center;width:100%">Nenhum dado ainda.</div>';
+    }
+    // Top vozes
+    const tv=s.top_voices||[];
+    if(voices){
+      if(!tv.length){voices.innerHTML='<div style="color:var(--muted);font-size:12px">Nenhum dado ainda.</div>';return;}
+      const maxUses=tv[0]?.uses||1;
+      voices.innerHTML=tv.map((v,i)=>`
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;font-weight:700;color:var(--muted);width:16px">${i+1}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.voice_name||'—')}</div>
+            <div style="height:4px;background:var(--surface2);border-radius:99px;margin-top:4px">
+              <div style="height:100%;width:${Math.round((v.uses/maxUses)*100)}%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px"></div>
+            </div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace;white-space:nowrap">${v.uses}x</span>
+        </div>`).join('');
+    }
+  }catch(e){
+    if(total)total.textContent='—';
+  }
 }
 
 /* ── BIBLIOTECA DE VOZES ── */
