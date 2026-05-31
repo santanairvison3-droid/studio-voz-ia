@@ -1303,7 +1303,7 @@ async function generateSingle(){
     const r=await fetch(`${API}/api/generate-index`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-      body:JSON.stringify({text,voice_id:selectedVoice})
+      body:JSON.stringify({text,voice_id:selectedVoice,voice_name:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||null),characters:text.length})
     });
     if(r.status===401){logout();return;}
     const d=await r.json();
@@ -1539,7 +1539,7 @@ async function generateAllTxt(){
       const r=await fetch(`${API}/api/generate-index`,{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body:JSON.stringify({text:f.text,voice_id:voiceId})
+        body:JSON.stringify({text:f.text,voice_id:voiceId,voice_name:(allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||null),characters:f.text.length})
       });
       if(r.status===401){logout();return;}
       const d=await r.json();
@@ -2030,7 +2030,7 @@ async function generateFromLib(vid, vname, btnEl, e){
     const r=await fetch(`${API}/api/generate-index`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-      body:JSON.stringify({text,voice_id:vid})
+      body:JSON.stringify({text,voice_id:vid,voice_name:vname||(allVoices.find(x=>(x.voice_id||x.id)===vid)?.name||null),characters:text.length})
     });
     if(r.status===401){logout();return;}
     const d=await r.json();
@@ -2079,7 +2079,7 @@ async function downloadFavoritesZip(){
       const r=await fetch(`${API}/api/generate-index`,{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body:JSON.stringify({text,voice_id:vid})
+        body:JSON.stringify({text,voice_id:vid,voice_name:vname||(allVoices.find(x=>(x.voice_id||x.id)===vid)?.name||null),characters:text.length})
       });
       const d=await r.json();
       let url=d.audio_url||null;
