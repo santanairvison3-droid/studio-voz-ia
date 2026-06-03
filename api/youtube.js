@@ -14,21 +14,32 @@ module.exports = async (req, res) => {
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'YOUTUBE_API_KEY não configurada no Vercel.' });
 
-  const { query, order='relevance', region='BR', date='', min_subs='', page='' } = req.query;
+  const {
+    query, order = 'relevance', region = 'BR',
+    date = '', min_subs = '', max_subs = '',
+    video_type = '', lang = '', page = ''
+  } = req.query;
+
   if (!query) return res.status(400).json({ error: 'query obrigatório' });
 
   try {
-    // ── Monta filtro de data ──────────────────────────────────────
+    // ── Filtro de data ────────────────────────────────────────────
     let publishedAfter = '';
     if (date) {
       const now = new Date();
-      const map = { hour: 1/24, today: 1, week: 7, month: 30, year: 365 };
+      const map = { today: 1, week: 7, month: 30, year: 365 };
       const days = map[date] || 0;
       if (days) {
         now.setTime(now.getTime() - days * 24 * 60 * 60 * 1000);
         publishedAfter = now.toISOString();
       }
     }
+
+    // ── Filtro de duração (Shorts / médio / longo) ────────────────
+    let videoDuration = '';
+    if (video_type === 'short') videoDuration = 'short';      // até 4min no YT (Shorts)
+    else if (video_type === 'medium') videoDuration = 'medium'; // 4-20min
+    else if (video_type === 'long') videoDuration = 'long';     // 20min+
 
     // ── Busca vídeos ──────────────────────────────────────────────
     const searchParams = new URLSearchParams({
@@ -39,7 +50,9 @@ module.exports = async (req, res) => {
       maxResults: 12,
       key: apiKey,
       ...(region && { regionCode: region }),
+      ...(lang && { relevanceLanguage: lang }),
       ...(publishedAfter && { publishedAfter }),
+      ...(videoDuration && { videoDuration }),
       ...(page && { pageToken: page }),
     });
 
@@ -54,7 +67,7 @@ module.exports = async (req, res) => {
     const items = searchData.items || [];
     if (!items.length) return res.status(200).json({ items: [], nextPage: '' });
 
-    // ── Busca detalhes dos vídeos (views, duração) ────────────────
+    // ── Detalhes dos vídeos ───────────────────────────────────────
     const videoIds = items.map(i => i.id?.videoId).filter(Boolean).join(',');
     const videosRes = await fetch(
       `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds}&key=${apiKey}`
@@ -63,7 +76,7 @@ module.exports = async (req, res) => {
     const videoMap = {};
     (videosData.items || []).forEach(v => { videoMap[v.id] = v; });
 
-    // ── Busca detalhes dos canais (inscritos) ─────────────────────
+    // ── Detalhes dos canais ───────────────────────────────────────
     const channelIds = [...new Set(items.map(i => i.snippet?.channelId).filter(Boolean))].join(',');
     const channelsRes = await fetch(
       `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelIds}&key=${apiKey}`
@@ -74,6 +87,7 @@ module.exports = async (req, res) => {
 
     // ── Monta resultado ───────────────────────────────────────────
     const minSubs = parseInt(min_subs) || 0;
+    const maxSubsVal = parseInt(max_subs) || 0;
 
     const result = items.map(item => {
       const vid = item.id?.videoId;
@@ -83,19 +97,24 @@ module.exports = async (req, res) => {
       const channelStats = channelMap[snippet.channelId]?.statistics || {};
       const subscribers = parseInt(channelStats.subscriberCount) || 0;
 
-      // Formata duração ISO 8601 → mm:ss
+      // Duração ISO → mm:ss + tipo
       const dur = details.duration || '';
       const durMatch = dur.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-      let duration = '';
+      let duration = '', totalSec = 0, videoType = 'medium';
       if (durMatch) {
-        const h = parseInt(durMatch[1])||0;
-        const m = parseInt(durMatch[2])||0;
-        const s = parseInt(durMatch[3])||0;
-        duration = h ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
+        const h = parseInt(durMatch[1]) || 0;
+        const m = parseInt(durMatch[2]) || 0;
+        const s = parseInt(durMatch[3]) || 0;
+        totalSec = h * 3600 + m * 60 + s;
+        duration = h
+          ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+          : `${m}:${String(s).padStart(2,'0')}`;
+        if (totalSec <= 60) videoType = 'short';
+        else if (totalSec >= 1200) videoType = 'long';
       }
 
-      // Formata data
-      const pub = snippet.publishedAt ? new Date(snippet.publishedAt).toLocaleDateString('pt-BR') : '';
+      const pub = snippet.publishedAt
+        ? new Date(snippet.publishedAt).toLocaleDateString('pt-BR') : '';
 
       return {
         id: vid,
@@ -107,10 +126,19 @@ module.exports = async (req, res) => {
         likes: parseInt(stats.likeCount) || 0,
         subscribers,
         duration,
+        videoType,
         published: pub,
         publishedAt: snippet.publishedAt || '',
       };
-    }).filter(v => v.id && (!minSubs || v.subscribers >= minSubs));
+    }).filter(v => {
+      if (!v.id) return false;
+      if (minSubs && v.subscribers < minSubs) return false;
+      if (maxSubsVal && v.subscribers > maxSubsVal) return false;
+      // Filtro de tipo pelo backend também (reforça o videoDuration da API)
+      if (video_type === 'short' && v.videoType !== 'short') return false;
+      if (video_type === 'long' && v.videoType !== 'long') return false;
+      return true;
+    });
 
     return res.status(200).json({
       items: result,
