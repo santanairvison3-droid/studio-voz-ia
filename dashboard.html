@@ -1161,14 +1161,14 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
       </div><!-- /coluna principal -->
 
       <!-- Painel lateral de Referências -->
-      <div id="yt-refs-panel" style="width:300px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;max-height:80vh;position:sticky;top:0">
-        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div id="yt-refs-panel" style="width:290px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;max-height:78vh;position:sticky;top:0">
+        <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:16px">🔖</span>
-            <span style="font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text)">Referências Salvas</span>
+            <span style="font-size:15px">🔖</span>
+            <span style="font-size:12px;font-weight:700;color:var(--text)">Referências Salvas</span>
             <span id="refs-count-badge" style="background:var(--accent-dim);border:1px solid var(--border-a);color:var(--accent);font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px">0</span>
           </div>
-          <button onclick="ytClearRefs()" title="Limpar todas" style="background:transparent;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:3px 7px;border-radius:6px;transition:background .2s" onmouseenter="this.style.background='rgba(255,77,77,.1)';this.style.color='var(--error)'" onmouseleave="this.style.background='transparent';this.style.color='var(--muted)'">🗑 Limpar</button>
+          <button onclick="ytClearRefs()" title="Limpar todas" style="background:transparent;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:3px 7px;border-radius:6px" onmouseenter="this.style.background='rgba(255,77,77,.1)';this.style.color='var(--error)'" onmouseleave="this.style.background='transparent';this.style.color='var(--muted)'">🗑 Limpar</button>
         </div>
         <div id="refs-list" style="overflow-y:auto;flex:1;padding:10px;display:flex;flex-direction:column;gap:8px">
           <div id="refs-empty" style="text-align:center;padding:32px 12px;color:var(--muted)">
@@ -1177,6 +1177,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
           </div>
         </div>
       </div>
+
       </div><!-- /flex wrapper -->
     </div>
 
@@ -1297,7 +1298,7 @@ function ytSaveRef(v,btn){
   saved.unshift({id:v.id,title:v.title,channel:v.channel,thumbnail:v.thumbnail,views:v.views,subscribers:v.subscribers,published:v.published,savedAt:new Date().toISOString()});
   if(saved.length>50)saved.pop();
   localStorage.setItem('svia_yt_refs',JSON.stringify(saved));
-  if(btn){btn.textContent='✅ Salvo!';btn.style.background='rgba(0,229,212,.15)';btn.style.color='var(--accent)';setTimeout(()=>{btn.textContent='🔖 Salvar referência';btn.style.background='var(--accent-dim)';},1500);}
+  if(btn){btn.textContent='✅ Salvo!';btn.style.background='rgba(0,229,212,.15)';setTimeout(()=>{btn.textContent='🔖 Salvar referência';btn.style.background='var(--accent-dim)';},1500);}
   ytRenderRefs();
 }
 
@@ -1308,17 +1309,14 @@ function ytRenderRefs(){
   const badge=document.getElementById('refs-count-badge');
   if(!list)return;
   if(badge)badge.textContent=saved.length;
-  // Remove cards antigos mas mantém o empty
   list.querySelectorAll('.ref-card').forEach(el=>el.remove());
   if(!saved.length){if(empty)empty.style.display='';return;}
   if(empty)empty.style.display='none';
-  saved.forEach((v,i)=>{
+  saved.forEach(v=>{
     const views=v.views>=1000000?(v.views/1000000).toFixed(1)+'M':v.views>=1000?(v.views/1000).toFixed(0)+'K':v.views||'—';
     const card=document.createElement('div');
     card.className='ref-card';
-    card.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s';
-    card.onmouseenter=()=>card.style.borderColor='var(--border-a)';
-    card.onmouseleave=()=>card.style.borderColor='var(--border)';
+    card.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden';
     card.innerHTML=`
       <a href="https://youtube.com/watch?v=${escHtml(v.id)}" target="_blank" style="display:flex;gap:10px;padding:10px;text-decoration:none;align-items:flex-start">
         <img src="${escHtml(v.thumbnail)}" alt="" style="width:72px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0">
@@ -1328,14 +1326,13 @@ function ytRenderRefs(){
           <div style="font-size:10px;color:var(--accent);margin-top:2px">👁 ${views}</div>
         </div>
       </a>
-      <div style="padding:0 10px 10px;display:flex;justify-content:flex-end">
-        <button data-ref-id="${escHtml(v.id)}" style="background:transparent;border:none;font-size:10px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:5px;transition:background .2s" onmouseenter="this.style.background='rgba(255,77,77,.12)';this.style.color='var(--error)'" onmouseleave="this.style.background='transparent';this.style.color='var(--muted)'">🗑 Remover</button>
+      <div style="padding:0 10px 8px;display:flex;justify-content:flex-end">
+        <button class="ref-remove-btn" data-ref-id="${escHtml(v.id)}" style="background:transparent;border:none;font-size:10px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:5px" onmouseenter="this.style.background='rgba(255,77,77,.12)';this.style.color='var(--error)'" onmouseleave="this.style.background='transparent';this.style.color='var(--muted)'">🗑 Remover</button>
       </div>`;
-    card.querySelector('button[data-ref-id]').onclick=(e)=>{
-      e.stopPropagation();
+    card.querySelector('.ref-remove-btn').onclick=(e)=>{
+      e.preventDefault();
       const refs=JSON.parse(localStorage.getItem('svia_yt_refs')||'[]');
-      const filtered=refs.filter(r=>r.id!==v.id);
-      localStorage.setItem('svia_yt_refs',JSON.stringify(filtered));
+      localStorage.setItem('svia_yt_refs',JSON.stringify(refs.filter(r=>r.id!==v.id)));
       ytRenderRefs();
     };
     list.appendChild(card);
@@ -1408,7 +1405,8 @@ async function init(){
   if(fc&&favorites.length)fc.textContent=favorites.length;
   await Promise.all([refreshStats(),loadVoices()]);
   renderHistory();
-  ytRenderRefs(); (não bloqueia o carregamento)
+  ytRenderRefs();
+  // Carrega dados da nuvem em background (não bloqueia o carregamento)
   loadCloudHistory();
   loadCloudFavorites();
   loadNotices();
