@@ -777,6 +777,9 @@ select option{background:var(--surface2)}
       <span class="nav-badge">.txt</span>
     </div>
     <div class="nav-section">Conta</div>
+    <div class="nav-item" onclick="goTab('trends',this)">
+      <span class="nav-ic">🔥</span>Tendências YT
+    </div>
     <div class="nav-item" onclick="goTab('stats',this)">
       <span class="nav-ic">📊</span>Estatísticas
     </div>
@@ -1045,6 +1048,77 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
 
     <!-- BIBLIOTECA DE VOZES -->
     <!-- ESTATÍSTICAS -->
+    <!-- TENDÊNCIAS YOUTUBE -->
+    <div class="tab-pane" id="tab-trends">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px">
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Buscar</div>
+          <div style="position:relative">
+            <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);pointer-events:none">🔍</span>
+            <input id="yt-query" type="text" placeholder="nicho, palavra-chave, tema..."
+              style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 10px 10px 33px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none"
+              onkeydown="if(event.key==='Enter')searchYT()">
+          </div>
+        </div>
+        <div style="min-width:130px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Período</div>
+          <select id="yt-date" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;width:100%">
+            <option value="">Qualquer data</option>
+            <option value="hour">Última hora</option>
+            <option value="today">Hoje</option>
+            <option value="week">Esta semana</option>
+            <option value="month">Este mês</option>
+            <option value="year">Este ano</option>
+          </select>
+        </div>
+        <div style="min-width:130px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Inscritos</div>
+          <select id="yt-subs" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;width:100%">
+            <option value="">Qualquer tamanho</option>
+            <option value="1000">+ 1K</option>
+            <option value="10000">+ 10K</option>
+            <option value="100000">+ 100K</option>
+            <option value="1000000">+ 1M</option>
+          </select>
+        </div>
+        <div style="min-width:130px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Ordenar</div>
+          <select id="yt-order" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;width:100%">
+            <option value="relevance">Relevância</option>
+            <option value="viewCount">Mais vistos</option>
+            <option value="date">Mais recentes</option>
+            <option value="rating">Mais curtidos</option>
+          </select>
+        </div>
+        <div style="min-width:120px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Região</div>
+          <select id="yt-region" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;width:100%">
+            <option value="BR">🇧🇷 Brasil</option>
+            <option value="US">🇺🇸 EUA</option>
+            <option value="PT">🇵🇹 Portugal</option>
+            <option value="">Global</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button onclick="searchYT()" id="btn-yt-search"
+            style="padding:10px 22px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px var(--glow)">
+            🔍 Buscar
+          </button>
+        </div>
+      </div>
+      <div id="yt-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+        <div style="grid-column:1/-1;text-align:center;padding:56px 20px;color:var(--muted)">
+          <div style="font-size:36px;margin-bottom:12px;opacity:.25">🎬</div>
+          <p style="font-size:14px">Digite um nicho ou palavra-chave e clique em Buscar</p>
+        </div>
+      </div>
+      <div id="yt-load-more" style="display:none;text-align:center;margin-top:16px">
+        <button onclick="searchYT(true)" style="padding:10px 28px;border-radius:9px;border:1px solid var(--border-a);background:transparent;color:var(--accent);font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer">
+          Carregar mais
+        </button>
+      </div>
+    </div>
+
     <div class="tab-pane" id="tab-stats">
       <div class="stats-row" id="stats-cards" style="margin-bottom:22px">
         <div class="sc"><div class="sc-label">Total de Áudios</div><div class="sc-value t" id="stat-total">—</div><div class="sc-sub">desde o início</div></div>
@@ -1115,6 +1189,85 @@ const token=getToken();if(!token){window.location.href='index.html';}
 let me=parseJWT(token)||{};
 let allVoices=[],selectedVoice=null;
 let voicesLoading=false; // guard: evita chamadas simultâneas ao voices-index
+
+/* ── TENDÊNCIAS YOUTUBE ── */
+let ytNextPage='';
+
+async function searchYT(loadMore){
+  const query=document.getElementById('yt-query').value.trim();
+  if(!query)return;
+  const btn=document.getElementById('btn-yt-search');
+  const results=document.getElementById('yt-results');
+  const loadMoreBtn=document.getElementById('yt-load-more');
+  const date=document.getElementById('yt-date').value;
+  const order=document.getElementById('yt-order').value;
+  const region=document.getElementById('yt-region').value;
+  const subs=document.getElementById('yt-subs').value;
+  if(!loadMore){ytNextPage='';results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px">🔍 Buscando...</div>';}
+  if(btn){btn.disabled=true;btn.textContent='⏳ Buscando...';}
+  try{
+    const params=new URLSearchParams({query,order,region});
+    if(date)params.set('date',date);
+    if(subs)params.set('min_subs',subs);
+    if(ytNextPage)params.set('page',ytNextPage);
+    const r=await fetch(`${API}/api/youtube?${params}`,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok){
+      results.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--error);font-size:13px">❌ Erro ao buscar. Verifique se a YOUTUBE_API_KEY está configurada no Vercel.</div>`;
+      return;
+    }
+    const d=await r.json();
+    ytNextPage=d.nextPage||'';
+    if(!loadMore)results.innerHTML='';
+    if(!d.items||!d.items.length){
+      if(!loadMore)results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px">Nenhum resultado encontrado.</div>';
+      if(loadMoreBtn)loadMoreBtn.style.display='none';
+      return;
+    }
+    d.items.forEach(v=>{
+      const card=document.createElement('div');
+      card.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:hidden;transition:border-color .2s;cursor:pointer';
+      card.onmouseenter=()=>card.style.borderColor='var(--border-a)';
+      card.onmouseleave=()=>card.style.borderColor='var(--border)';
+      const views=v.views>=1000000?(v.views/1000000).toFixed(1)+'M':v.views>=1000?(v.views/1000).toFixed(0)+'K':v.views||'—';
+      const subs2=v.subscribers>=1000000?(v.subscribers/1000000).toFixed(1)+'M':v.subscribers>=1000?(v.subscribers/1000).toFixed(0)+'K':v.subscribers||'—';
+      card.innerHTML=`
+        <a href="https://youtube.com/watch?v=${escHtml(v.id)}" target="_blank" style="display:block;text-decoration:none">
+          <div style="position:relative">
+            <img src="${escHtml(v.thumbnail)}" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block">
+            <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.8);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace">${escHtml(v.duration||'')}</div>
+          </div>
+        </a>
+        <div style="padding:12px">
+          <div style="font-size:13px;font-weight:600;line-height:1.4;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text)">${escHtml(v.title)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.channel)}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <span style="font-size:10px;background:rgba(0,229,212,.08);border:1px solid rgba(0,229,212,.2);color:var(--accent);padding:2px 8px;border-radius:99px">👁 ${views}</span>
+            <span style="font-size:10px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:2px 8px;border-radius:99px">👥 ${subs2}</span>
+            <span style="font-size:10px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:2px 8px;border-radius:99px">📅 ${escHtml(v.published||'')}</span>
+          </div>
+          <button onclick="event.stopPropagation();document.getElementById('text-input').value='';document.getElementById('text-input').focus();goTab('generate',document.querySelector('.nav-item'));setTimeout(()=>{document.getElementById('text-input').value=${JSON.stringify('')};},100)"
+            style="width:100%;padding:7px;border-radius:7px;background:var(--accent-dim);border:1px solid var(--border-a);color:var(--accent);font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;cursor:pointer">
+            🎙️ Usar como ideia de áudio
+          </button>
+        </div>`;
+      // Botão usar ideia — leva título para o campo de texto
+      const ideaBtn=card.querySelector('button');
+      const title=v.title;
+      ideaBtn.onclick=(e)=>{
+        e.stopPropagation();
+        const textInput=document.getElementById('text-input');
+        if(textInput){textInput.value=title;updateCounter&&updateCounter();}
+        goTab('generate',document.querySelector('.nav-item'));
+      };
+      results.appendChild(card);
+    });
+    if(loadMoreBtn)loadMoreBtn.style.display=ytNextPage?'block':'none';
+  }catch(e){
+    results.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--error);font-size:13px">❌ ${escHtml(e.message)}</div>`;
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='🔍 Buscar';}
+  }
+}
 
 async function init(){
   document.getElementById('sb-name').textContent=me.name||me.username||'Usuário';
@@ -1806,7 +1959,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -1816,6 +1969,7 @@ function goTab(name,el){
   if(name==='history')renderHistory();
   if(name==='voices')renderLibVoices();
   if(name==='stats')loadStats();
+  if(name==='trends')document.getElementById('yt-query').focus();
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
 }
