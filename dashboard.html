@@ -1283,22 +1283,20 @@ function ytCard(v){
     </div>`;
   card.querySelector('.yt-save-btn').onclick=(e)=>{
     e.stopPropagation();
-    ytSaveRef(v);
+    ytSaveRef(v,e.currentTarget);
   };
   return card;
 }
 
-function ytSaveRef(v){
+function ytSaveRef(v,btn){
   const saved=JSON.parse(localStorage.getItem('svia_yt_refs')||'[]');
   if(saved.find(x=>x.id===v.id)){
-    const btn=event&&event.target;
     if(btn){btn.textContent='✅ Já salvo';setTimeout(()=>{btn.textContent='🔖 Salvar referência';},1500);}
     return;
   }
   saved.unshift({id:v.id,title:v.title,channel:v.channel,thumbnail:v.thumbnail,views:v.views,subscribers:v.subscribers,published:v.published,savedAt:new Date().toISOString()});
   if(saved.length>50)saved.pop();
   localStorage.setItem('svia_yt_refs',JSON.stringify(saved));
-  const btn=event&&event.target;
   if(btn){btn.textContent='✅ Salvo!';btn.style.background='rgba(0,229,212,.15)';btn.style.color='var(--accent)';setTimeout(()=>{btn.textContent='🔖 Salvar referência';btn.style.background='var(--accent-dim)';},1500);}
   ytRenderRefs();
 }
@@ -1331,13 +1329,13 @@ function ytRenderRefs(){
         </div>
       </a>
       <div style="padding:0 10px 10px;display:flex;justify-content:flex-end">
-        <button data-ref-idx="${i}" style="background:transparent;border:none;font-size:10px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:5px;transition:background .2s" onmouseenter="this.style.background='rgba(255,77,77,.12)';this.style.color='var(--error)'" onmouseleave="this.style.background='transparent';this.style.color='var(--muted)'">🗑 Remover</button>
+        <button data-ref-id="${escHtml(v.id)}" style="background:transparent;border:none;font-size:10px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:5px;transition:background .2s" onmouseenter="this.style.background='rgba(255,77,77,.12)';this.style.color='var(--error)'" onmouseleave="this.style.background='transparent';this.style.color='var(--muted)'">🗑 Remover</button>
       </div>`;
-    card.querySelector('button[data-ref-idx]').onclick=(e)=>{
+    card.querySelector('button[data-ref-id]').onclick=(e)=>{
       e.stopPropagation();
       const refs=JSON.parse(localStorage.getItem('svia_yt_refs')||'[]');
-      refs.splice(i,1);
-      localStorage.setItem('svia_yt_refs',JSON.stringify(refs));
+      const filtered=refs.filter(r=>r.id!==v.id);
+      localStorage.setItem('svia_yt_refs',JSON.stringify(filtered));
       ytRenderRefs();
     };
     list.appendChild(card);
