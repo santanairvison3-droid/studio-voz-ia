@@ -1255,47 +1255,151 @@ let voicesLoading=false; // guard: evita chamadas simultâneas ao voices-index
 /* ── TENDÊNCIAS YOUTUBE ── */
 let ytNextPage='';
 
+function calcViralScore(v){
+  const views=v.views||0;
+  const subs=v.subscribers||1;
+  const now=new Date();
+  const pub=v.publishedRaw?new Date(v.publishedRaw):null;
+  const daysSince=pub?Math.max(1,Math.round((now-pub)/(1000*60*60*24))):30;
+  const ratio=views/subs;
+  let ratioScore=ratio>=10?40:ratio>=5?32:ratio>=2?22:ratio>=1?14:ratio>=0.5?8:2;
+  const vpd=views/daysSince;
+  let speedScore=vpd>=100000?30:vpd>=10000?24:vpd>=1000?18:vpd>=100?12:vpd>=10?6:2;
+  let smallBonus=subs<10000?20:subs<50000?15:subs<200000?10:subs<1000000?5:0;
+  let freshScore=daysSince<=7?10:daysSince<=30?7:daysSince<=90?4:daysSince<=365?2:0;
+  const total=Math.min(100,ratioScore+speedScore+smallBonus+freshScore);
+  let label,color,bg,border;
+  if(total>=80){label='🔥 Viral';color='#ff5533';bg='rgba(255,85,51,.15)';border='rgba(255,85,51,.4)';}
+  else if(total>=60){label='⚡ Alto';color='#ffab00';bg='rgba(255,171,0,.15)';border='rgba(255,171,0,.35)';}
+  else if(total>=40){label='📈 Médio';color='var(--accent)';bg='rgba(0,229,212,.1)';border='rgba(0,229,212,.25)';}
+  else if(total>=20){label='🌱 Baixo';color='var(--muted)';bg='var(--surface2)';border='var(--border)';}
+  else{label='😴 Fraco';color='var(--muted)';bg='var(--surface2)';border='var(--border)';}
+  return{score:total,label,color,bg,border,ratio:ratio.toFixed(1),viewsPerDay:Math.round(vpd)};
+}
+
 function ytCard(v){
+  const viral=calcViralScore(v);
   const card=document.createElement('div');
-  card.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:hidden;transition:border-color .2s';
-  card.onmouseenter=()=>card.style.borderColor='var(--border-a)';
-  card.onmouseleave=()=>card.style.borderColor='var(--border)';
+  const cardBorder=viral.score>=80?'rgba(255,85,51,.4)':viral.score>=60?'rgba(255,171,0,.3)':viral.score>=40?'var(--border-a)':'var(--border)';
+  card.style.cssText='background:var(--surface);border:1px solid '+cardBorder+';border-radius:13px;overflow:hidden;transition:border-color .2s';
+  card.onmouseenter=()=>card.style.borderColor=viral.score>=80?'rgba(255,85,51,.7)':viral.score>=60?'rgba(255,171,0,.6)':'var(--accent)';
+  card.onmouseleave=()=>card.style.borderColor=cardBorder;
   const views=v.views>=1000000?(v.views/1000000).toFixed(1)+'M':v.views>=1000?(v.views/1000).toFixed(0)+'K':v.views||'—';
   const subs=v.subscribers>=1000000?(v.subscribers/1000000).toFixed(1)+'M':v.subscribers>=1000?(v.subscribers/1000).toFixed(0)+'K':v.subscribers||'—';
+  const vpdLabel=viral.viewsPerDay>=1000?(viral.viewsPerDay/1000).toFixed(1)+'K/dia':viral.viewsPerDay+'/dia';
+  const barColor=viral.score>=80?'linear-gradient(90deg,#ff5533,#ff8855)':viral.score>=60?'linear-gradient(90deg,#ffab00,#ffd000)':viral.score>=40?'linear-gradient(90deg,var(--accent),var(--accent2))':'rgba(255,255,255,.08)';
   const typeLabel=v.videoType==='short'?'<span style="font-size:9px;background:rgba(255,77,114,.12);border:1px solid rgba(255,77,114,.25);color:var(--error);padding:2px 7px;border-radius:99px">SHORT</span>':v.videoType==='long'?'<span style="font-size:9px;background:rgba(0,150,255,.12);border:1px solid rgba(0,150,255,.25);color:#5599ff;padding:2px 7px;border-radius:99px">LONGO</span>':v.videoType==='live'?'<span style="font-size:9px;background:rgba(255,77,77,.15);border:1px solid rgba(255,77,77,.35);color:#ff5555;padding:2px 7px;border-radius:99px">🔴 AO VIVO</span>':'';
   card.innerHTML=`
     <a href="https://youtube.com/watch?v=${escHtml(v.id)}" target="_blank" style="display:block;text-decoration:none">
       <div style="position:relative">
         <img src="${escHtml(v.thumbnail)}" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block">
         ${v.duration?`<div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.8);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace">${escHtml(v.duration)}</div>`:''}
+        <div style="position:absolute;top:8px;left:8px;background:${viral.bg};border:1px solid ${viral.border};backdrop-filter:blur(6px);border-radius:99px;padding:3px 10px;display:flex;align-items:center;gap:5px">
+          <span style="font-size:11px;font-weight:700;color:${viral.color}">${viral.label}</span>
+          <span style="font-size:10px;font-weight:800;color:${viral.color};font-family:'JetBrains Mono',monospace">${viral.score}</span>
+        </div>
       </div>
     </a>
     <div style="padding:12px">
       <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px">${typeLabel}<div style="font-size:13px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text)">${escHtml(v.title)}</div></div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.channel)}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <span style="font-size:10px;background:rgba(0,229,212,.08);border:1px solid rgba(0,229,212,.2);color:var(--accent);padding:2px 7px;border-radius:99px">👁 ${views}</span>
-        <span style="font-size:10px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:2px 7px;border-radius:99px">👥 ${subs}</span>
-        <span style="font-size:10px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:2px 7px;border-radius:99px">📅 ${escHtml(v.published||'')}</span>
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Score de Viralidade</span>
+          <span style="font-size:10px;font-weight:800;color:${viral.color};font-family:'JetBrains Mono',monospace">${viral.score}/100</span>
+        </div>
+        <div style="height:4px;background:var(--surface2);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${viral.score}%;background:${barColor};border-radius:99px"></div>
+        </div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 9px">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:2px">VIEWS</div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace">${views}</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 9px">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:2px">INSCRITOS</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);font-family:'JetBrains Mono',monospace">${subs}</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 9px">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:2px">RATIO V/I</div>
+          <div style="font-size:13px;font-weight:700;color:${parseFloat(viral.ratio)>=2?'var(--success)':'var(--muted)'};font-family:'JetBrains Mono',monospace">${viral.ratio}x</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 9px">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:2px">VELOCIDADE</div>
+          <div style="font-size:13px;font-weight:700;color:${viral.viewsPerDay>=1000?'var(--warning)':'var(--muted)'};font-family:'JetBrains Mono',monospace">${vpdLabel}</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px">📅 ${escHtml(v.published||'')}</div>
       <button class="yt-save-btn" style="width:100%;padding:7px;border-radius:7px;background:var(--accent-dim);border:1px solid var(--border-a);color:var(--accent);font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;cursor:pointer">
         🔖 Salvar referência
       </button>
     </div>`;
   card.querySelector('.yt-save-btn').onclick=(e)=>{
     e.stopPropagation();
-    ytSaveRef(v);
+    ytSaveRef(v,e.currentTarget);
   };
   return card;
 }
-
-function ytSaveRef(v){
+function ytSaveRef(v,btn){
   const saved=JSON.parse(localStorage.getItem('svia_yt_refs')||'[]');
-  if(saved.find(x=>x.id===v.id)){alert('Já salvo nas referências!');return;}
-  saved.unshift({id:v.id,title:v.title,channel:v.channel,thumbnail:v.thumbnail,views:v.views,subscribers:v.subscribers,published:v.published,savedAt:new Date().toISOString()});
+  if(saved.find(x=>x.id===v.id)){
+    if(btn){btn.textContent='✅ Já salvo';setTimeout(()=>{btn.textContent='🔖 Salvar referência';},1500);}
+    return;
+  }
+  saved.unshift({id:v.id,title:v.title,channel:v.channel,thumbnail:v.thumbnail,views:v.views,subscribers:v.subscribers,published:v.published,viralScore:calcViralScore(v).score,savedAt:new Date().toISOString()});
   if(saved.length>50)saved.pop();
   localStorage.setItem('svia_yt_refs',JSON.stringify(saved));
-  alert('✅ Salvo nas referências!');
+  if(btn){btn.textContent='✅ Salvo!';btn.style.background='rgba(0,229,212,.15)';setTimeout(()=>{btn.textContent='🔖 Salvar referência';btn.style.background='var(--accent-dim)';},1500);}
+  ytRenderRefs();
+}
+
+function ytRenderRefs(){
+  const saved=JSON.parse(localStorage.getItem('svia_yt_refs')||'[]');
+  const list=document.getElementById('refs-list');
+  const empty=document.getElementById('refs-empty');
+  const badge=document.getElementById('refs-count-badge');
+  if(!list)return;
+  if(badge)badge.textContent=saved.length;
+  list.querySelectorAll('.ref-card').forEach(el=>el.remove());
+  if(!saved.length){if(empty)empty.style.display='';return;}
+  if(empty)empty.style.display='none';
+  saved.forEach(v=>{
+    const views=v.views>=1000000?(v.views/1000000).toFixed(1)+'M':v.views>=1000?(v.views/1000).toFixed(0)+'K':v.views||'—';
+    const score=v.viralScore||0;
+    const scoreColor=score>=80?'#ff5533':score>=60?'#ffab00':score>=40?'var(--accent)':'var(--muted)';
+    const card=document.createElement('div');
+    card.className='ref-card';
+    card.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden';
+    card.innerHTML=`
+      <a href="https://youtube.com/watch?v=${escHtml(v.id)}" target="_blank" style="display:flex;gap:10px;padding:10px;text-decoration:none;align-items:flex-start">
+        <img src="${escHtml(v.thumbnail)}" alt="" style="width:72px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:600;color:var(--text);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:3px">${escHtml(v.title)}</div>
+          <div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.channel)}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+            <span style="font-size:10px;color:var(--accent)">👁 ${views}</span>
+            ${score?`<span style="font-size:9px;font-weight:700;color:${scoreColor};font-family:'JetBrains Mono',monospace">▲${score}</span>`:''}
+          </div>
+        </div>
+      </a>
+      <div style="padding:0 10px 8px;display:flex;justify-content:flex-end">
+        <button class="ref-remove-btn" data-ref-id="${escHtml(v.id)}" style="background:transparent;border:none;font-size:10px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:5px" onmouseenter="this.style.background='rgba(255,77,77,.12)';this.style.color='var(--error)'" onmouseleave="this.style.background='transparent';this.style.color='var(--muted)'">🗑 Remover</button>
+      </div>`;
+    card.querySelector('.ref-remove-btn').onclick=(e)=>{
+      e.preventDefault();
+      const refs=JSON.parse(localStorage.getItem('svia_yt_refs')||'[]');
+      localStorage.setItem('svia_yt_refs',JSON.stringify(refs.filter(r=>r.id!==v.id)));
+      ytRenderRefs();
+    };
+    list.appendChild(card);
+  });
+}
+
+function ytClearRefs(){
+  if(!confirm('Remover todas as referências salvas?'))return;
+  localStorage.removeItem('svia_yt_refs');
+  ytRenderRefs();
 }
 
 async function searchYT(loadMore){
@@ -2053,7 +2157,7 @@ function goTab(name,el){
   if(name==='history')renderHistory();
   if(name==='voices')renderLibVoices();
   if(name==='stats')loadStats();
-  if(name==='trends')document.getElementById('yt-query').focus();
+  if(name==='trends'){document.getElementById('yt-query').focus();ytRenderRefs();}
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
 }
