@@ -251,9 +251,10 @@ module.exports = async (req, res) => {
       if (maxSubsVal && v.subscribers > maxSubsVal) return false;
       if (minViewsVal && v.views < minViewsVal) return false;
       if (minDurSec && v.totalSec < minDurSec) return false;
-      // Shorts e longs: validação dupla (API + pós-filtro para garantir)
+      // Tipo de vídeo: filtro pós-busca para garantir
       if (video_type === 'short' && v.videoType !== 'short') return false;
       if (video_type === 'long' && v.videoType !== 'long') return false;
+      if (video_type === 'video' && v.videoType === 'short') return false;
       return true;
     });
 
