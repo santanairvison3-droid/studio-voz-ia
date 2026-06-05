@@ -10,10 +10,19 @@ function viralScore(v) {
   const vpd = views / daysSince;
 
   let score = 0;
+  // Fator 1: Ratio views/inscritos (0-40pts) — canal furou a bolha
   score += ratio >= 20 ? 40 : ratio >= 10 ? 35 : ratio >= 5 ? 28 : ratio >= 2 ? 20 : ratio >= 1 ? 12 : 6;
+  // Fator 2: Velocidade views/dia (0-30pts)
   score += vpd >= 500000 ? 30 : vpd >= 100000 ? 26 : vpd >= 10000 ? 20 : vpd >= 1000 ? 14 : vpd >= 100 ? 8 : 4;
+  // Fator 3: Canal pequeno = nicho inexplorado (0-20pts)
   score += subs < 5000 ? 20 : subs < 20000 ? 16 : subs < 100000 ? 12 : subs < 500000 ? 6 : 2;
+  // Fator 4: Frescor (0-10pts)
   score += daysSince <= 3 ? 10 : daysSince <= 7 ? 9 : daysSince <= 14 ? 7 : daysSince <= 30 ? 5 : daysSince <= 90 ? 3 : 1;
+  // Fator 5: Engajamento likes/views (0-15pts) — conteúdo que o público aprova
+  if (views > 0 && v.likes > 0) {
+    const eng = v.likes / views;
+    score += eng >= 0.1 ? 15 : eng >= 0.05 ? 10 : eng >= 0.02 ? 5 : eng >= 0.01 ? 2 : 0;
+  }
   return Math.min(100, score);
 }
 
@@ -155,6 +164,15 @@ module.exports = async (req, res) => {
       }
     }
 
+    // Busca inteligente: "relevância" vira "date" para descobrir virais recentes.
+    // Sem filtro de data explícito, restringe automaticamente aos últimos 6 meses.
+    const ytOrder = order === 'relevance' ? 'date' : order;
+    if (!publishedAfter && order === 'relevance') {
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      publishedAfter = sixMonthsAgo.toISOString();
+    }
+
     // Tipo de busca: channel e playlist são passados direto para a API
     const ytType = video_type === 'channel' ? 'channel'
                  : video_type === 'playlist' ? 'playlist'
@@ -176,7 +194,7 @@ module.exports = async (req, res) => {
       part: 'snippet',
       q: query,
       type: ytType,
-      order,
+      order: ytOrder,
       maxResults: 50,
       key: apiKey,
       ...(region && { regionCode: region }),
