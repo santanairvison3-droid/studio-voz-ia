@@ -27,7 +27,8 @@ function parseDuration(isoStr) {
   const durationStr = h
     ? `${h}:${String(min).padStart(2, '0')}:${String(s).padStart(2, '0')}`
     : `${min}:${String(s).padStart(2, '0')}`;
-  const videoType = totalSec <= 60 ? 'short' : totalSec >= 1200 ? 'long' : 'medium';
+  // YouTube Shorts: até 180s (3 min) conforme política atual
+  const videoType = totalSec <= 180 ? 'short' : totalSec >= 1200 ? 'long' : 'medium';
   return { durationStr, totalSec, videoType };
 }
 
