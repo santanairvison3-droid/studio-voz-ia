@@ -96,8 +96,12 @@ module.exports = async (req, res) => {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
   const redirectUri = process.env.OAUTH_REDIRECT_URI;
-  if (!clientId || !clientSecret || !redirectUri)
-    return res.status(500).json({ error: 'OAuth não configurado no servidor.' });
+  const missing = [];
+  if (!clientId) missing.push('GOOGLE_OAUTH_CLIENT_ID');
+  if (!clientSecret) missing.push('GOOGLE_OAUTH_CLIENT_SECRET');
+  if (!redirectUri) missing.push('OAUTH_REDIRECT_URI');
+  if (missing.length)
+    return res.status(500).json({ error: 'OAuth não configurado no servidor.', faltando: missing });
 
   const { action = '', channel_id = '' } = req.query;
 
