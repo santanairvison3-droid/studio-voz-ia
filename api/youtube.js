@@ -1,4 +1,12 @@
 const jwt = require('jsonwebtoken');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
+const HUNT_LIMIT = 2; // caçadas de nicho por conta por dia (protege a cota da API)
 
 // Score viral calculado no servidor para ordenar os resultados
 function viralScore(v) {
@@ -41,6 +49,46 @@ function parseDuration(isoStr) {
   return { durationStr, totalSec, videoType };
 }
 
+// Busca sugestões reais de palavras-chave do YouTube (autocomplete). Zero cota.
+async function fetchSuggestions(query, hl, gl) {
+  try {
+    const r = await fetch(
+      `https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&hl=${hl}&gl=${gl}&q=${encodeURIComponent(query)}`,
+      { headers: { 'User-Agent': 'Mozilla/5.0' } }
+    );
+    const raw = await r.text();
+    const data = JSON.parse(raw);
+    return (data[1] || []).filter(s => s && s.toLowerCase() !== query.toLowerCase());
+  } catch {
+    return [];
+  }
+}
+
+// Converte um item de search.list + stats em objeto de vídeo padronizado
+function mapVideoItem(item, videoMap, channelMap) {
+  const vid = item.id?.videoId || item.id;
+  if (!vid) return null;
+  const snippet = item.snippet || {};
+  const stats = videoMap[vid]?.statistics || {};
+  const channelStats = channelMap[snippet.channelId]?.statistics || {};
+  const { durationStr, totalSec, videoType } = parseDuration(videoMap[vid]?.contentDetails?.duration);
+  const pub = snippet.publishedAt ? new Date(snippet.publishedAt).toLocaleDateString('pt-BR') : '';
+  return {
+    id: vid,
+    title: snippet.title || '',
+    channel: snippet.channelTitle || '',
+    channelId: snippet.channelId || '',
+    thumbnail: snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url || '',
+    views: parseInt(stats.viewCount) || 0,
+    likes: parseInt(stats.likeCount) || 0,
+    subscribers: parseInt(channelStats.subscriberCount) || 0,
+    duration: durationStr,
+    totalSec, videoType,
+    published: pub,
+    publishedRaw: snippet.publishedAt || '',
+  };
+}
+
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido' });
@@ -49,7 +97,8 @@ module.exports = async (req, res) => {
   if (!authHeader?.startsWith('Bearer '))
     return res.status(401).json({ error: 'Não autorizado' });
 
-  try { jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET); }
+  let user;
+  try { user = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET); }
   catch { return res.status(401).json({ error: 'Token inválido' }); }
 
   const apiKey = process.env.YOUTUBE_API_KEY;
@@ -136,6 +185,115 @@ module.exports = async (req, res) => {
       return res.status(200).json({ items: result, nextPage: '' });
     } catch (e) {
       console.error('[youtube/trending]', e.message);
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  // ── CAÇAR NICHO (expansão semântica de palavra-chave) ──
+  // Descobre variações REAIS do termo (autocomplete) e busca todas,
+  // varrendo o nicho inteiro em vez de só o match literal do título.
+  if (action === 'hunt') {
+    if (!query) return res.status(400).json({ error: 'query obrigatório' });
+
+    // Limite diário de caçadas por conta (protege a cota compartilhada da API)
+    const huntLimit = user.lim_hunt || HUNT_LIMIT;
+    let huntsToday = 0;
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { count } = await supabase
+        .from('hunt_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.sub || user.id)
+        .gte('created_at', `${today}T00:00:00`)
+        .lte('created_at', `${today}T23:59:59`);
+      huntsToday = count || 0;
+    } catch (e) {}
+
+    if (huntsToday >= huntLimit)
+      return res.status(429).json({ error: `Limite diário de caçadas atingido (${huntLimit}/dia). Use a busca normal ou volte amanhã.` });
+
+    try {
+      const hl = lang || { BR: 'pt', US: 'en', PT: 'pt', ES: 'es', MX: 'es', FR: 'fr' }[region] || 'pt';
+      const gl = region || 'BR';
+
+      // 1. Descobre variações reais do nicho (grátis)
+      const sugs = await fetchSuggestions(query, hl, gl);
+      // Query original + até 4 variações mais buscadas
+      const queries = [query, ...sugs.slice(0, 4)];
+
+      // Filtro de data (mesma lógica da busca normal)
+      let publishedAfter = '';
+      if (date) {
+        const now = new Date();
+        const days = { today: 1, week: 7, month: 30, year: 365 }[date] || 0;
+        if (days) { now.setTime(now.getTime() - days * 86400000); publishedAfter = now.toISOString(); }
+      }
+      let videoDuration = '';
+      if (duration === 'short' || duration === 'medium' || duration === 'long') videoDuration = duration;
+      else if (video_type === 'short') videoDuration = 'short';
+
+      // 2. Busca cada variação em paralelo (1 página cada)
+      const searches = await Promise.all(queries.map(q => {
+        const p = new URLSearchParams({
+          part: 'snippet', q, type: 'video', order: 'viewCount',
+          maxResults: '25', key: apiKey,
+          ...(region && { regionCode: region }),
+          ...(lang && { relevanceLanguage: lang }),
+          ...(publishedAfter && { publishedAfter }),
+          ...(videoDuration && { videoDuration }),
+        });
+        return fetch(`https://www.googleapis.com/youtube/v3/search?${p}`).then(r => r.json()).catch(() => ({ items: [] }));
+      }));
+
+      // Registra a caçada (a cota já foi consumida pelas buscas acima)
+      supabase.from('hunt_log').insert({ user_id: user.sub || user.id }).then(() => {}, () => {});
+
+      // 3. Junta e deduplica por videoId
+      const seen = new Set();
+      const allItems = [];
+      searches.forEach(d => (d.items || []).forEach(it => {
+        const vid = it.id?.videoId;
+        if (vid && !seen.has(vid)) { seen.add(vid); allItems.push(it); }
+      }));
+      if (!allItems.length) return res.status(200).json({ items: [], expanded: queries, nextPage: '' });
+
+      // 4. Busca stats de vídeos e canais (em lotes de 50)
+      const videoIds = allItems.map(i => i.id?.videoId).filter(Boolean);
+      const channelIds = [...new Set(allItems.map(i => i.snippet?.channelId).filter(Boolean))];
+      const videoMap = {}, channelMap = {};
+      for (let i = 0; i < videoIds.length; i += 50) {
+        const r = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds.slice(i, i + 50).join(',')}&key=${apiKey}`);
+        const d = await r.json();
+        (d.items || []).forEach(v => { videoMap[v.id] = v; });
+      }
+      for (let i = 0; i < channelIds.length; i += 50) {
+        const r = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelIds.slice(i, i + 50).join(',')}&key=${apiKey}`);
+        const d = await r.json();
+        (d.items || []).forEach(c => { channelMap[c.id] = c; });
+      }
+
+      // 5. Monta, filtra e ordena por score viral
+      const minSubsVal = parseInt(min_subs) || 0;
+      const maxSubsVal = parseInt(max_subs) || 0;
+      const minViewsVal = parseInt(min_views) || 0;
+      const minDurSec = parseInt(min_dur) || 0;
+
+      const result = allItems.map(it => mapVideoItem(it, videoMap, channelMap)).filter(v => {
+        if (!v) return false;
+        if (minSubsVal && v.subscribers < minSubsVal) return false;
+        if (maxSubsVal && v.subscribers > maxSubsVal) return false;
+        if (minViewsVal && v.views < minViewsVal) return false;
+        if (minDurSec && v.totalSec < minDurSec) return false;
+        if (video_type === 'short' && v.videoType !== 'short') return false;
+        if (video_type === 'long' && v.videoType !== 'long') return false;
+        if (video_type === 'video' && v.videoType === 'short') return false;
+        return true;
+      });
+      result.sort((a, b) => viralScore(b) - viralScore(a));
+
+      return res.status(200).json({ items: result, expanded: queries, nextPage: '' });
+    } catch (e) {
+      console.error('[youtube/hunt]', e.message);
       return res.status(500).json({ error: e.message });
     }
   }
