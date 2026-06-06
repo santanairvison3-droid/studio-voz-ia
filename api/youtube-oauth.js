@@ -137,7 +137,11 @@ module.exports = async (req, res) => {
       );
       const chData = await chRes.json();
       const ch = chData.items?.[0];
-      if (!ch) return back('sem_canal');
+      if (!ch) {
+        console.error('[oauth] mine=true', chRes.status, JSON.stringify(chData).substring(0, 400));
+        const reason = chData.error?.errors?.[0]?.reason || chData.error?.message || `http${chRes.status}/itens${chData.items?.length ?? 'undef'}`;
+        return back('sem_canal:' + encodeURIComponent(String(reason).substring(0, 90)));
+      }
 
       const { data: existing } = await supabase.from('yt_channels').select('channel_id').eq('user_id', uid);
       const already = (existing || []).some(c => c.channel_id === ch.id);
