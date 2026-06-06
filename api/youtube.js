@@ -64,6 +64,82 @@ module.exports = async (req, res) => {
     action = '', channel_url = '', qty = '50', ord = 'date'
   } = req.query;
 
+  // ── SUGESTÕES DE PALAVRAS-CHAVE (autocomplete real do YouTube) ──
+  // Mostra o que as pessoas DIGITAM de verdade. Zero cota da Data API.
+  if (action === 'suggest') {
+    if (!query) return res.status(400).json({ error: 'query obrigatório' });
+    const hl = lang || { BR: 'pt', US: 'en', PT: 'pt', ES: 'es', MX: 'es', FR: 'fr' }[region] || 'pt';
+    const gl = region || 'BR';
+    try {
+      const r = await fetch(
+        `https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&hl=${hl}&gl=${gl}&q=${encodeURIComponent(query)}`,
+        { headers: { 'User-Agent': 'Mozilla/5.0' } }
+      );
+      const raw = await r.text();
+      let data;
+      try { data = JSON.parse(raw); } catch { data = [query, []]; }
+      const suggestions = (data[1] || []).filter(s => s && s.toLowerCase() !== query.toLowerCase());
+      return res.status(200).json({ query, suggestions });
+    } catch (e) {
+      console.error('[youtube/suggest]', e.message);
+      return res.status(200).json({ query, suggestions: [] });
+    }
+  }
+
+  // ── TEMAS EM ALTA (vídeos bombando na região AGORA) ──
+  // Custa só 1 unidade de cota (vs. 100 da busca normal).
+  if (action === 'trending') {
+    try {
+      const params = new URLSearchParams({
+        part: 'snippet,statistics,contentDetails',
+        chart: 'mostPopular',
+        regionCode: region || 'BR',
+        maxResults: '50',
+        key: apiKey,
+      });
+      if (req.query.category) params.set('videoCategoryId', req.query.category);
+
+      const r = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`);
+      const d = await r.json();
+      if (!r.ok) return res.status(500).json({ error: d.error?.message || 'Erro ao buscar tendências' });
+
+      const items = d.items || [];
+      // Busca inscritos dos canais para calcular o score viral
+      const channelIds = [...new Set(items.map(i => i.snippet?.channelId).filter(Boolean))].join(',');
+      const chRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelIds}&key=${apiKey}`);
+      const chData = await chRes.json();
+      const channelMap = {};
+      (chData.items || []).forEach(c => { channelMap[c.id] = c; });
+
+      const result = items.map(item => {
+        const snippet = item.snippet || {};
+        const stats = item.statistics || {};
+        const channelStats = channelMap[snippet.channelId]?.statistics || {};
+        const { durationStr, totalSec, videoType } = parseDuration(item.contentDetails?.duration);
+        const pub = snippet.publishedAt ? new Date(snippet.publishedAt).toLocaleDateString('pt-BR') : '';
+        return {
+          id: item.id,
+          title: snippet.title || '',
+          channel: snippet.channelTitle || '',
+          channelId: snippet.channelId || '',
+          thumbnail: snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url || '',
+          views: parseInt(stats.viewCount) || 0,
+          likes: parseInt(stats.likeCount) || 0,
+          subscribers: parseInt(channelStats.subscriberCount) || 0,
+          duration: durationStr,
+          totalSec, videoType,
+          published: pub,
+          publishedRaw: snippet.publishedAt || '',
+        };
+      });
+      result.sort((a, b) => viralScore(b) - viralScore(a));
+      return res.status(200).json({ items: result, nextPage: '' });
+    } catch (e) {
+      console.error('[youtube/trending]', e.message);
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
   // ── INSIGHTS DE CANAL ──────────────────────────────────────────
   if (action === 'channel') {
     if (!channel_url) return res.status(400).json({ error: 'channel_url obrigatório' });
