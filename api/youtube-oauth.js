@@ -106,7 +106,9 @@ module.exports = async (req, res) => {
   const { action = '', channel_id = '' } = req.query;
 
   // ── CALLBACK: troca código por tokens e salva o canal (não usa Bearer) ──
-  if (action === 'callback') {
+  // O Google volta para o redirect_uri (sem query) acrescentando ?code=...&state=...
+  // Detectamos pela presença de code/error — assim o redirect_uri não precisa de query string.
+  if (action === 'callback' || req.query.code || req.query.error) {
     const { code, state, error: oauthErr } = req.query;
     const back = (msg) => res.redirect(`/dashboard.html#canais${msg ? '=' + encodeURIComponent(msg) : ''}`);
     if (oauthErr) return back('cancelado');
