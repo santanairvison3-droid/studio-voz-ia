@@ -66,7 +66,9 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .cr-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .cr-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--accent);line-height:1}
 
-.sb-nav{flex:1;padding:8px 10px;display:flex;flex-direction:column;gap:1px}
+.sb-nav{flex:1;min-height:0;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:1px;scrollbar-width:thin;scrollbar-color:var(--border-a) transparent}
+.sb-nav::-webkit-scrollbar{width:5px}
+.sb-nav::-webkit-scrollbar-thumb{background:var(--border-a);border-radius:99px}
 .nav-section{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);padding:12px 10px 5px}
 .nav-item{
   display:flex;align-items:center;gap:9px;
@@ -780,6 +782,9 @@ select option{background:var(--surface2)}
     <div class="nav-item" onclick="goTab('trends',this)">
       <span class="nav-ic">🔥</span>Tendências YT
     </div>
+    <div class="nav-item" onclick="goTab('canais',this)">
+      <span class="nav-ic">📊</span>Meus Canais
+    </div>
     <div class="nav-item" onclick="goTab('stats',this)">
       <span class="nav-ic">📊</span>Estatísticas
     </div>
@@ -1066,6 +1071,10 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
             style="padding:10px 22px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px var(--glow)">
             🔍 Buscar
           </button>
+          <button onclick="huntNiche()" id="btn-yt-hunt" title="Varre o nicho inteiro: busca seu termo + as variações reais que as pessoas pesquisam"
+            style="padding:10px 18px;background:transparent;border:1px solid var(--border-a);border-radius:10px;color:var(--accent);font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">
+            🎯 Caçar Nicho
+          </button>
           <button onclick="loadTrending()" id="btn-yt-trending" title="Vídeos bombando na região agora"
             style="padding:10px 18px;background:transparent;border:1px solid rgba(255,85,51,.4);border-radius:10px;color:#ff5533;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">
             🔥 Em Alta
@@ -1203,6 +1212,26 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
         </div>
         <div id="refs-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px"></div>
       </div>
+    </div>
+
+    <!-- MEUS CANAIS (monitoramento OAuth) -->
+    <div class="tab-pane" id="tab-canais">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:3px">📊 Monitoramento de Canais</div>
+          <div style="font-size:12px;color:var(--muted)">Conecte seu canal e receba um diagnóstico com dados reais + prompt pronto pra IA.</div>
+        </div>
+        <button onclick="connectChannel()" id="btn-connect-ch"
+          style="padding:11px 20px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px var(--glow)">
+          🔗 Conectar com Google
+        </button>
+      </div>
+      <div id="ch-notice" style="display:none;margin-bottom:14px;padding:11px 16px;border-radius:10px;font-size:13px"></div>
+      <div id="channels-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px">Carregando canais...</div>
+      </div>
+      <!-- Painel de análise -->
+      <div id="ch-report" style="display:none;margin-top:20px"></div>
     </div>
 
     <div class="tab-pane" id="tab-stats">
@@ -2191,7 +2220,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -2202,6 +2231,7 @@ function goTab(name,el){
   if(name==='voices')renderLibVoices();
   if(name==='stats')loadStats();
   if(name==='trends'){document.getElementById('yt-query').focus();ytRenderRefs();}
+  if(name==='canais')loadChannels();
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
 }
@@ -2602,6 +2632,52 @@ function ytSuggest(){
   },350);
 }
 
+/* ── CAÇAR NICHO (expansão semântica de palavra-chave) ── */
+async function huntNiche(){
+  const query=document.getElementById('yt-query').value.trim();
+  if(!query){alert('⚠️ Digite um nicho ou palavra-chave primeiro.');return;}
+  const btn=document.getElementById('btn-yt-hunt');
+  const results=document.getElementById('yt-results');
+  const loadMoreBtn=document.getElementById('yt-load-more');
+  if(loadMoreBtn)loadMoreBtn.style.display='none';
+  document.getElementById('yt-suggest-box').style.display='none';
+  ytNextPage='';
+  results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px">🎯 Caçando o nicho inteiro... descobrindo variações reais e varrendo cada uma.</div>';
+  btn.disabled=true;btn.textContent='⏳...';
+  // Coleta filtros ativos (mesmos da busca normal)
+  const date=document.getElementById('yt-date').value;
+  const region=document.getElementById('yt-region').value;
+  const subsMin=document.getElementById('yt-subs-min').value;
+  const subsMax=document.getElementById('yt-subs-max').value;
+  const type=document.getElementById('yt-type').value;
+  const duration=document.getElementById('yt-duration').value;
+  const lang=document.getElementById('yt-lang').value;
+  try{
+    const params=new URLSearchParams({action:'hunt',query,region:region||'BR'});
+    if(date)params.set('date',date);
+    if(subsMin)params.set('min_subs',subsMin);
+    if(subsMax)params.set('max_subs',subsMax);
+    if(type)params.set('video_type',type);
+    if(duration)params.set('duration',duration);
+    if(lang&&lang!=='multi')params.set('lang',lang);
+    const r=await fetch(`${API}/api/youtube?${params}`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();
+    if(!r.ok){results.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--error);font-size:13px">❌ ${escHtml(d.error||'Erro')}</div>`;return;}
+    results.innerHTML='';
+    // Mostra os termos que foram caçados
+    if(d.expanded&&d.expanded.length>1){
+      const banner=document.createElement('div');
+      banner.style.cssText='grid-column:1/-1;background:var(--accent-dim);border:1px solid var(--border-a);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--text);display:flex;flex-wrap:wrap;gap:6px;align-items:center';
+      banner.innerHTML='<span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">🎯 Nicho varrido:</span>'+d.expanded.map(t=>`<span style="background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:3px 10px;font-size:11px;color:var(--accent)">${escHtml(t)}</span>`).join('');
+      results.appendChild(banner);
+    }
+    if(!d.items?.length){results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px">Nenhum resultado encontrado para o nicho.</div>';return;}
+    d.items.forEach(v=>results.appendChild(ytCard(v)));
+  }catch(e){
+    results.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--error);font-size:13px">❌ ${escHtml(e.message)}</div>`;
+  }finally{btn.disabled=false;btn.textContent='🎯 Caçar Nicho';}
+}
+
 /* ── TEMAS EM ALTA (trending da região agora) ── */
 async function loadTrending(){
   const btn=document.getElementById('btn-yt-trending');
@@ -2623,6 +2699,146 @@ async function loadTrending(){
   }catch(e){
     results.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--error);font-size:13px">❌ ${escHtml(e.message)}</div>`;
   }finally{btn.disabled=false;btn.textContent='🔥 Em Alta';}
+}
+
+/* ── MEUS CANAIS (monitoramento OAuth) ── */
+let lastAiPrompt='';
+
+function chNotice(msg,type){
+  const el=document.getElementById('ch-notice');
+  if(!el)return;
+  if(!msg){el.style.display='none';return;}
+  const c={ok:['rgba(0,214,143,.1)','rgba(0,214,143,.25)','#2dffb4'],err:['rgba(255,77,114,.1)','rgba(255,77,114,.25)','#ff7096'],info:['rgba(0,229,212,.08)','rgba(0,229,212,.25)','var(--accent)']}[type||'info'];
+  el.style.background=c[0];el.style.border='1px solid '+c[1];el.style.color=c[2];
+  el.textContent=msg;el.style.display='block';
+}
+
+// Lê o retorno do callback OAuth (#canais=conectado, =limite_canais, etc.)
+function readChannelCallback(){
+  const h=location.hash||'';
+  const m=h.match(/#canais=([\w]+)/);
+  if(!m)return;
+  const map={conectado:['✅ Canal conectado com sucesso!','ok'],cancelado:['Conexão cancelada.','info'],limite_canais:['⚠️ Limite de 5 canais atingido. Desconecte um antes de adicionar outro.','err'],sem_refresh:['⚠️ Não foi possível obter autorização. Tente novamente e confirme todas as permissões.','err'],sem_canal:['⚠️ Nenhum canal encontrado nessa conta Google.','err'],expirado:['A sessão de conexão expirou. Tente novamente.','err'],erro_token:['Erro ao validar com o Google. Tente novamente.','err'],erro:['Ocorreu um erro na conexão.','err']};
+  const r=map[m[1]];
+  if(r)chNotice(r[0],r[1]);
+  history.replaceState(null,'',location.pathname);
+}
+
+async function loadChannels(){
+  readChannelCallback();
+  const list=document.getElementById('channels-list');
+  try{
+    const r=await fetch(`${API}/api/channel-monitor?action=list`,{headers:{Authorization:`Bearer ${token}`}});
+    if(r.status===401){logout();return;}
+    const d=await r.json();
+    const chs=d.channels||[];
+    if(!chs.length){
+      list.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--muted);border:2px dashed var(--border);border-radius:12px"><div style="font-size:32px;margin-bottom:10px;opacity:.3">📺</div><div style="font-size:14px;margin-bottom:4px">Nenhum canal conectado ainda.</div><div style="font-size:12px">Clique em "Conectar com Google" e autorize com a conta do seu canal.</div></div>';
+      return;
+    }
+    list.innerHTML=chs.map(c=>`
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <img src="${escHtml(c.channel_thumb)}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid var(--border-a)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(c.channel_title)}</div>
+            <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace">${c.last_analyzed_at?'Analisado '+new Date(c.last_analyzed_at).toLocaleDateString('pt-BR'):'Nunca analisado'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="analyzeChannel('${escHtml(c.channel_id)}')" style="flex:1;padding:9px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;cursor:pointer">📈 Analisar</button>
+          <button onclick="disconnectChannel('${escHtml(c.channel_id)}','${escHtml(c.channel_title)}')" title="Desconectar" style="padding:9px 12px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif">✕</button>
+        </div>
+      </div>`).join('');
+  }catch(e){
+    list.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--error);font-size:13px">❌ ${escHtml(e.message)}</div>`;
+  }
+}
+
+async function connectChannel(){
+  const btn=document.getElementById('btn-connect-ch');
+  btn.disabled=true;btn.textContent='⏳ Abrindo...';
+  try{
+    const r=await fetch(`${API}/api/youtube-oauth?action=login`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();
+    if(d.url){location.href=d.url;}
+    else{chNotice(d.error||'Não foi possível iniciar a conexão.','err');btn.disabled=false;btn.textContent='🔗 Conectar com Google';}
+  }catch(e){chNotice('Erro de conexão.','err');btn.disabled=false;btn.textContent='🔗 Conectar com Google';}
+}
+
+async function disconnectChannel(channelId,title){
+  if(!confirm(`Desconectar o canal "${title}"?`))return;
+  try{
+    await fetch(`${API}/api/channel-monitor?action=disconnect&channel_id=${encodeURIComponent(channelId)}`,{headers:{Authorization:`Bearer ${token}`}});
+    document.getElementById('ch-report').style.display='none';
+    loadChannels();
+  }catch(e){chNotice('Erro ao desconectar.','err');}
+}
+
+async function analyzeChannel(channelId){
+  const panel=document.getElementById('ch-report');
+  panel.style.display='block';
+  panel.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">📈 Analisando canal... buscando retenção, CTR e padrões de título.</div>';
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
+  try{
+    const r=await fetch(`${API}/api/channel-monitor?action=report&channel_id=${encodeURIComponent(channelId)}`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();
+    if(!r.ok){panel.innerHTML=`<div style="text-align:center;padding:40px;color:var(--error);font-size:13px">❌ ${escHtml(d.error||'Erro na análise')}</div>`;return;}
+    lastAiPrompt=d.prompt||'';
+    const o=d.overall||{};
+    const mm=Math.floor((o.avgViewDuration||0)/60),ss=(o.avgViewDuration||0)%60;
+    const card=(label,val,sub)=>`<div class="sc"><div class="sc-label">${label}</div><div class="sc-value t">${val}</div><div class="sc-sub">${sub||''}</div></div>`;
+    const fmtN=n=>n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':String(n||0);
+    const vidRow=(v,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:11px;font-weight:700;color:var(--muted);width:16px">${i+1}</span>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.title)}</div><div style="font-size:10px;color:var(--muted)">${fmtN(v.views)} views · ${v.duration}</div></div>
+      <span style="font-size:13px;font-weight:700;color:${v.retention>=50?'var(--success)':v.retention>=30?'var(--warning)':'var(--error)'};font-family:'JetBrains Mono',monospace">${v.retention}%</span>
+    </div>`;
+    const ts=d.titleStructure;
+    panel.innerHTML=`
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <img src="${escHtml(d.channel?.thumb||'')}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid var(--border-a)">
+        <div style="font-size:16px;font-weight:700">${escHtml(d.channel?.title||'')}</div>
+        <span style="font-size:10px;color:var(--muted);margin-left:auto">últimos 30 dias</span>
+      </div>
+      <div class="stats-row" style="margin-bottom:18px">
+        ${card('Retenção Média',Math.round(o.avgViewPercentage||0)+'%','quanto assistem')}
+        ${card('Tempo Médio',mm+'m '+ss+'s','por vídeo')}
+        ${card('Views (30d)',fmtN(o.views),'visualizações')}
+        ${card('Inscritos +',fmtN(o.subscribersGained),'no período')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">
+        <div class="card"><div class="card-title">🏆 Maior Retenção</div>${(d.topVideos||[]).map(vidRow).join('')||'<div style="color:var(--muted);font-size:12px">Sem dados.</div>'}</div>
+        <div class="card"><div class="card-title">⚠️ Menor Retenção</div>${(d.worstVideos||[]).map(vidRow).join('')||'<div style="color:var(--muted);font-size:12px">Sem dados.</div>'}</div>
+      </div>
+      ${ts?`<div class="card" style="margin-bottom:18px"><div class="card-title">✍️ Estrutura dos Títulos que Retêm</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px">
+          <span style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px">📏 ${ts.avgLength} caracteres</span>
+          <span style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px">🔢 ${ts.pctNumber}% c/ número</span>
+          <span style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px">❓ ${ts.pctQuestion}% pergunta</span>
+          <span style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px">😀 ${ts.pctEmoji}% emoji</span>
+        </div>
+        ${ts.topWords?.length?`<div style="margin-top:12px;font-size:11px;color:var(--muted)">Palavras frequentes: <span style="color:var(--accent)">${ts.topWords.map(escHtml).join(', ')}</span></div>`:''}
+      </div>`:''}
+      <div class="card" style="border-color:var(--border-a)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+          <div class="card-title" style="margin:0">🤖 Prompt pronto pra IA (Claude / GPT / Gemini)</div>
+          <button onclick="copyAiPrompt()" id="btn-copy-prompt" style="padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;cursor:pointer">📋 Copiar Prompt</button>
+        </div>
+        <textarea readonly style="width:100%;min-height:200px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);resize:vertical">${escHtml(d.prompt||'')}</textarea>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">💡 Copie e cole numa IA pra receber melhorias de título, thumbnail, retenção e ideias de vídeo.</div>
+      </div>`;
+  }catch(e){
+    panel.innerHTML=`<div style="text-align:center;padding:40px;color:var(--error);font-size:13px">❌ ${escHtml(e.message)}</div>`;
+  }
+}
+
+function copyAiPrompt(){
+  if(!lastAiPrompt)return;
+  navigator.clipboard.writeText(lastAiPrompt).then(()=>{
+    const btn=document.getElementById('btn-copy-prompt');
+    if(btn){const t=btn.textContent;btn.textContent='✅ Copiado!';setTimeout(()=>btn.textContent=t,1800);}
+  });
 }
 
 /* ── CANAL YOUTUBE ── */
