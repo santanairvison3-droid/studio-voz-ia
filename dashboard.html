@@ -2716,11 +2716,18 @@ function chNotice(msg,type){
 // Lê o retorno do callback OAuth (#canais=conectado, =limite_canais, etc.)
 function readChannelCallback(){
   const h=location.hash||'';
-  const m=h.match(/#canais=([\w]+)/);
+  const m=h.match(/#canais=([^&]+)/);
   if(!m)return;
+  const raw=decodeURIComponent(m[1]);
+  const key=raw.split(':')[0];
+  const detail=raw.includes(':')?raw.substring(raw.indexOf(':')+1):'';
   const map={conectado:['✅ Canal conectado com sucesso!','ok'],cancelado:['Conexão cancelada.','info'],limite_canais:['⚠️ Limite de 5 canais atingido. Desconecte um antes de adicionar outro.','err'],sem_refresh:['⚠️ Não foi possível obter autorização. Tente novamente e confirme todas as permissões.','err'],sem_canal:['⚠️ Nenhum canal encontrado nessa conta Google.','err'],expirado:['A sessão de conexão expirou. Tente novamente.','err'],erro_token:['Erro ao validar com o Google. Tente novamente.','err'],erro:['Ocorreu um erro na conexão.','err']};
-  const r=map[m[1]];
-  if(r)chNotice(r[0],r[1]);
+  const r=map[key];
+  if(r){
+    let msg=r[0];
+    if(detail)msg+=' — motivo: '+detail;
+    chNotice(msg,r[1]);
+  }
   history.replaceState(null,'',location.pathname);
 }
 
