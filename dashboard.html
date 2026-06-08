@@ -748,6 +748,77 @@ select option{background:var(--surface2)}
   .tb-pills .pill:last-child{display:none}
   .vlib-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
 }
+
+/* ═══ FERRAMENTAS DE IMAGEM ═══ */
+.tools-page-header{margin-bottom:28px}
+.tools-page-title{font-size:22px;font-weight:700;margin-bottom:4px}
+.tools-page-sub{font-size:13px;color:var(--muted)}
+.workflow-hint{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:14px 18px;margin-bottom:24px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);
+}
+.workflow-hint strong{color:var(--text)}
+.wf-step{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;
+}
+.wf-arrow{color:var(--accent);font-size:16px;font-weight:700;flex-shrink:0}
+.tool-cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.tool-card{
+  background:var(--surface);border:1px solid var(--border-a);
+  border-radius:16px;padding:28px;
+  display:flex;flex-direction:column;gap:14px;
+  position:relative;overflow:hidden;
+  transition:transform .2s,box-shadow .2s,border-color .2s;
+}
+.tool-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+}
+.tool-card:hover{transform:translateY(-3px);box-shadow:0 14px 44px rgba(0,229,212,.12);border-color:rgba(0,229,212,.28)}
+.tool-card-img::before{background:linear-gradient(90deg,#5599ff,#00d4ff)}
+.tool-card-img:hover{box-shadow:0 14px 44px rgba(0,150,255,.12);border-color:rgba(85,153,255,.3)}
+.tool-card-header{display:flex;align-items:center;justify-content:space-between}
+.tool-icon{
+  width:54px;height:54px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  background:var(--accent-dim);border:1px solid var(--border-a);
+}
+.tool-card-img .tool-icon{background:rgba(85,153,255,.1);border-color:rgba(85,153,255,.25)}
+.tool-badge{
+  font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  padding:4px 10px;border-radius:99px;border:1px solid;
+  background:var(--accent-dim);border-color:rgba(0,229,212,.3);color:var(--accent);
+}
+.tool-badge-img{background:rgba(85,153,255,.1);border-color:rgba(85,153,255,.3);color:#5599ff}
+.tool-name{font-size:22px;font-weight:700;color:var(--text)}
+.tool-sub{font-size:13px;font-weight:600;color:var(--accent);margin-top:-8px}
+.tool-card-img .tool-sub{color:#5599ff}
+.tool-desc{font-size:13px;color:var(--muted);line-height:1.75;flex:1}
+.tool-chips{display:flex;flex-wrap:wrap;gap:6px}
+.tool-chip{
+  font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--muted);padding:3px 10px;border-radius:99px;
+}
+.btn-open{
+  display:block;text-align:center;padding:14px;border-radius:10px;
+  font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;
+  text-decoration:none;letter-spacing:.3px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#040709;border:none;cursor:pointer;
+  box-shadow:0 4px 20px var(--glow);
+  transition:opacity .2s,transform .1s,box-shadow .2s;
+}
+.btn-open:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 7px 28px rgba(0,229,212,.35)}
+.btn-open-img{
+  background:linear-gradient(135deg,#5599ff,#00d4ff);
+  box-shadow:0 4px 20px rgba(85,153,255,.25);
+}
+.btn-open-img:hover{box-shadow:0 7px 28px rgba(85,153,255,.4)}
+@media(max-width:660px){.tool-cards-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -793,6 +864,11 @@ select option{background:var(--surface2)}
     </div>
     <div class="nav-item" onclick="goTab('voucher',this)">
       <span class="nav-ic">🎟️</span>Voucher
+    </div>
+    <div class="nav-section">Imagem IA</div>
+    <div class="nav-item" onclick="goTab('imagens',this)">
+      <span class="nav-ic">🎨</span>Ferramentas de Imagem
+      <span class="nav-badge">NEW</span>
     </div>
   </nav>
 
@@ -1255,6 +1331,72 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
             <div style="color:var(--muted);font-size:12px">Carregando...</div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- FERRAMENTAS DE IMAGEM IA -->
+    <div class="tab-pane" id="tab-imagens">
+      <div class="tools-page-header">
+        <div class="tools-page-title">🎨 Ferramentas de Imagem IA</div>
+        <div class="tools-page-sub">Gere prompts visuais do seu roteiro e crie imagens em massa — tudo no Gemini.</div>
+      </div>
+
+      <div class="workflow-hint">
+        <span class="wf-step">📝 <span>Seu roteiro</span></span>
+        <span class="wf-arrow">→</span>
+        <span class="wf-step">🎬 <span><strong>CinePrompt</strong> gera os prompts</span></span>
+        <span class="wf-arrow">→</span>
+        <span class="wf-step">🖼️ <span><strong>MassScene</strong> gera as imagens</span></span>
+        <span class="wf-arrow">→</span>
+        <span class="wf-step">📦 <span>Download .zip</span></span>
+      </div>
+
+      <div class="tool-cards-grid">
+
+        <!-- CARD 1: CinePrompt -->
+        <div class="tool-card">
+          <div class="tool-card-header">
+            <div class="tool-icon">🎬</div>
+            <span class="tool-badge">GEMINI</span>
+          </div>
+          <div class="tool-name">CinePrompt</div>
+          <div class="tool-sub">Gerador de Prompts Visuais</div>
+          <div class="tool-desc">
+            Cole seu roteiro e a IA divide em cenas, identifica personagens e gera prompts detalhados em inglês — prontos para qualquer ferramenta de imagem (Midjourney, DALL-E, Imagen).
+          </div>
+          <div class="tool-chips">
+            <span class="tool-chip">✦ GPT-4o-mini</span>
+            <span class="tool-chip">✦ Auto-tradução EN</span>
+            <span class="tool-chip">✦ Até 5 roteiros</span>
+            <span class="tool-chip">✦ Download .txt</span>
+          </div>
+          <a class="btn-open" href="https://gemini.google.com/share/68b0b42b77e1" target="_blank" rel="noopener">
+            🚀 Abrir CinePrompt
+          </a>
+        </div>
+
+        <!-- CARD 2: MassScene -->
+        <div class="tool-card tool-card-img">
+          <div class="tool-card-header">
+            <div class="tool-icon">🖼️</div>
+            <span class="tool-badge tool-badge-img">GEMINI</span>
+          </div>
+          <div class="tool-name">MassScene</div>
+          <div class="tool-sub">Gerador de Imagens em Massa</div>
+          <div class="tool-desc">
+            Cole os prompts gerados pelo CinePrompt e gere todas as imagens de uma vez via Google Imagen 4. Escolha o estilo, proporção e baixe tudo em um arquivo .zip.
+          </div>
+          <div class="tool-chips">
+            <span class="tool-chip">✦ Google Imagen 4</span>
+            <span class="tool-chip">✦ Download .zip</span>
+            <span class="tool-chip">✦ Proporção livre</span>
+            <span class="tool-chip">✦ Múltiplos estilos</span>
+          </div>
+          <a class="btn-open btn-open-img" href="https://gemini.google.com/share/77ffc3c40ac1" target="_blank" rel="noopener">
+            🚀 Abrir MassScene
+          </a>
+        </div>
+
       </div>
     </div>
 
