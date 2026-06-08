@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IrvImagem — Irvison Studio</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080b10;--s1:#0e1318;--s2:#131a22;--s3:#18222d;
+  --border:#1c2c3a;--border2:#243848;
+  --accent:#00ff9d;--accent2:#ff6b00;--accent3:#00d4ff;
+  --text:#d8eaf5;--muted:#4d6880;--muted2:#3a5268;
+  --r:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;user-select:none}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 50% 35% at 5% 5%,rgba(0,255,157,.04) 0%,transparent 70%),
+  radial-gradient(ellipse 40% 30% at 95% 90%,rgba(0,212,255,.04) 0%,transparent 70%);
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,255,157,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,157,.015) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
+
+/* HEADER */
+header{padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:28px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header-left{}
+.logo{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;line-height:1;letter-spacing:-1px}
+.logo em{color:var(--accent);font-style:normal}
+.logo-by{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-top:4px;font-family:'Fira Code',monospace}
+.logo-by span{color:var(--accent);letter-spacing:1px}
+.tagline{font-size:13px;color:var(--muted);margin-top:3px}
+.studio-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  background:linear-gradient(135deg,rgba(0,255,157,.08),rgba(0,212,255,.06));
+  border:1px solid rgba(0,255,157,.2);
+  border-radius:10px;padding:8px 16px;
+  font-family:'Fira Code',monospace;
+}
+.studio-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,157,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(0,255,157,0)}}
+.studio-badge-txt{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:1px}
+
+/* PIX GRATIDÃO */
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.pix-container{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  background:var(--s2);padding:12px;border-radius:var(--r);
+  border:1px solid var(--border);
+  transition:transform .2s,border-color .2s;
+  cursor:pointer;user-select:none;
+}
+.pix-container:hover{transform:translateY(-2px);border-color:var(--accent);background:var(--s3)}
+.pix-container img{width:100px;height:100px;border-radius:6px;background:#fff;padding:5px}
+.pix-container span{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-family:'Syne',sans-serif}
+.notif{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--s3);border:1px solid var(--accent);color:var(--accent);padding:10px 20px;border-radius:8px;font-size:13px;z-index:200;display:none}
+
+/* API KEY PANEL */
+.api-panel{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.api-row{display:flex;gap:8px}
+.api-row input{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-family:'Fira Code',monospace;font-size:13px;outline:none;transition:border-color .2s}
+.api-row input:focus{border-color:var(--accent)}
+.api-row input::placeholder{color:var(--muted2);font-family:'Outfit',sans-serif}
+.api-toggle{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:0 13px;color:var(--muted);cursor:pointer;font-size:15px;transition:all .2s;flex-shrink:0}
+.api-toggle:hover{border-color:var(--accent);color:var(--accent)}
+.api-saved{font-size:10px;font-family:'Fira Code',monospace;margin-top:6px;display:none}
+.api-saved.ok{color:var(--accent);display:block}
+.api-saved.missing{color:#ff4f6b;display:block}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+.sidebar{position:sticky;top:20px;display:flex;flex-direction:column;gap:14px}
+.panel{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px;transition:border-color .2s}
+.panel:hover{border-color:var(--border2)}
+.panel-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.panel-title::before{content:'';width:3px;height:14px;background:var(--accent);border-radius:2px;flex-shrink:0}
+
+label.lbl{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+
+select{
+  width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:10px 13px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;
+  outline:none;transition:border-color .2s;margin-bottom:12px;
+  appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%234d6880' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;padding-right:30px;
+}
+select:focus{border-color:var(--accent)}
+
+.ratio-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ratio-btn{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 6px;color:var(--muted);font-size:11px;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;text-align:center}
+.ratio-btn:hover,.ratio-btn.on{border-color:var(--accent);color:var(--accent);background:rgba(0,255,157,.06)}
+
+.range-row{display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1;height:4px;accent-color:var(--accent);cursor:pointer;background:var(--s3);border-radius:2px;border:none;padding:0;margin-bottom:0}
+.range-val{font-family:'Fira Code',monospace;font-size:12px;color:var(--accent);min-width:16px;text-align:right}
+
+.file-drop{border:2px dashed var(--border);border-radius:8px;padding:24px 18px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s2);position:relative}
+.file-drop:hover{border-color:var(--accent);background:rgba(0,255,157,.04)}
+.file-drop input{display:none}
+.file-drop span{font-size:12px;color:var(--muted);pointer-events:none}
+
+.btn-main{
+  width:100%;background:linear-gradient(135deg,var(--accent),#00cc7a);color:#000;
+  border:none;border-radius:var(--r);padding:15px;font-family:'Syne',sans-serif;
+  font-size:17px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .25s;
+}
+.btn-main:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,255,157,.2);filter:brightness(1.08)}
+.btn-main:disabled{opacity:.35;cursor:not-allowed;transform:none}
+
+.btn-sec{
+  width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:11px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:1px;cursor:pointer;transition:all .2s;margin-top:8px;
+}
+.btn-sec:hover:not(:disabled){border-color:var(--accent3);color:var(--accent3)}
+.btn-sec:disabled{opacity:.3;cursor:not-allowed}
+
+.btn-danger{
+  width:100%;background:rgba(255,79,107,.05);border:1px solid rgba(255,79,107,.2);border-radius:8px;
+  padding:11px;color:#ff4f6b;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:1px;cursor:pointer;transition:all .2s;margin-top:8px;
+}
+.btn-danger:hover{background:rgba(255,79,107,.1);border-color:#ff4f6b}
+
+/* MAIN */
+.main-area{display:flex;flex-direction:column;gap:14px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.stat{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+.stat-val{font-family:'Fira Code',monospace;font-size:20px;font-weight:600;color:var(--accent)}
+.stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+
+.editor-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.editor-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--border)}
+.editor-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent3)}
+.count-badge{font-size:10px;color:var(--muted);font-family:'Fira Code',monospace}
+
+textarea{width:100%;background:transparent;border:none;padding:16px;color:var(--text);font-family:'Fira Code',monospace;font-size:13px;line-height:1.8;resize:vertical;min-height:200px;outline:none;user-select:text}
+
+.prog-section{display:none;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.prog-bar-bg{height:6px;background:var(--s3);border-radius:100px;overflow:hidden;margin-bottom:8px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));transition:width .4s ease;width:0}
+.prog-info{font-size:11px;color:var(--muted);font-family:'Fira Code',monospace}
+
+.img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:10px}
+.img-card{background:var(--s1);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s}
+.img-placeholder{aspect-ratio:16/9;background:var(--s2);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.img-placeholder img{width:100%;height:100%;object-fit:cover;cursor:pointer}
+.img-footer{padding:8px 12px;display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-top:1px solid var(--border)}
+.img-num{font-family:'Fira Code',monospace;font-size:10px;font-weight:700;color:var(--accent)}
+
+.spin{width:20px;height:20px;border:2px solid rgba(0,255,157,.1);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.err-lbl{font-size:10px;color:#ff4f6b;font-family:'Fira Code',monospace;text-align:center;padding:10px}
+
+/* FOOTER */
+footer{text-align:center;padding:32px 0 24px;border-top:1px solid var(--border);margin-top:32px}
+.footer-brand{font-family:'Fira Code',monospace;font-size:11px;color:var(--muted);letter-spacing:1px}
+.footer-brand span{color:var(--accent)}
+
+@media(max-width:760px){.layout{grid-template-columns:1fr}.sidebar{position:static}.img-grid{grid-template-columns:repeat(2,1fr)}.header-left .logo{font-size:28px}.studio-badge{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="header-left">
+      <div class="logo">Irv<em>Imagem</em></div>
+      <div class="logo-by">by <span>Irvison Dark Studio</span></div>
+      <div class="tagline">Gerador de Imagens em Massa · Exclusivo</div>
+    </div>
+    <div class="header-right">
+      <div class="studio-badge">
+        <div class="studio-badge-dot"></div>
+        <span class="studio-badge-txt">IRVISON STUDIO</span>
+      </div>
+      <div class="pix-container" onclick="copyPixCode()" title="Clique para copiar o código Pix">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=00020126580014BR.GOV.BCB.PIX013608c85176-ba5f-4080-9b2c-4690d98c16355204000053039865802BR5925Irvison Santana do Nascim6009SAO PAULO62140510bELmberYnL6304D15B" alt="QR Code Pix">
+        <span>pix de Gratidão</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="sidebar">
+
+      <div class="panel">
+        <div class="panel-title">Estilo Visual</div>
+        <select id="styleSelect">
+          <option value="">— Estilo do prompt —</option>
+          <option value="photorealistic, 8K, hyperdetailed, cinematic lighting">📷 Fotorrealista</option>
+          <option value="Pixar-style 3D, vibrant colors, soft lighting">🎨 Cartoon 3D</option>
+          <option value="Studio Ghibli, hand-drawn anime style, aesthetic">🌸 Anime / Ghibli</option>
+          <option value="neon cyberpunk style, cinematic atmosphere">🌆 Cyberpunk</option>
+          <option value="oil painting, textured brushstrokes, fine art">🎨 Pintura Óleo</option>
+          <option value="dark fantasy, epic painterly style, dramatic shadows">🌑 Dark Fantasy</option>
+          <option value="watercolor painting, soft loose brush strokes, pastel tones">🖌️ Aquarela</option>
+          <option value="comic book style, bold ink outlines, halftone dots, vibrant flat colors">📖 HQ / Comics</option>
+        </select>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Proporção</div>
+        <div class="ratio-grid">
+          <button class="ratio-btn" data-ratio="1:1" onclick="setRatio('1:1',this)">1:1</button>
+          <button class="ratio-btn on" data-ratio="16:9" onclick="setRatio('16:9',this)">16:9</button>
+          <button class="ratio-btn" data-ratio="9:16" onclick="setRatio('9:16',this)">9:16</button>
+          <button class="ratio-btn" data-ratio="4:3" onclick="setRatio('4:3',this)">4:3</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Velocidade</div>
+        <label class="lbl">Paralelas simultâneas</label>
+        <div class="range-row">
+          <input type="range" id="concurrency" min="1" max="5" value="1" oninput="document.getElementById('concVal').textContent=this.value">
+          <span class="range-val" id="concVal">1</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Importar .TXT</div>
+        <label class="file-drop" id="dropZone" for="fileInput">
+          <input type="file" id="fileInput" accept=".txt">
+          <span>📁 Solte o arquivo aqui</span>
+        </label>
+      </div>
+
+      <button class="btn-main" id="btnGen" onclick="startGeneration()">🔥 GERAR IMAGENS</button>
+      <button class="btn-sec" id="btnDlZip" disabled onclick="downloadZip()">📦 BAIXAR .ZIP</button>
+      <button class="btn-danger" onclick="resetAll()">🗑️ LIMPAR TUDO</button>
+
+    </div>
+
+    <div class="main-area">
+      <div class="stats-row">
+        <div class="stat"><div class="stat-val" id="statTotal">0</div><div class="stat-lbl">Prompts</div></div>
+        <div class="stat"><div class="stat-val" id="statDone">0</div><div class="stat-lbl">Geradas</div></div>
+        <div class="stat"><div class="stat-val" id="statErr">0</div><div class="stat-lbl">Erros</div></div>
+        <div class="stat"><div class="stat-val" id="statPct">0%</div><div class="stat-lbl">Progresso</div></div>
+      </div>
+
+      <div class="editor-wrap">
+        <div class="editor-head">
+          <span class="editor-label">Prompts de Imagem (um por linha)</span>
+          <span class="count-badge" id="lineCount">0 prompts</span>
+        </div>
+        <textarea id="promptArea" placeholder="Cole seus prompts aqui, um por linha...
+
+Exemplo:
+Photorealistic woman walking in a rainy city, cinematic lighting, 8K
+A dragon flying over a medieval castle, dark fantasy, dramatic shadows"></textarea>
+      </div>
+
+      <div id="prog-section" class="prog-section">
+        <div class="prog-bar-bg"><div class="prog-fill" id="progFill"></div></div>
+        <div class="prog-info" id="progInfo">Aguardando início...</div>
+      </div>
+
+      <div class="img-grid" id="imgCards"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-brand">© 2025 <span>Irvison Dark Studio</span> · IrvImagem · Todos os direitos reservados</div>
+  </footer>
+
+</div>
+
+<div id="notif" class="notif"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// ─── PROTEÇÃO ────────────────────────────────────────────────────────────────
+(function(){
+  document.addEventListener('contextmenu',e=>e.preventDefault());
+  document.addEventListener('keydown',function(e){
+    if(e.key==='F12'){e.preventDefault();return false;}
+    if(e.ctrlKey&&(e.key==='u'||e.key==='U')){e.preventDefault();return false;}
+    if(e.ctrlKey&&e.key==='s'){e.preventDefault();return false;}
+    if(e.ctrlKey&&e.shiftKey&&['i','I','j','J','c','C','k','K'].includes(e.key)){e.preventDefault();return false;}
+  });
+})();
+
+// ─── ESTADO ──────────────────────────────────────────────────────────────────
+const apiKey="";
+const pixCode="00020126580014BR.GOV.BCB.PIX013608c85176-ba5f-4080-9b2c-4690d98c16355204000053039865802BR5925Irvison Santana do Nascim6009SAO PAULO62140510bELmberYnL6304D15B";
+let currentRatio='16:9';
+let generatedImages=[];
+let doneCount=0,errCount=0,totalCount=0;
+let isRunning=false;
+
+// ─── UI ──────────────────────────────────────────────────────────────────────
+document.getElementById('promptArea').addEventListener('input',updateLineCount);
+
+function updateLineCount(){
+  const lines=document.getElementById('promptArea').value.split('\n').filter(l=>l.trim().length>0);
+  document.getElementById('lineCount').textContent=`${lines.length} prompts`;
+  document.getElementById('statTotal').textContent=lines.length;
+}
+
+function setRatio(r,btn){
+  currentRatio=r;
+  document.querySelectorAll('.ratio-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function resetAll(){
+  if(isRunning)return;
+  document.getElementById('promptArea').value='';
+  updateLineCount();
+  doneCount=0;errCount=0;totalCount=0;
+  generatedImages=[];
+  updateStats();
+  document.getElementById('imgCards').innerHTML='';
+  document.getElementById('prog-section').style.display='none';
+  document.getElementById('btnDlZip').disabled=true;
+}
+
+function updateStats(){
+  document.getElementById('statDone').textContent=doneCount;
+  document.getElementById('statErr').textContent=errCount;
+  const pct=totalCount>0?Math.round(((doneCount+errCount)/totalCount)*100):0;
+  document.getElementById('statPct').textContent=pct+'%';
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progInfo').textContent=`Processando: ${doneCount+errCount} de ${totalCount}`;
+}
+
+// ─── API ─────────────────────────────────────────────────────────────────────
+async function fetchImage(prompt,retries=5){
+  const style=document.getElementById('styleSelect').value;
+  const finalPrompt=style?`${prompt}, ${style}`:prompt;
+  let delay=1000;
+  for(let i=0;i<retries;i++){
+    try{
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({instances:[{prompt:finalPrompt}],parameters:{sampleCount:1,aspectRatio:currentRatio}})
+      });
+      if(res.status===429){await new Promise(r=>setTimeout(r,delay));delay*=2;continue;}
+      const data=await res.json();
+      if(!res.ok)throw new Error(data.error?.message||'API Error');
+      const b64=data?.predictions?.[0]?.bytesBase64Encoded;
+      if(!b64)throw new Error('No image data');
+      return`data:image/png;base64,${b64}`;
+    }catch(e){
+      if(i===retries-1)throw e;
+      await new Promise(r=>setTimeout(r,delay));
+      delay*=2;
+    }
+  }
+}
+
+// ─── GERAÇÃO ─────────────────────────────────────────────────────────────────
+async function startGeneration(){
+  const raw=document.getElementById('promptArea').value;
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  if(!lines.length||isRunning)return;
+  isRunning=true;
+  doneCount=0;errCount=0;totalCount=lines.length;
+  generatedImages=new Array(lines.length).fill(null);
+  document.getElementById('btnGen').disabled=true;
+  document.getElementById('btnDlZip').disabled=true;
+  document.getElementById('prog-section').style.display='block';
+  const grid=document.getElementById('imgCards');
+  grid.innerHTML='';
+  const concurrency=parseInt(document.getElementById('concurrency').value)||1;
+
+  const processIndex=async(idx)=>{
+    const card=document.createElement('div');
+    card.className='img-card';
+    card.innerHTML=`
+      <div class="img-placeholder" id="ph-${idx}"><div class="spin"></div></div>
+      <div class="img-footer">
+        <div class="img-num">IMG #${idx+1}</div>
+        <button id="dl-${idx}" disabled style="background:none;border:none;cursor:pointer;opacity:.3;font-size:16px">💾</button>
+      </div>`;
+    grid.appendChild(card);
+    try{
+      const data=await fetchImage(lines[idx]);
+      document.getElementById(`ph-${idx}`).innerHTML=`<img src="${data}" onclick="window.open(this.src)" title="Clique para ampliar">`;
+      const dlBtn=document.getElementById(`dl-${idx}`);
+      dlBtn.disabled=false;dlBtn.style.opacity='1';dlBtn.style.color='var(--accent)';
+      dlBtn.onclick=()=>{const a=document.createElement('a');a.href=data;a.download=`irvimagem-${idx+1}.png`;a.click();};
+      generatedImages[idx]={name:`irvimagem-${idx+1}.png`,data:data.split(',')[1]};
+      doneCount++;
+    }catch(e){
+      let msg='Erro na geração';
+      if(e.message.includes('safety'))msg='Filtro de Segurança';
+      document.getElementById(`ph-${idx}`).innerHTML=`<div class="err-lbl">⚠ ${msg}</div>`;
+      errCount++;
+    }
+    updateStats();
+  };
+
+  for(let i=0;i<lines.length;i+=concurrency){
+    const batch=[];
+    for(let j=0;j<concurrency&&(i+j)<lines.length;j++)batch.push(processIndex(i+j));
+    await Promise.all(batch);
+    if(i+concurrency<lines.length)await new Promise(r=>setTimeout(r,500));
+  }
+
+  isRunning=false;
+  document.getElementById('btnGen').disabled=false;
+  document.getElementById('btnDlZip').disabled=(doneCount===0);
+  document.getElementById('progInfo').textContent=`✅ Concluído! ${doneCount} imagem(ns) gerada(s).`;
+}
+
+// ─── EXPORT ──────────────────────────────────────────────────────────────────
+async function downloadZip(){
+  const zip=new JSZip();
+  let count=0;
+  generatedImages.forEach(img=>{if(img){zip.file(img.name,img.data,{base64:true});count++;}});
+  if(!count)return;
+  const content=await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(content);
+  a.download='irvimagem-studio.zip';
+  a.click();
+}
+
+// ─── IMPORTAR TXT ─────────────────────────────────────────────────────────────
+const dz=document.getElementById('dropZone');
+dz.onclick=()=>document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange=(e)=>{
+  const file=e.target.files[0];
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=(ev)=>{document.getElementById('promptArea').value=ev.target.result;updateLineCount();};
+  r.readAsText(file);
+};
+
+// ─── PIX GRATIDÃO ─────────────────────────────────────────────────────────────
+function copyPixCode(){
+  const ta=document.createElement("textarea");
+  ta.value=pixCode;
+  ta.style.position='fixed';
+  ta.style.left='-9999px';
+  ta.style.userSelect='text';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  let ok=false;
+  try{ ok=document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+  if(ok){ notify('Código Pix copiado com sucesso!'); }
+  else if(navigator.clipboard){ navigator.clipboard.writeText(pixCode).then(()=>notify('Código Pix copiado com sucesso!')).catch(()=>{}); }
+}
+
+function notify(msg){
+  const n=document.getElementById('notif');
+  n.textContent=msg;
+  n.style.display='block';
+  setTimeout(()=>n.style.display='none',3000);
+}
+</script>
+</body>
+</html>
