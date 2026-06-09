@@ -1302,6 +1302,33 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
           🔗 Conectar com Google
         </button>
       </div>
+
+      <!-- AVISO DE LIBERAÇÃO (OAuth em modo teste do Google) -->
+      <div style="margin-bottom:16px;background:rgba(255,171,0,.07);border:1px solid rgba(255,171,0,.3);border-radius:12px;padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+          <span style="font-size:18px">🔒</span>
+          <span style="font-size:13px;font-weight:700;color:var(--warning);letter-spacing:.2px">Antes de conectar — liberação necessária</span>
+        </div>
+        <div style="font-size:13px;color:var(--text);line-height:1.7">
+          Para usar o recurso de conectar seu canal do YouTube, primeiro
+          <strong style="color:var(--warning)">fale com o suporte e informe o seu e-mail</strong>.
+          Esse e-mail é autorizado <strong>diretamente pelo Google</strong> junto ao suporte
+          (segurança do Google e do YouTube).
+          <div style="margin-top:10px;padding:10px 14px;background:var(--surface2);border-radius:9px;border:1px solid var(--border)">
+            ✅ <strong>É só o e-mail</strong>, não é o seu canal.<br>
+            ✅ <strong>Ninguém tem acesso ao seu canal.</strong> O e-mail serve apenas para a liberação,
+            porque usamos o <strong>modo teste</strong> do Google — que é <strong style="color:var(--success)">sem nenhum custo</strong>.
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted)">
+            👉 Sem essa liberação prévia, o Google bloqueia o acesso e a conexão não funciona.
+          </div>
+          <a href="https://wa.me/5581995738085?text=Ol%C3%A1!%20Quero%20liberar%20meu%20e-mail%20para%20conectar%20meu%20canal%20do%20YouTube%20no%20Studio%20de%20Voz%20IA." target="_blank" rel="noopener"
+            style="display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:10px 18px;background:linear-gradient(135deg,#25D366,#128C7E);border-radius:9px;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-decoration:none;box-shadow:0 4px 16px rgba(37,211,102,.25)">
+            💬 Falar com o suporte no WhatsApp · (81) 9 9573-8085
+          </a>
+        </div>
+      </div>
+
       <div id="ch-notice" style="display:none;margin-bottom:14px;padding:11px 16px;border-radius:10px;font-size:13px"></div>
       <div id="channels-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
         <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px">Carregando canais...</div>
