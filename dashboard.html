@@ -1512,8 +1512,9 @@ function calcViralScore(v){
   if(subs<50000)hype+=4;
   if(chAvgViews>0&&chAvgViews/subs>=3)hype+=8; else if(chAvgViews>0&&chAvgViews/subs>=1)hype+=4;
   hype=Math.min(20,hype);
-  // canal é "referência" se tem assinatura forte de hype (poucos vídeos + estourando)
-  const isHype=(chVideos>0&&chVideos<=80&&subs<50000&&(chAvgViews/subs)>=2)||(subs<20000&&ratio>=10);
+  // canal é "referência" só se: NÃO for short + VPH mínimo real (>=100 v/h) + assinatura de hype
+  const isShort=v.videoType==='short';
+  const isHype=!isShort&&vph>=100&&((chVideos>0&&chVideos<=80&&subs<50000&&(chAvgViews/subs)>=2)||(subs<20000&&ratio>=10));
   // Fator 1: Ratio views/inscritos (0-35pts)
   let ratioScore=ratio>=20?35:ratio>=10?30:ratio>=5?24:ratio>=2?17:ratio>=1?10:ratio>=0.5?5:2;
   // Fator 2: VPH — views por hora (0-30pts)
@@ -3020,8 +3021,12 @@ async function analyzeChannel(channelId){
       <span style="font-size:13px;font-weight:700;color:${v.retention>=50?'var(--success)':v.retention>=30?'var(--warning)':'var(--error)'};font-family:'JetBrains Mono',monospace">${v.retention}%</span>
     </div>`;
     const ts=d.titleStructure;
-    // Frente 2: palavras-chave do canal (tags + palavras dos títulos)
-    const kwAll=[...new Set([...(d.topTags||[]),...((ts&&ts.topWords)||[])].map(s=>String(s).trim()).filter(Boolean))].slice(0,18);
+    // Frente 2: idioma do canal (pelos títulos) + palavras-chave no idioma do conteúdo
+    const chTitles=[...(d.topVideos||[]),...(d.worstVideos||[])].map(v=>v.title);
+    const chLangInfo=detectLang(chTitles);
+    // palavras do título primeiro (idioma certo), depois tags; remove tags de outro idioma
+    const kwRaw=[...new Set([...((ts&&ts.topWords)||[]),...(d.topTags||[])].map(s=>String(s).trim()).filter(Boolean))];
+    const kwAll=kwRaw.filter(k=>kwMatchesLang(k,chLangInfo.lang)).slice(0,18);
     const kwMain=kwAll[0]||d.channel?.title||'';
     panel.innerHTML=`
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
@@ -3067,7 +3072,7 @@ async function analyzeChannel(channelId){
         <div style="font-size:11px;color:var(--muted);margin-top:8px">💡 Copie e cole numa IA pra receber melhorias de título, thumbnail, retenção e ideias de vídeo.</div>
       </div>`;
     // Frente 2: ativa palavras-chave/concorrentes (filtra o próprio canal pelo channelId)
-    kwState={channelId,keyword:kwMain};
+    kwState={channelId,keyword:kwMain,region:chLangInfo.region,lang:chLangInfo.lang};
     document.querySelectorAll('#kw-keywords .kw-chip').forEach(el=>el.onclick=()=>runKwCompetitors(el.dataset.kw));
     const fb=document.getElementById('btn-find-comp');
     if(fb)fb.onclick=()=>runKwCompetitors(fb.dataset.kw);
@@ -3077,13 +3082,30 @@ async function analyzeChannel(channelId){
   }
 }
 
+// Detecta o idioma/região do canal a partir dos títulos (pra não cruzar EN com PT).
+function detectLang(titles){
+  const t=(titles||[]).join(' ').toLowerCase();
+  if(!t.trim())return{region:'BR',lang:'pt'};
+  const pt=(t.match(/\b(de|que|com|para|você|voce|não|nao|como|mulher|dinheiro|por|uma|seu|sua|anos)\b/g)||[]).length+(t.match(/[ãõçáéíóúâê]/g)||[]).length;
+  const es=(t.match(/\b(el|la|los|las|por|para|con|que|como|mujer|dinero|años|vida|hombre)\b/g)||[]).length+(t.match(/[ñ¿¡]/g)||[]).length;
+  const en=(t.match(/\b(the|how|why|with|your|money|woman|women|after|over|that|and|this|of|to)\b/g)||[]).length;
+  if(en>=pt&&en>=es)return{region:'US',lang:'en'};
+  if(es>pt)return{region:'ES',lang:'es'};
+  return{region:'BR',lang:'pt'};
+}
+// Remove palavras com acento PT/ES quando o canal é em inglês (limpa tags em outro idioma).
+function kwMatchesLang(w,lang){
+  if(lang==='en')return!/[ãõçáéíóúâêñ¿¡]/i.test(w);
+  return true;
+}
+
 // ── Meus Canais: sugestões de pesquisa (custo zero) + concorrentes (sob demanda) ──
-let kwState={channelId:'',keyword:''};
+let kwState={channelId:'',keyword:'',region:'BR',lang:'pt'};
 async function loadKwSuggest(keyword){
   const box=document.getElementById('kw-suggest');
   if(!box)return;
   try{
-    const r=await fetch(`${API}/api/youtube?action=suggest&query=${encodeURIComponent(keyword)}&region=BR`,{headers:{Authorization:`Bearer ${token}`}});
+    const r=await fetch(`${API}/api/youtube?action=suggest&query=${encodeURIComponent(keyword)}&region=${kwState.region||'BR'}&lang=${kwState.lang||'pt'}`,{headers:{Authorization:`Bearer ${token}`}});
     const d=await r.json();
     const sugs=(d.suggestions||[]).slice(0,12);
     if(!sugs.length){box.innerHTML='<span style="font-size:11px;color:var(--muted)">Sem sugestões pra esta palavra.</span>';return;}
@@ -3094,13 +3116,19 @@ async function loadKwSuggest(keyword){
 async function runKwCompetitors(keyword){
   const box=document.getElementById('kw-competitors');
   if(!box||!keyword)return;
-  box.innerHTML=`<div style="padding:18px;text-align:center;color:var(--muted);font-size:12px">🔎 Buscando concorrentes para "${escHtml(keyword)}"...</div>`;
+  box.innerHTML=`<div style="padding:18px;text-align:center;color:var(--muted);font-size:12px">🔎 Buscando concorrentes de referência para "${escHtml(keyword)}"...</div>`;
   try{
-    const r=await fetch(`${API}/api/youtube?query=${encodeURIComponent(keyword)}&order=viewCount&region=BR`,{headers:{Authorization:`Bearer ${token}`}});
+    // video_type=video exclui Shorts logo na API; idioma/região do próprio canal
+    const r=await fetch(`${API}/api/youtube?query=${encodeURIComponent(keyword)}&order=viewCount&region=${kwState.region||'BR'}&lang=${kwState.lang||'pt'}&video_type=video`,{headers:{Authorization:`Bearer ${token}`}});
     const d=await r.json();
     if(!r.ok){box.innerHTML=`<div style="color:var(--error);font-size:12px;padding:12px">❌ ${escHtml(d.error||'Erro')}</div>`;return;}
-    const items=(d.items||[]).filter(v=>v.channelId&&v.channelId!==kwState.channelId).slice(0,12);
-    if(!items.length){box.innerHTML='<div style="color:var(--muted);font-size:12px;padding:12px">Nenhum concorrente encontrado.</div>';return;}
+    // Referência de verdade: sem Shorts + VPH mínimo de 100 views/hora
+    const items=(d.items||[])
+      .filter(v=>v.channelId&&v.channelId!==kwState.channelId)
+      .filter(v=>v.videoType!=='short')
+      .filter(v=>calcViralScore(v).viewsPerHour>=100)
+      .slice(0,12);
+    if(!items.length){box.innerHTML='<div style="color:var(--muted);font-size:12px;padding:12px">Nenhum concorrente de referência (vídeo longo com 100+ views/hora) encontrado pra essa palavra. Tente outra palavra-chave.</div>';return;}
     const a=analyzeTitlesFE(items.map(v=>v.title));
     const words=(a&&a.topWords||[]).slice(0,12);
     box.innerHTML=`
