@@ -142,5 +142,83 @@ module.exports = async (req, res) => {
     }
   }
 
-  return res.status(400).json({ error: 'action inválida. Use: history, favorites, notices, stats' });
+  // ══════════════════════════════════════════════════════════════
+  // HISTÓRICO DE BUSCAS / PERFIL DO USUÁRIO (Tendências)
+  // POST /api/user-data?action=searches  → registra uma busca
+  // GET  /api/user-data?action=searches  → devolve perfil agregado
+  // ══════════════════════════════════════════════════════════════
+  if (action === 'searches') {
+    if (req.method === 'POST') {
+      const { query, region, lang, video_type, source } = req.body || {};
+      const q = String(query || '').trim();
+      if (q.length < 2) return res.status(200).json({ ok: true, skipped: true });
+      const queryNorm = q.toLowerCase().slice(0, 120);
+      try {
+        const { data: existing } = await supabase
+          .from('search_log').select('id, count')
+          .eq('user_id', uid).eq('query_norm', queryNorm).maybeSingle();
+        if (existing) {
+          await supabase.from('search_log').update({
+            count: (existing.count || 1) + 1,
+            last_at: new Date().toISOString(),
+            region: region || null, lang: lang || null,
+            video_type: video_type || null, source: source || null
+          }).eq('id', existing.id);
+        } else {
+          await supabase.from('search_log').insert({
+            user_id: uid, query: q.slice(0, 120), query_norm: queryNorm,
+            region: region || null, lang: lang || null,
+            video_type: video_type || null, source: source || null
+          });
+        }
+        return res.status(200).json({ ok: true });
+      } catch (e) {
+        return res.status(500).json({ error: e.message });
+      }
+    }
+    if (req.method === 'GET') {
+      try {
+        const { data, error } = await supabase
+          .from('search_log')
+          .select('query, query_norm, region, lang, video_type, count, last_at')
+          .eq('user_id', uid)
+          .order('last_at', { ascending: false })
+          .limit(200);
+        if (error) throw error;
+        const rows = data || [];
+
+        // Buscas recentes (queries distintas, mais novas primeiro)
+        const recent = rows.map(r => r.query).filter(Boolean).slice(0, 12);
+
+        // Nicho: palavras mais frequentes (pondera pelo count de cada busca)
+        const STOP = new Set(['de','a','o','e','que','do','da','em','um','uma','para','com','no','na','os','as','por','se','the','to','of','and','my','i','you','is','it','how','el','la','los','las','un','con','su','pra','mais','sua','seu','voce','você','dos','das','para','como']);
+        const freq = {};
+        rows.forEach(r => {
+          const w = (r.count || 1);
+          String(r.query_norm || '').replace(/[^\p{L}\s]/gu, ' ').split(/\s+/).forEach(word => {
+            if (word.length >= 3 && !STOP.has(word)) freq[word] = (freq[word] || 0) + w;
+          });
+        });
+        const keywords = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 12).map(x => x[0]);
+
+        // Valor mais frequente de region/lang/video_type (default do usuário)
+        const mode = (field) => {
+          const c = {};
+          rows.forEach(r => { const v = r[field]; if (v) c[v] = (c[v] || 0) + (r.count || 1); });
+          const top = Object.entries(c).sort((a, b) => b[1] - a[1])[0];
+          return top ? top[0] : null;
+        };
+
+        return res.status(200).json({
+          recent, keywords,
+          region: mode('region'), lang: mode('lang'), video_type: mode('video_type'),
+          total: rows.length
+        });
+      } catch (e) {
+        return res.status(500).json({ error: e.message });
+      }
+    }
+  }
+
+  return res.status(400).json({ error: 'action inválida. Use: history, favorites, notices, stats, searches' });
 };
