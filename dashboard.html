@@ -1139,7 +1139,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
             <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);pointer-events:none">🔍</span>
             <input id="yt-query" type="text" placeholder="nicho, palavra-chave, tema..." autocomplete="off"
               style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 10px 10px 33px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none"
-              oninput="ytSuggest()" onkeydown="if(event.key==='Enter')searchYT()">
+              oninput="ytSuggest()" onfocus="ytSuggestSeed()" onkeydown="if(event.key==='Enter')searchYT()">
           </div>
         </div>
         <div style="display:flex;align-items:flex-end;gap:8px">
@@ -1261,6 +1261,8 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
           </select>
         </div>
       </div>
+      <!-- Perfil de busca do usuário (personalização tipo YouTube) -->
+      <div id="yt-profile" style="display:none;background:var(--surface);border:1px solid var(--border-a);border-radius:12px;padding:14px;margin-bottom:18px"></div>
       <div id="yt-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
         <div style="grid-column:1/-1;text-align:center;padding:56px 20px;color:var(--muted)">
           <div style="font-size:36px;margin-bottom:12px;opacity:.25">🎬</div>
@@ -1708,13 +1710,94 @@ async function searchYT(loadMore){
       if(loadMoreBtn)loadMoreBtn.style.display='none';
       return;
     }
-    allItems.forEach(v=>results.appendChild(ytCard(v)));
+    // Inclina o ranking pro nicho do usuário (boost de afinidade leve)
+    rankForUser(allItems).forEach(v=>results.appendChild(ytCard(v)));
+    if(!loadMore)logSearch(query,'search');
     if(loadMoreBtn)loadMoreBtn.style.display=(langs.length===1&&ytNextPage)?'block':'none';
   }catch(e){
     results.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--error);font-size:13px">❌ ${escHtml(e.message)}</div>`;
   }finally{
     if(btn){btn.disabled=false;btn.textContent='🔍 Buscar Vídeos';}
   }
+}
+
+/* ── PERFIL DE BUSCA DO USUÁRIO (histórico server-side + personalização) ── */
+let userProfile=null;
+// Registra a busca no servidor (não-bloqueante), por usuário
+function logSearch(query,source){
+  const q=String(query||'').trim(); if(q.length<2)return;
+  fetch(`${API}/api/user-data?action=searches`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+    body:JSON.stringify({
+      query:q,source:source||'search',
+      region:document.getElementById('yt-region')?.value||'',
+      lang:document.getElementById('yt-lang')?.value||'',
+      video_type:document.getElementById('yt-type')?.value||''
+    })
+  }).then(()=>{loadSearchProfile();}).catch(()=>{});
+}
+async function loadSearchProfile(){
+  try{
+    const r=await fetch(`${API}/api/user-data?action=searches`,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok)return;
+    userProfile=await r.json();
+    renderSearchProfile();
+  }catch(e){}
+}
+// Pré-seleciona região/idioma/tipo conforme o histórico (só se ainda não digitou)
+function applyProfileDefaults(){
+  if(!userProfile)return;
+  const qEl=document.getElementById('yt-query');
+  if(qEl&&qEl.value.trim())return;
+  const setIf=(id,val)=>{const el=document.getElementById(id);if(el&&val&&[...el.options].some(o=>o.value===val))el.value=val;};
+  setIf('yt-region',userProfile.region);
+  setIf('yt-lang',userProfile.lang);
+  setIf('yt-type',userProfile.video_type);
+}
+function renderSearchProfile(){
+  const box=document.getElementById('yt-profile'); if(!box)return;
+  const p=userProfile;
+  if(!p||((!p.recent||!p.recent.length)&&(!p.keywords||!p.keywords.length))){box.style.display='none';return;}
+  const chip=(t,kind)=>`<span class="prof-chip" data-q="${escHtml(t)}" style="cursor:pointer;font-size:11px;background:${kind==='kw'?'var(--accent-dim)':'var(--surface2)'};border:1px solid ${kind==='kw'?'var(--border-a)':'var(--border)'};color:${kind==='kw'?'var(--accent)':'var(--text)'};border-radius:99px;padding:5px 11px">${kind==='kw'?'🎯 ':'🕘 '}${escHtml(t)}</span>`;
+  box.style.display='block';
+  box.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:13px;font-weight:700">🧭 Seu perfil de busca</span>
+      <span style="font-size:10px;color:var(--muted)">personalizado pro seu histórico</span>
+    </div>
+    ${(p.recent||[]).length?`<div style="font-size:9px;color:var(--muted);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase">Buscas recentes</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${p.recent.map(t=>chip(t,'recent')).join('')}</div>`:''}
+    ${(p.keywords||[]).length?`<div style="font-size:9px;color:var(--muted);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase">Seu nicho</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">${p.keywords.map(t=>chip(t,'kw')).join('')}</div>`:''}`;
+  box.querySelectorAll('.prof-chip').forEach(el=>el.onclick=()=>{const qEl=document.getElementById('yt-query');if(qEl){qEl.value=el.dataset.q;searchYT();}});
+}
+// Semeia o autocomplete com o nicho do usuário quando o campo está vazio
+function ytSuggestSeed(){
+  const q=document.getElementById('yt-query');
+  if(!q||q.value.trim())return;
+  const box=document.getElementById('yt-suggest-box');
+  if(!box||!userProfile||!userProfile.keywords||!userProfile.keywords.length)return;
+  box.style.display='flex';
+  box.innerHTML='<span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">🧭 Seu nicho:</span>';
+  userProfile.keywords.slice(0,8).forEach(s=>{
+    const chip=document.createElement('span');
+    chip.style.cssText='cursor:pointer;font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:4px 11px;color:var(--accent)';
+    chip.textContent=s;
+    chip.onclick=()=>{document.getElementById('yt-query').value=s;box.style.display='none';searchYT();};
+    box.appendChild(chip);
+  });
+}
+// Afinidade do vídeo com o nicho do usuário (boost leve no ranking, teto 12)
+function profileAffinity(v){
+  if(!userProfile||!userProfile.keywords||!userProfile.keywords.length)return 0;
+  const hay=((v.title||'')+' '+(v.channel||'')).toLowerCase();
+  let n=0; userProfile.keywords.forEach(k=>{if(k&&hay.includes(k))n++;});
+  return Math.min(12,n*3);
+}
+// Reordena puxando o nicho do usuário pra cima, sem atropelar o score viral
+function rankForUser(items){
+  return items.slice().sort((a,b)=>(calcViralScore(b).score+profileAffinity(b))-(calcViralScore(a).score+profileAffinity(a)));
 }
 
 async function init(){
@@ -1730,6 +1813,7 @@ async function init(){
   loadCloudHistory();
   loadCloudFavorites();
   loadNotices();
+  loadSearchProfile();
 }
 
 async function loadNotices(){
@@ -2438,7 +2522,7 @@ function goTab(name,el){
   if(name==='history')renderHistory();
   if(name==='voices')renderLibVoices();
   if(name==='stats')loadStats();
-  if(name==='trends'){document.getElementById('yt-query').focus();ytRenderRefs();}
+  if(name==='trends'){document.getElementById('yt-query').focus();ytRenderRefs();renderSearchProfile();applyProfileDefaults();}
   if(name==='canais')loadChannels();
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
@@ -2891,7 +2975,8 @@ async function huntNiche(){
       results.appendChild(banner);
     }
     if(!d.items?.length){results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px">Nenhum resultado encontrado para o nicho.</div>';return;}
-    d.items.forEach(v=>results.appendChild(ytCard(v)));
+    rankForUser(d.items).forEach(v=>results.appendChild(ytCard(v)));
+    logSearch(query,'hunt');
   }catch(e){
     results.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--error);font-size:13px">❌ ${escHtml(e.message)}</div>`;
   }finally{btn.disabled=false;btn.textContent='🎯 Caçar Nicho';}
