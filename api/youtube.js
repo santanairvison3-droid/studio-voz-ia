@@ -8,6 +8,30 @@ const supabase = createClient(
 
 const HUNT_LIMIT = 2; // caçadas de nicho por conta por dia (protege a cota da API)
 
+// VPH = views por hora desde a publicação. Sinal mais sensível de "hype" que views/dia.
+function calcVPH(v) {
+  const views = v.views || 0;
+  const pub = v.publishedRaw ? new Date(v.publishedRaw) : null;
+  const hoursSince = pub ? Math.max(1, (Date.now() - pub) / 3600000) : 2160; // ~90 dias
+  return views / hoursSince;
+}
+
+// Detecta canal-referência em "hype" (padrão típico de canal automatizado/feito por IA):
+// poucos inscritos + poucos vídeos + cada vídeo rende muito mais que a base de inscritos.
+function hypeBonus(v) {
+  const subs = Math.max(v.subscribers, 1);
+  const chVideos = v.channelVideoCount || 0;
+  const chViews = v.channelViews || 0;
+  const chAvgViews = chVideos > 0 ? chViews / chVideos : 0;
+  let hype = 0;
+  if (chVideos > 0 && chVideos <= 30) hype += 8;        // canal novo / poucos vídeos
+  else if (chVideos > 0 && chVideos <= 80) hype += 4;
+  if (subs < 50000) hype += 4;                           // base pequena de inscritos
+  if (chAvgViews > 0 && chAvgViews / subs >= 3) hype += 8; // cada vídeo estoura vs inscritos
+  else if (chAvgViews > 0 && chAvgViews / subs >= 1) hype += 4;
+  return Math.min(20, hype);
+}
+
 // Score viral calculado no servidor para ordenar os resultados
 function viralScore(v) {
   const views = v.views || 0;
@@ -15,23 +39,23 @@ function viralScore(v) {
   const pub = v.publishedRaw ? new Date(v.publishedRaw) : null;
   const daysSince = pub ? Math.max(1, Math.round((Date.now() - pub) / 86400000)) : 90;
   const ratio = views / subs;
-  const vpd = views / daysSince;
+  const vph = calcVPH(v);
 
   let score = 0;
-  // Fator 1: Ratio views/inscritos (0-40pts) — canal furou a bolha
-  score += ratio >= 20 ? 40 : ratio >= 10 ? 35 : ratio >= 5 ? 28 : ratio >= 2 ? 20 : ratio >= 1 ? 12 : 6;
-  // Fator 2: Velocidade views/dia (0-30pts)
-  score += vpd >= 500000 ? 30 : vpd >= 100000 ? 26 : vpd >= 10000 ? 20 : vpd >= 1000 ? 14 : vpd >= 100 ? 8 : 4;
-  // Fator 3: Canal pequeno = nicho inexplorado (0-20pts)
-  score += subs < 5000 ? 20 : subs < 20000 ? 16 : subs < 100000 ? 12 : subs < 500000 ? 6 : 2;
+  // Fator 1: Ratio views/inscritos (0-35pts) — canal furou a bolha
+  score += ratio >= 20 ? 35 : ratio >= 10 ? 30 : ratio >= 5 ? 24 : ratio >= 2 ? 17 : ratio >= 1 ? 10 : 5;
+  // Fator 2: VPH — views por hora (0-30pts) — hype em tempo real
+  score += vph >= 5000 ? 30 : vph >= 1000 ? 25 : vph >= 200 ? 18 : vph >= 50 ? 11 : vph >= 10 ? 5 : 1;
+  // Fator 3: Canal-referência / hype-IA (0-20pts) — poucos inscritos + poucos vídeos + média alta
+  score += hypeBonus(v);
   // Fator 4: Frescor (0-10pts)
-  score += daysSince <= 3 ? 10 : daysSince <= 7 ? 9 : daysSince <= 14 ? 7 : daysSince <= 30 ? 5 : daysSince <= 90 ? 3 : 1;
-  // Fator 5: Engajamento likes/views (0-15pts) — conteúdo que o público aprova
+  score += daysSince <= 3 ? 10 : daysSince <= 7 ? 8 : daysSince <= 14 ? 6 : daysSince <= 30 ? 4 : daysSince <= 90 ? 2 : 1;
+  // Fator 5: Engajamento likes/views (0-10pts) — conteúdo que o público aprova
   if (views > 0 && v.likes > 0) {
     const eng = v.likes / views;
-    score += eng >= 0.1 ? 15 : eng >= 0.05 ? 10 : eng >= 0.02 ? 5 : eng >= 0.01 ? 2 : 0;
+    score += eng >= 0.1 ? 10 : eng >= 0.05 ? 7 : eng >= 0.02 ? 4 : eng >= 0.01 ? 2 : 0;
   }
-  return Math.min(100, score);
+  return Math.min(100, Math.round(score));
 }
 
 function parseDuration(isoStr) {
@@ -82,6 +106,8 @@ function mapVideoItem(item, videoMap, channelMap) {
     views: parseInt(stats.viewCount) || 0,
     likes: parseInt(stats.likeCount) || 0,
     subscribers: parseInt(channelStats.subscriberCount) || 0,
+    channelVideoCount: parseInt(channelStats.videoCount) || 0,
+    channelViews: parseInt(channelStats.viewCount) || 0,
     duration: durationStr,
     totalSec, videoType,
     published: pub,
@@ -175,6 +201,8 @@ module.exports = async (req, res) => {
           views: parseInt(stats.viewCount) || 0,
           likes: parseInt(stats.likeCount) || 0,
           subscribers: parseInt(channelStats.subscriberCount) || 0,
+          channelVideoCount: parseInt(channelStats.videoCount) || 0,
+          channelViews: parseInt(channelStats.viewCount) || 0,
           duration: durationStr,
           totalSec, videoType,
           published: pub,
@@ -339,6 +367,8 @@ module.exports = async (req, res) => {
       (vData.items || []).forEach(v => { vMap[v.id] = v; });
 
       const chSubscribers = parseInt(chStats.subscriberCount) || 0;
+      const chVideoCount = parseInt(chStats.videoCount) || 0;
+      const chTotalViews = parseInt(chStats.viewCount) || 0;
 
       const result = items.map(item => {
         const vid = item.id?.videoId;
@@ -356,6 +386,8 @@ module.exports = async (req, res) => {
           views: parseInt(stats.viewCount) || 0,
           likes: parseInt(stats.likeCount) || 0,
           subscribers: chSubscribers,
+          channelVideoCount: chVideoCount,
+          channelViews: chTotalViews,
           duration: durationStr,
           totalSec, videoType,
           published: pub,
@@ -493,6 +525,8 @@ module.exports = async (req, res) => {
         views: parseInt(stats.viewCount) || 0,
         likes: parseInt(stats.likeCount) || 0,
         subscribers: parseInt(channelStats.subscriberCount) || 0,
+        channelVideoCount: parseInt(channelStats.videoCount) || 0,
+        channelViews: parseInt(channelStats.viewCount) || 0,
         duration: durationStr,
         totalSec, videoType,
         published: pub,
