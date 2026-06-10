@@ -1499,24 +1499,39 @@ function calcViralScore(v){
   const now=new Date();
   const pub=parsePublishedDate(v);
   const daysSince=pub?Math.max(1,Math.round((now-pub)/(1000*60*60*24))):90;
+  const hoursSince=pub?Math.max(1,(now-pub)/(1000*60*60)):2160;
   const ratio=views/subs;
-  // Fator 1: Ratio views/inscritos (0-40pts) — canal furou a bolha
-  let ratioScore=ratio>=20?40:ratio>=10?35:ratio>=5?28:ratio>=2?20:ratio>=1?12:ratio>=0.5?6:2;
-  // Fator 2: Velocidade views/dia (0-30pts)
-  const vpd=views/daysSince;
-  let speedScore=vpd>=500000?30:vpd>=100000?26:vpd>=10000?20:vpd>=1000?14:vpd>=100?8:vpd>=10?4:1;
-  // Fator 3: Canal pequeno = nicho inexplorado (0-20pts)
-  let smallBonus=subs<5000?20:subs<20000?16:subs<100000?12:subs<500000?6:subs<2000000?2:0;
+  const vph=views/hoursSince;            // views por hora (sinal de hype)
+  const vpd=views/daysSince;             // views por dia (secundário)
+  // ── Detecção de canal-referência em hype (padrão de canal feito por IA) ──
+  const chVideos=v.channelVideoCount||0;
+  const chViews=v.channelViews||0;
+  const chAvgViews=chVideos>0?chViews/chVideos:0;
+  let hype=0;
+  if(chVideos>0&&chVideos<=30)hype+=8; else if(chVideos>0&&chVideos<=80)hype+=4;
+  if(subs<50000)hype+=4;
+  if(chAvgViews>0&&chAvgViews/subs>=3)hype+=8; else if(chAvgViews>0&&chAvgViews/subs>=1)hype+=4;
+  hype=Math.min(20,hype);
+  // canal é "referência" se tem assinatura forte de hype (poucos vídeos + estourando)
+  const isHype=(chVideos>0&&chVideos<=80&&subs<50000&&(chAvgViews/subs)>=2)||(subs<20000&&ratio>=10);
+  // Fator 1: Ratio views/inscritos (0-35pts)
+  let ratioScore=ratio>=20?35:ratio>=10?30:ratio>=5?24:ratio>=2?17:ratio>=1?10:ratio>=0.5?5:2;
+  // Fator 2: VPH — views por hora (0-30pts)
+  let vphScore=vph>=5000?30:vph>=1000?25:vph>=200?18:vph>=50?11:vph>=10?5:1;
+  // Fator 3: Canal-referência / hype-IA (0-20pts)
   // Fator 4: Frescor (0-10pts)
-  let freshScore=daysSince<=3?10:daysSince<=7?9:daysSince<=14?7:daysSince<=30?5:daysSince<=90?3:daysSince<=365?1:0;
-  const total=Math.min(100,ratioScore+speedScore+smallBonus+freshScore);
+  let freshScore=daysSince<=3?10:daysSince<=7?8:daysSince<=14?6:daysSince<=30?4:daysSince<=90?2:daysSince<=365?1:0;
+  // Fator 5: Engajamento likes/views (0-10pts)
+  let engScore=0;
+  if(views>0&&v.likes>0){const eng=v.likes/views;engScore=eng>=0.1?10:eng>=0.05?7:eng>=0.02?4:eng>=0.01?2:0;}
+  const total=Math.min(100,Math.round(ratioScore+vphScore+hype+freshScore+engScore));
   let label,color,bg,border;
   if(total>=80){label='🔥 Viral';color='#ff5533';bg='rgba(255,85,51,.15)';border='rgba(255,85,51,.4)';}
   else if(total>=60){label='⚡ Alto';color='#ffab00';bg='rgba(255,171,0,.15)';border='rgba(255,171,0,.35)';}
   else if(total>=40){label='📈 Médio';color='var(--accent)';bg='rgba(0,229,212,.1)';border='rgba(0,229,212,.25)';}
   else if(total>=20){label='🌱 Baixo';color='#7a8fa6';bg='var(--surface2)';border='var(--border)';}
   else{label='😴 Fraco';color='var(--muted)';bg='var(--surface2)';border='var(--border)';}
-  return{score:total,label,color,bg,border,ratio:ratio.toFixed(1),viewsPerDay:Math.round(vpd),daysSince};
+  return{score:total,label,color,bg,border,ratio:ratio.toFixed(1),viewsPerDay:Math.round(vpd),viewsPerHour:Math.round(vph),daysSince,isHype,channelVideoCount:chVideos};
 }
 
 function ytCard(v){
@@ -1529,6 +1544,7 @@ function ytCard(v){
   const views=v.views>=1000000?(v.views/1000000).toFixed(1)+'M':v.views>=1000?(v.views/1000).toFixed(0)+'K':v.views||'—';
   const subs=v.subscribers>=1000000?(v.subscribers/1000000).toFixed(1)+'M':v.subscribers>=1000?(v.subscribers/1000).toFixed(0)+'K':v.subscribers||'—';
   const vpdLabel=viral.viewsPerDay>=1000?(viral.viewsPerDay/1000).toFixed(1)+'K/dia':viral.viewsPerDay+'/dia';
+  const vphLabel=viral.viewsPerHour>=1000?(viral.viewsPerHour/1000).toFixed(1)+'K/h':viral.viewsPerHour+'/h';
   const barColor=viral.score>=80?'linear-gradient(90deg,#ff5533,#ff8855)':viral.score>=60?'linear-gradient(90deg,#ffab00,#ffd000)':viral.score>=40?'linear-gradient(90deg,var(--accent),var(--accent2))':'rgba(255,255,255,.08)';
   const typeLabel=v.videoType==='short'?'<span style="font-size:9px;background:rgba(255,77,114,.12);border:1px solid rgba(255,77,114,.25);color:var(--error);padding:2px 7px;border-radius:99px">SHORT</span>':v.videoType==='long'?'<span style="font-size:9px;background:rgba(0,150,255,.12);border:1px solid rgba(0,150,255,.25);color:#5599ff;padding:2px 7px;border-radius:99px">LONGO</span>':v.videoType==='live'?'<span style="font-size:9px;background:rgba(255,77,77,.15);border:1px solid rgba(255,77,77,.35);color:#ff5555;padding:2px 7px;border-radius:99px">🔴 AO VIVO</span>':'';
   card.innerHTML=`
@@ -1545,6 +1561,7 @@ function ytCard(v){
     <div style="padding:12px">
       <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px">${typeLabel}<div style="font-size:13px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text)">${escHtml(v.title)}</div></div>
       <div onclick="searchChannel('${escHtml(v.channelId)}','${escHtml(v.channel)}')" style="font-size:11px;color:var(--accent);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer" title="Ver vídeos do canal">📺 ${escHtml(v.channel)}</div>
+      ${viral.isHype?`<div style="margin-bottom:8px"><span title="Padrão de canal-referência (frequentemente feito por IA): poucos inscritos, poucos vídeos e muita visualização" style="font-size:9px;font-weight:700;background:rgba(124,77,255,.15);border:1px solid rgba(124,77,255,.4);color:#9b7bff;padding:3px 9px;border-radius:99px">🚀 Canal-Referência${viral.channelVideoCount?` · ${viral.channelVideoCount} vídeos`:''}</span></div>`:''}
       <div style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
           <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Score de Viralidade</span>
@@ -1567,9 +1584,9 @@ function ytCard(v){
           <div style="font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:2px">RATIO V/I</div>
           <div style="font-size:13px;font-weight:700;color:${parseFloat(viral.ratio)>=2?'var(--success)':'var(--muted)'};font-family:'JetBrains Mono',monospace">${viral.ratio}x</div>
         </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 9px">
-          <div style="font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:2px">VELOCIDADE</div>
-          <div style="font-size:13px;font-weight:700;color:${viral.viewsPerDay>=1000?'var(--warning)':'var(--muted)'};font-family:'JetBrains Mono',monospace">${vpdLabel}</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 9px" title="Views por hora desde a publicação — ${vpdLabel}">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:2px">VPH (views/h)</div>
+          <div style="font-size:13px;font-weight:700;color:${viral.viewsPerHour>=200?'var(--warning)':'var(--muted)'};font-family:'JetBrains Mono',monospace">${vphLabel}</div>
         </div>
       </div>
       <div style="font-size:10px;color:var(--muted);margin-bottom:10px">📅 ${escHtml(v.published||'—')}${viral.daysSince&&viral.daysSince<9999?` <span style="color:var(--accent)">(${viral.daysSince}d atrás)</span>`:''}</div>
@@ -3003,6 +3020,9 @@ async function analyzeChannel(channelId){
       <span style="font-size:13px;font-weight:700;color:${v.retention>=50?'var(--success)':v.retention>=30?'var(--warning)':'var(--error)'};font-family:'JetBrains Mono',monospace">${v.retention}%</span>
     </div>`;
     const ts=d.titleStructure;
+    // Frente 2: palavras-chave do canal (tags + palavras dos títulos)
+    const kwAll=[...new Set([...(d.topTags||[]),...((ts&&ts.topWords)||[])].map(s=>String(s).trim()).filter(Boolean))].slice(0,18);
+    const kwMain=kwAll[0]||d.channel?.title||'';
     panel.innerHTML=`
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
         <img src="${escHtml(d.channel?.thumb||'')}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid var(--border-a)">
@@ -3028,6 +3048,16 @@ async function analyzeChannel(channelId){
         </div>
         ${ts.topWords?.length?`<div style="margin-top:12px;font-size:11px;color:var(--muted)">Palavras frequentes: <span style="color:var(--accent)">${ts.topWords.map(escHtml).join(', ')}</span></div>`:''}
       </div>`:''}
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-title">🔑 Palavras-chave & Concorrentes</div>
+        ${kwAll.length?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Palavras-chave do seu canal (clique pra ver concorrentes):</div>
+        <div id="kw-keywords" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">${kwAll.map(k=>`<span class="kw-chip" data-kw="${escHtml(k)}" style="cursor:pointer;font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:5px 11px">${escHtml(k)}</span>`).join('')}</div>`:''}
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">🔎 O que as pessoas pesquisam <span style="opacity:.7">(sugestões reais do YouTube · custo zero)</span>:</div>
+        <div id="kw-suggest" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"><span style="font-size:11px;color:var(--muted)">carregando…</span></div>
+        <button id="btn-find-comp" data-kw="${escHtml(kwMain)}" style="padding:9px 16px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;cursor:pointer">🔎 Ver concorrentes usando "${escHtml(kwMain)}"</button>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px">💡 Cada busca consome cota da API — use quando precisar comparar com a concorrência.</div>
+        <div id="kw-competitors"></div>
+      </div>
       <div class="card" style="border-color:var(--border-a)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
           <div class="card-title" style="margin:0">🤖 Prompt pronto pra IA (Claude / GPT / Gemini)</div>
@@ -3036,9 +3066,50 @@ async function analyzeChannel(channelId){
         <textarea readonly style="width:100%;min-height:200px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);resize:vertical">${escHtml(d.prompt||'')}</textarea>
         <div style="font-size:11px;color:var(--muted);margin-top:8px">💡 Copie e cole numa IA pra receber melhorias de título, thumbnail, retenção e ideias de vídeo.</div>
       </div>`;
+    // Frente 2: ativa palavras-chave/concorrentes (filtra o próprio canal pelo channelId)
+    kwState={channelId,keyword:kwMain};
+    document.querySelectorAll('#kw-keywords .kw-chip').forEach(el=>el.onclick=()=>runKwCompetitors(el.dataset.kw));
+    const fb=document.getElementById('btn-find-comp');
+    if(fb)fb.onclick=()=>runKwCompetitors(fb.dataset.kw);
+    if(kwMain)loadKwSuggest(kwMain);
   }catch(e){
     panel.innerHTML=`<div style="text-align:center;padding:40px;color:var(--error);font-size:13px">❌ ${escHtml(e.message)}</div>`;
   }
+}
+
+// ── Meus Canais: sugestões de pesquisa (custo zero) + concorrentes (sob demanda) ──
+let kwState={channelId:'',keyword:''};
+async function loadKwSuggest(keyword){
+  const box=document.getElementById('kw-suggest');
+  if(!box)return;
+  try{
+    const r=await fetch(`${API}/api/youtube?action=suggest&query=${encodeURIComponent(keyword)}&region=BR`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();
+    const sugs=(d.suggestions||[]).slice(0,12);
+    if(!sugs.length){box.innerHTML='<span style="font-size:11px;color:var(--muted)">Sem sugestões pra esta palavra.</span>';return;}
+    box.innerHTML=sugs.map(s=>`<span class="kw-chip" data-kw="${escHtml(s)}" title="Buscar concorrentes com esta palavra" style="cursor:pointer;font-size:11px;background:var(--accent-dim);border:1px solid var(--border-a);color:var(--accent);border-radius:99px;padding:5px 11px">🔎 ${escHtml(s)}</span>`).join('');
+    box.querySelectorAll('.kw-chip').forEach(el=>el.onclick=()=>runKwCompetitors(el.dataset.kw));
+  }catch(e){box.innerHTML='<span style="font-size:11px;color:var(--muted)">Não foi possível carregar sugestões.</span>';}
+}
+async function runKwCompetitors(keyword){
+  const box=document.getElementById('kw-competitors');
+  if(!box||!keyword)return;
+  box.innerHTML=`<div style="padding:18px;text-align:center;color:var(--muted);font-size:12px">🔎 Buscando concorrentes para "${escHtml(keyword)}"...</div>`;
+  try{
+    const r=await fetch(`${API}/api/youtube?query=${encodeURIComponent(keyword)}&order=viewCount&region=BR`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();
+    if(!r.ok){box.innerHTML=`<div style="color:var(--error);font-size:12px;padding:12px">❌ ${escHtml(d.error||'Erro')}</div>`;return;}
+    const items=(d.items||[]).filter(v=>v.channelId&&v.channelId!==kwState.channelId).slice(0,12);
+    if(!items.length){box.innerHTML='<div style="color:var(--muted);font-size:12px;padding:12px">Nenhum concorrente encontrado.</div>';return;}
+    const a=analyzeTitlesFE(items.map(v=>v.title));
+    const words=(a&&a.topWords||[]).slice(0,12);
+    box.innerHTML=`
+      <div style="margin:14px 0 6px;font-size:12px;font-weight:700">🏁 Concorrentes para "${escHtml(keyword)}"</div>
+      ${words.length?`<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Palavras que os concorrentes mais usam nos títulos: <span style="color:var(--accent)">${words.map(escHtml).join(', ')}</span></div>`:''}
+      <div id="kw-comp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px"></div>`;
+    const grid=document.getElementById('kw-comp-grid');
+    items.forEach(v=>grid.appendChild(ytCard(v)));
+  }catch(e){box.innerHTML=`<div style="color:var(--error);font-size:12px;padding:12px">❌ ${escHtml(e.message)}</div>`;}
 }
 
 function copyAiPrompt(){
@@ -3047,6 +3118,75 @@ function copyAiPrompt(){
     const btn=document.getElementById('btn-copy-prompt');
     if(btn){const t=btn.textContent;btn.textContent='✅ Copiado!';setTimeout(()=>btn.textContent=t,1800);}
   });
+}
+
+/* ── MODELAGEM DE TÍTULO (canais de referência) ── */
+// Porta enxuta do analyzeTitles do backend. Custo zero (usa títulos já carregados).
+function analyzeTitlesFE(titles){
+  titles=(titles||[]).filter(Boolean);
+  const n=titles.length; if(!n)return null;
+  const pct=c=>Math.round(c/n*100);
+  let num=0,q=0,emo=0,brk=0,caps=0,len=0;
+  const emojiRe=/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+  const freq={};
+  const stop=new Set(['de','a','o','e','que','do','da','em','um','uma','para','com','no','na','os','as','por','se','the','to','of','and','my','i','you','is','it','how','el','la','los','las','un','con','su','pra','mais','sua','seu','voce','você','dos','das']);
+  titles.forEach(t=>{
+    len+=t.length;
+    if(/\d/.test(t))num++;
+    if(t.includes('?'))q++;
+    if(emojiRe.test(t))emo++;
+    if(/[\[\]\(\)]/.test(t))brk++;
+    if(/\b[A-ZÀ-Ú]{3,}\b/.test(t))caps++;
+    t.toLowerCase().replace(/[^\p{L}\s]/gu,' ').split(/\s+/).forEach(w=>{if(w.length>=4&&!stop.has(w))freq[w]=(freq[w]||0)+1;});
+  });
+  const topWords=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,10).map(x=>x[0]);
+  return{count:n,avgLength:Math.round(len/n),pctNumber:pct(num),pctQuestion:pct(q),pctEmoji:pct(emo),pctBracket:pct(brk),pctCaps:pct(caps),topWords};
+}
+function capWord(w){return w?w.charAt(0).toUpperCase()+w.slice(1):w;}
+// Monta a fórmula + exemplos prontos a partir dos padrões do canal de referência.
+function buildTitleModel(a){
+  if(!a)return null;
+  const parts=[];
+  if(a.pctNumber>=40)parts.push('[Número]');
+  parts.push('[Palavra-chave]');
+  if(a.pctQuestion>=40)parts.push('(forma de pergunta)');
+  if(a.pctCaps>=40)parts.push('[PALAVRA EM CAIXA]');
+  if(a.pctBracket>=30)parts.push('[colchete extra]');
+  if(a.pctEmoji>=40)parts.push('+ emoji');
+  const W=(a.topWords||[]).map(capWord);
+  const w1=W[0]||'[tema]',w2=W[1]||'[assunto]',w3=W[2]||w1;
+  const ex=[];
+  if(a.pctNumber>=30)ex.push(`7 ${w1} de ${w2} que Ninguém te Contou`);
+  if(a.pctQuestion>=30)ex.push(`Por que ${w1} ${w2}? A Verdade que Mudou Tudo`);
+  ex.push(`${w1} ${w2}: O Guia Completo${a.pctBracket>=30?` [${w3}]`:''}`);
+  if(ex.length<2)ex.push(`Como ${w1} Transformou ${w2} Para Sempre`);
+  return{formula:parts.join(' + '),examples:ex.slice(0,3),avgLength:a.avgLength};
+}
+let lastChModelText='';
+function copyChModel(){
+  if(!lastChModelText)return;
+  navigator.clipboard.writeText(lastChModelText).then(()=>{
+    const b=document.getElementById('btn-copy-model');
+    if(b){const t=b.textContent;b.textContent='✅ Copiado!';setTimeout(()=>b.textContent=t,1500);}
+  });
+}
+function renderChModel(titles){
+  const box=document.getElementById('ch-model');
+  if(!box)return;
+  const model=buildTitleModel(analyzeTitlesFE(titles));
+  if(!model){box.innerHTML='';lastChModelText='';return;}
+  lastChModelText=`Fórmula de título: ${model.formula}\nTamanho ideal: ~${model.avgLength} caracteres\nExemplos:\n${model.examples.map(t=>'- '+t).join('\n')}`;
+  box.innerHTML=`
+    <div style="background:var(--surface2);border:1px solid var(--border-a);border-radius:12px;padding:14px 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+        <div style="font-size:13px;font-weight:700">✍️ Modelo de título deste canal de referência</div>
+        <button id="btn-copy-model" onclick="copyChModel()" style="font-size:11px;padding:6px 12px;border-radius:7px;background:var(--accent-dim);border:1px solid var(--border-a);color:var(--accent);cursor:pointer;font-weight:600">📋 Copiar modelo</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px">Fórmula que mais aparece (~${model.avgLength} caracteres):</div>
+      <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;font-family:'JetBrains Mono',monospace">${escHtml(model.formula)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px">Exemplos prontos pra adaptar:</div>
+      ${model.examples.map(t=>`<div style="font-size:12px;margin-bottom:4px;color:var(--text)">• ${escHtml(t)}</div>`).join('')}
+    </div>`;
 }
 
 /* ── CANAL YOUTUBE ── */
@@ -3058,6 +3198,7 @@ async function searchChannel(channelId, channelName){
   document.getElementById('ch-name').textContent=channelName;
   document.getElementById('ch-meta').textContent='';
   document.getElementById('ch-thumb').src='';
+  document.getElementById('ch-model').innerHTML='';
   try{
     const r=await fetch(`${API}/api/youtube?action=channel&channel_url=channel/${encodeURIComponent(channelId)}&ord=viewCount`,{headers:{Authorization:`Bearer ${token}`}});
     const d=await r.json();
@@ -3070,6 +3211,7 @@ async function searchChannel(channelId, channelName){
     document.getElementById('ch-meta').textContent=`${subs} inscritos · ${views} views · ${ch.videoCount||'—'} vídeos`;
     results.innerHTML='';
     if(!d.items?.length){results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Nenhum vídeo encontrado.</div>';return;}
+    renderChModel(d.items.map(v=>v.title));
     d.items.forEach(v=>results.appendChild(ytCard(v)));
   }catch(e){
     results.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--error)">❌ ${escHtml(e.message)}</div>`;
@@ -3092,6 +3234,7 @@ init();
       </div>
       <button onclick="closeChModal()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:20px;padding:6px;border-radius:8px;flex-shrink:0">✕</button>
     </div>
+    <div id="ch-model" style="padding:14px 16px 0"></div>
     <div id="ch-results" style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div>
   </div>
 </div>
