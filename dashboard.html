@@ -1873,13 +1873,26 @@ function updateCounter(){
 }
 
 let lastJobId='';
+// Trava global anti-duplicação: impede um 2º POST enquanto o áudio ainda
+// está sendo gerado (o POST volta rápido com job_id, mas o áudio só fica
+// pronto depois do polling). Sem isso, o usuário reclica e gera/conta 2x.
+let genInFlight=false;
+function setGenBtn(busy){
+  const btn=document.getElementById('btn-gen');
+  if(!btn)return;
+  btn.disabled=busy;
+  btn.textContent=busy?'⏳ Gerando...':'🎙️ Gerar Áudio';
+  document.getElementById('gen-prog')?.classList.toggle('show',busy);
+}
+function endGen(){genInFlight=false;setGenBtn(false);}
+
 async function generateSingle(){
+  if(genInFlight){showStatus('Já existe um áudio sendo gerado. Aguarde terminar.','info');return;}
   const text=document.getElementById('text-input').value.trim();
   if(!text){showStatus('Digite um texto primeiro.','error');return;}
   if(!selectedVoice){showStatus('Selecione uma voz.','error');return;}
-  const btn=document.getElementById('btn-gen');
-  btn.disabled=true;btn.textContent='⏳ Gerando...';
-  document.getElementById('gen-prog').classList.add('show');
+  genInFlight=true;
+  setGenBtn(true);
   document.getElementById('audio-result').classList.remove('show');
   showStatus('Enviando para processamento...','info');
   try{
@@ -1890,19 +1903,20 @@ async function generateSingle(){
     });
     if(r.status===401){logout();return;}
     const d=await r.json();
-    if(!r.ok){showStatus(d.error||'Erro ao gerar.','error');return;}
+    if(!r.ok){showStatus(d.error||'Erro ao gerar.','error');endGen();return;}
     if(d.audio_url){
       showAudio(d.audio_url,d.job_id||'—');
       saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
       sessionStorage.removeItem('auth_cache');refreshStats(true);
+      endGen();
     } else if(d.job_id){
+      // NÃO libera o botão aqui — só quando o polling terminar (em pollAudio).
       lastJobId=d.job_id;showStatus(`Job ${d.job_id} em processamento...`,'info');
       pollAudio(d.job_id);
     } else {
-      showStatus('Resposta inesperada.','error');
+      showStatus('Resposta inesperada.','error');endGen();
     }
-  }catch(e){showStatus('Erro de conexão.','error');}
-  finally{btn.disabled=false;btn.textContent='🎙️ Gerar Áudio';document.getElementById('gen-prog').classList.remove('show');}
+  }catch(e){showStatus('Erro de conexão.','error');endGen();}
 }
 
 function showStatus(msg,type){
@@ -1931,7 +1945,7 @@ function pollAudio(jobId){
   let att=0;
   const t=setInterval(async()=>{
     att++;
-    if(att>60){clearInterval(t);showStatus('Timeout. Tente novamente.','error');return;}
+    if(att>60){clearInterval(t);showStatus('Timeout. Tente novamente.','error');endGen();return;}
     try{
       const r=await fetch(`${API}/api/generate-index?job_id=${jobId}`,{headers:{Authorization:`Bearer ${token}`}});
       const d=await r.json();
@@ -1941,8 +1955,9 @@ function pollAudio(jobId){
         showAudio(audioUrl,jobId);
         saveHistory({url:d.audio_url,jobId,text:document.getElementById('text-input').value.substring(0,80),voice:selectedVoice,ts:new Date().toISOString()});
         sessionStorage.removeItem('auth_cache');refreshStats(true);
+        endGen();
       } else if(d.status==='error'||d.status==='failed'){
-        clearInterval(t);showStatus('Falha na geração.','error');
+        clearInterval(t);showStatus('Falha na geração.','error');endGen();
       }
     }catch(e){}
   },3000);
@@ -2100,17 +2115,20 @@ function showTxtStatus(msg,show=true){
 }
 
 async function generateAllTxt(){
+  if(genInFlight){alert('⏳ Já existe uma geração em andamento. Aguarde terminar.');return;}
   const voiceId=getTxtSelectedVoice();
   if(!voiceId){alert('⚠️ Selecione uma voz antes de gerar.');return;}
   const pending=txtFiles.filter(f=>f.status==='ready'||f.status==='error');
   if(!pending.length){alert('⚠️ Nenhum arquivo pronto para gerar. Adicione arquivos .txt.');return;}
 
   const btn=document.getElementById('btn-txt-gen');
+  genInFlight=true;
   btn.disabled=true;btn.textContent='⏳ Gerando...';
 
   let done=0,total=pending.length;
   showTxtStatus(`Gerando 0 de ${total}...`);
 
+  try{
   for(const f of pending){
     const idx=txtFiles.indexOf(f);
     txtFiles[idx].status='generating';
@@ -2153,10 +2171,13 @@ async function generateAllTxt(){
     await new Promise(res=>setTimeout(res,500));
   }
 
-  btn.disabled=false;btn.textContent='🎙️ Gerar Todos os Áudios';
   const errs=txtFiles.filter(f=>f.status==='error').length;
   const dones=txtFiles.filter(f=>f.status==='done').length;
   showTxtStatus(`✅ Concluído: ${dones} gerado${dones!==1?'s':''}${errs?` · ❌ ${errs} com erro`:''}`);
+  }finally{
+    genInFlight=false;
+    btn.disabled=false;btn.textContent='🎙️ Gerar Todos os Áudios';
+  }
 }
 
 function pollJobUrl(jobId){
@@ -2603,14 +2624,17 @@ function previewVoice(vid, vname, e){
 // Gerar áudio direto da biblioteca (usa texto da caixa de gerar)
 async function generateFromLib(vid, vname, btnEl, e){
   e.stopPropagation();
+  if(genInFlight){alert('⏳ Já existe uma geração em andamento. Aguarde terminar.');return;}
   const text=document.getElementById('text-input')?.value?.trim();
   if(!text){
     alert('⚠️ Digite um texto na aba "Gerar Áudio" primeiro!');
     return;
   }
+  genInFlight=true;
   btnEl.disabled=true; btnEl.textContent='⏳...';
   const resultEl=document.getElementById('glr-'+vid);
   if(resultEl){resultEl.classList.remove('show');}
+  const finishLib=()=>{genInFlight=false;btnEl.textContent='🎵 Gerar';btnEl.disabled=false;};
   try{
     const r=await fetch(`${API}/api/generate-index`,{
       method:'POST',
@@ -2619,18 +2643,19 @@ async function generateFromLib(vid, vname, btnEl, e){
     });
     if(r.status===401){logout();return;}
     const d=await r.json();
-    if(!r.ok){alert('❌ '+(d.error||'Erro ao gerar.'));return;}
+    if(!r.ok){alert('❌ '+(d.error||'Erro ao gerar.'));finishLib();return;}
     if(d.audio_url&&resultEl){
       resultEl.innerHTML=`🎵 Pronto! <a href="${d.audio_url}" download="audio-${vid}.mp3" target="_blank">⬇ Baixar</a>`;
       resultEl.classList.add('show');
       saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:vname,ts:new Date().toISOString()});
       sessionStorage.removeItem('auth_cache');refreshStats(true);
+      finishLib();
     } else if(d.job_id){
+      // NÃO libera aqui — só quando o polling terminar (finishLib nos finais).
       btnEl.textContent='⏳ Aguardando...';
-      // polling simples
       let att=0;
       const t=setInterval(async()=>{
-        att++;if(att>60){clearInterval(t);btnEl.textContent='🎵 Gerar';btnEl.disabled=false;return;}
+        att++;if(att>60){clearInterval(t);finishLib();return;}
         const r2=await fetch(`${API}/api/generate-index?job_id=${d.job_id}`,{headers:{Authorization:`Bearer ${token}`}});
         const d2=await r2.json();
         if(d2.status==='done'||d2.status==='completed'){
@@ -2639,32 +2664,36 @@ async function generateFromLib(vid, vname, btnEl, e){
           if(resultEl){resultEl.innerHTML=`🎵 Pronto! <a href="${url}" download="audio-${vid}.mp3" target="_blank">⬇ Baixar</a>`;resultEl.classList.add('show');}
           saveHistory({url,jobId:d.job_id,text:text.substring(0,80),voice:vname,ts:new Date().toISOString()});
           sessionStorage.removeItem('auth_cache');refreshStats(true);
-          btnEl.textContent='🎵 Gerar';btnEl.disabled=false;
+          finishLib();
         } else if(d2.status==='error'||d2.status==='failed'){
-          clearInterval(t);btnEl.textContent='🎵 Gerar';btnEl.disabled=false;
+          clearInterval(t);finishLib();
         }
       },3000);
       return;
+    } else {
+      finishLib();
     }
-  }catch(err){alert('❌ Erro de conexão.');}
-  btnEl.textContent='🎵 Gerar';btnEl.disabled=false;
+  }catch(err){alert('❌ Erro de conexão.');finishLib();}
 }
 
 // Baixar todas as favoritas em ZIP
 async function downloadFavoritesZip(){
+  if(genInFlight){alert('⏳ Já existe uma geração em andamento. Aguarde terminar.');return;}
   if(!favorites.length){alert('⭐ Marque algumas vozes como favoritas primeiro!');return;}
   const text=document.getElementById('text-input')?.value?.trim();
   if(!text){alert('⚠️ Digite um texto na aba "Gerar Áudio" antes de baixar em ZIP!');return;}
   const btn=document.getElementById('btn-dl-zip');
+  genInFlight=true;
   btn.disabled=true;btn.textContent='⏳ Gerando...';
   const urls=[];
+  try{
   for(const vid of favorites){
     try{
       const v=allVoices.find(x=>(x.voice_id||x.id)===vid);
       const r=await fetch(`${API}/api/generate-index`,{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body:JSON.stringify({text,voice_id:vid,voice_name:vname||(allVoices.find(x=>(x.voice_id||x.id)===vid)?.name||null),characters:text.length})
+        body:JSON.stringify({text,voice_id:vid,voice_name:(v?.name||null),characters:text.length})
       });
       const d=await r.json();
       let url=d.audio_url||null;
@@ -2681,15 +2710,18 @@ async function downloadFavoritesZip(){
       if(url)urls.push({url,name:(v?.name||vid)+'.mp3'});
     }catch(e){}
   }
-  if(!urls.length){btn.disabled=false;btn.textContent='⬇ ZIP Favoritas';alert('Nenhum áudio gerado com sucesso.');return;}
+  if(!urls.length){alert('Nenhum áudio gerado com sucesso.');return;}
   // Baixa cada arquivo individualmente (sem JSZip no servidor)
   for(const {url,name} of urls){
     const a=document.createElement('a');a.href=url;a.download=name;a.target='_blank';a.click();
     await new Promise(res=>setTimeout(res,800));
   }
-  btn.disabled=false;btn.textContent='⬇ ZIP Favoritas';
   alert(`✅ ${urls.length} áudio(s) baixado(s)!`);
   sessionStorage.removeItem('auth_cache');refreshStats(true);
+  }finally{
+    genInFlight=false;
+    btn.disabled=false;btn.textContent='⬇ ZIP Favoritas';
+  }
 }
 
 function renderLibVoices(){
