@@ -115,7 +115,9 @@ module.exports = async (req, res) => {
     // ══════════════════════════════════════════════
     const isAdmin = user.role === 'admin';
     const uid = user.sub || user.id;
-    let supabase;
+    // FIX: dbUser declarado no escopo do POST (não só dentro do if) para que a
+    // devolução de crédito em caso de erro do DarkPlanner consiga lê-lo.
+    let supabase, dbUser;
 
     if (!isAdmin) {
       try {
@@ -128,11 +130,12 @@ module.exports = async (req, res) => {
         // Data no horário do Brasil (UTC-3) — mesma lógica do auth.js
         const today = getTodayBR();
 
-        const { data: dbUser, error: userErr } = await supabase
+        const { data: dbUserRow, error: userErr } = await supabase
           .from('users')
           .select('lim_day, daily_used, last_reset, status, plan')
           .eq('id', uid)
           .single();
+        dbUser = dbUserRow;
 
         if (userErr || !dbUser) {
           return res.status(401).json({ error: 'Usuário não encontrado.' });
