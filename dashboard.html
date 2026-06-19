@@ -870,6 +870,11 @@ select option{background:var(--surface2)}
       <span class="nav-ic">🎨</span>Ferramentas de Imagem
       <span class="nav-badge">NEW</span>
     </div>
+    <div class="nav-section">Esportes</div>
+    <div class="nav-item" onclick="goTab('esportes',this)">
+      <span class="nav-ic">🔥</span>HypeEsportivo
+      <span class="nav-badge">NEW</span>
+    </div>
   </nav>
 
   <div class="sb-user">
@@ -1426,6 +1431,38 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
           </a>
         </div>
 
+      </div>
+    </div>
+
+    <!-- HYPEESPORTIVO (esporte) -->
+    <div class="tab-pane" id="tab-esportes">
+      <div class="tools-page-header">
+        <div class="tools-page-title">🔥 HypeEsportivo Dark</div>
+        <div class="tools-page-sub">Gere roteiros esportivos para YouTube com notícias ao vivo — títulos, descrição, tags e thumbnails, em vários idiomas.</div>
+      </div>
+
+      <div class="tool-cards-grid">
+        <!-- CARD: HypeEsportivo -->
+        <div class="tool-card">
+          <div class="tool-card-header">
+            <div class="tool-icon">🔥</div>
+            <span class="tool-badge">GEMINI</span>
+          </div>
+          <div class="tool-name">HypeEsportivo Dark</div>
+          <div class="tool-sub">Gerador de Roteiros Esportivos</div>
+          <div class="tool-desc">
+            Busca notícias esportivas ao vivo no Google e gera o roteiro completo do vídeo (gancho, desenvolvimento e fechamento) — mais 5 títulos clickbait, descrição pronta, tags SEO, hashtags e ideias de thumbnail. Tem modo manual para uma notícia específica.
+          </div>
+          <div class="tool-chips">
+            <span class="tool-chip">✦ Notícias ao vivo</span>
+            <span class="tool-chip">✦ 11 esportes</span>
+            <span class="tool-chip">✦ 6 idiomas</span>
+            <span class="tool-chip">✦ Títulos + SEO + Thumbs</span>
+          </div>
+          <a class="btn-open" href="https://gemini.google.com/share/2138dcb94da2" target="_blank" rel="noopener">
+            🚀 Abrir HypeEsportivo
+          </a>
+        </div>
       </div>
     </div>
 
@@ -2512,7 +2549,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
