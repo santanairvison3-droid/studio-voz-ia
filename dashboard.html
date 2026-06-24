@@ -1475,7 +1475,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     <style>
     .md-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px}
     .md-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px}
-    .md-toggle button{background:transparent;border:none;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer}
+    .md-toggle button{background:transparent;border:none;color:#c2d2e8;font-family:inherit;font-size:13px;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer}
     .md-toggle button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709}
     .md-search{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0 12px}
     .md-search input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:inherit;font-size:14px;padding:11px 0}
@@ -1483,14 +1483,17 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .md-go{padding:11px 22px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px var(--glow)}
     .md-filters{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:14px}
     .md-fgroup{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-    .md-flabel{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
-    .md-chip{padding:7px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
-    .md-chip:hover{color:var(--text)}
-    .md-chip.on{background:var(--accent-dim);border-color:var(--border-a);color:var(--accent)}
+    .md-flabel{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#9db2cf}
+    .md-chip{padding:7px 15px;background:var(--surface3);border:1px solid rgba(255,255,255,.13);border-radius:99px;color:#ccdaee;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
+    .md-chip:hover{color:#fff;border-color:var(--border-a)}
+    .md-chip.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:700}
     .md-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;min-height:24px}
     .md-actbtn{padding:8px 16px;background:transparent;border:1px solid var(--border-a);border-radius:9px;color:var(--accent);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
     .md-actbtn:disabled{opacity:.4;cursor:not-allowed}
-    .md-count{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+    .md-count{font-size:12px;color:#9db2cf;font-family:'JetBrains Mono',monospace}
+    #tab-midias .tools-page-sub{color:#9db2cf}
+    #tab-midias .md-search input::placeholder{color:#7e93b2}
+    #tab-midias .md-search span{color:#9db2cf!important}
     .md-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
     .md-card{position:relative;border-radius:12px;overflow:hidden;background:var(--surface2);border:1px solid var(--border);aspect-ratio:1/1;cursor:pointer}
     .md-card.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
@@ -1506,7 +1509,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .md-check{position:absolute;top:8px;left:8px;width:24px;height:24px;border-radius:7px;border:2px solid rgba(255,255,255,.5);background:rgba(4,7,9,.5);display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent}
     .md-card.sel .md-check{background:var(--accent);border-color:var(--accent);color:#040709}
     .md-dur{position:absolute;bottom:8px;right:8px;font-size:10px;font-weight:700;background:rgba(4,7,9,.75);color:#fff;padding:2px 7px;border-radius:6px;font-family:'JetBrains Mono',monospace}
-    .md-empty{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--muted)}
+    .md-empty{grid-column:1/-1;text-align:center;padding:70px 20px;color:#9db2cf}
     .md-empty-ic{font-size:42px;opacity:.4;margin-bottom:12px}
     .md-more{margin:18px auto 0;display:block;padding:11px 26px;background:var(--surface2);border:1px solid var(--border-a);border-radius:10px;color:var(--accent);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
     .md-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border-a);color:var(--accent);padding:11px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:300;display:none}
