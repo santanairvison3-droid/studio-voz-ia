@@ -1579,6 +1579,8 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .db-go{padding:12px 24px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px var(--glow)}
     .db-go:disabled{opacity:.5;cursor:not-allowed}
     .db-hint{font-size:12.5px;color:#9db2cf;margin-bottom:14px}
+    .db-counter{display:inline-block;padding:2px 10px;border-radius:99px;background:var(--accent-dim);border:1px solid var(--border-a);color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:11.5px}
+    .db-counter.zero{background:rgba(255,77,114,.12);border-color:rgba(255,77,114,.35);color:var(--error)}
     .db-state{text-align:center;padding:60px 20px;color:#9db2cf}
     .db-state .ic{font-size:40px;opacity:.45;margin-bottom:12px}
     .db-spin{width:34px;height:34px;border:3px solid var(--border-a);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
@@ -1630,7 +1632,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
         <input id="db-url" type="text" placeholder="https://www.youtube.com/@CanalDeReferencia" onkeydown="if(event.key==='Enter')analisarDobra()">
         <button class="db-go" id="db-go" onclick="analisarDobra()">🔍 Analisar →</button>
       </div>
-      <div class="db-hint">Análises limitadas por dia por conta. A análise pode levar alguns segundos.</div>
+      <div class="db-hint"><span id="db-counter" class="db-counter">Análises hoje: —</span> · a análise pode levar até ~1 min (a IA precisa de tempo pra entregar tudo).</div>
 
       <div id="db-result"></div>
     </div>
@@ -2863,7 +2865,17 @@ function mdToast(msg){
 /* Renderer tolerante: não sabemos o schema exato do DarkPlanner, então cada campo é
    buscado por vários nomes prováveis (PT/EN) e sempre há um "Ver dados brutos (JSON)". */
 let dobraBusy=false, dobraLast=null, dobraInit=false;
-function initDobra(){ if(!dobraInit){ dobraInit=true; setTimeout(()=>document.getElementById('db-url').focus(),60); } }
+function initDobra(){ if(!dobraInit){ dobraInit=true; setTimeout(()=>document.getElementById('db-url').focus(),60); } dobraLoadCount(); }
+async function dobraLoadCount(){
+  try{ const r=await fetch(`${API}/api/youtube?action=dobra&count=1`,{headers:{Authorization:`Bearer ${token}`}}); if(r.ok) setDobraCounter(await r.json()); }catch(e){}
+}
+function setDobraCounter(u){
+  const el=document.getElementById('db-counter'); if(!el||!u)return;
+  if(u.admin){ el.textContent='Análises: ilimitado (admin)'; el.classList.remove('zero'); return; }
+  const used=u.usadas_hoje||0, lim=u.limite||0, rest=(u.restantes!=null)?u.restantes:Math.max(0,lim-used);
+  el.textContent=`Análises hoje: ${used}/${lim}`+(rest<=0?' · esgotado':` · ${rest} restante${rest===1?'':'s'}`);
+  el.classList.toggle('zero', rest<=0);
+}
 function dbGet(o,keys){ if(!o||typeof o!=='object')return undefined; for(const k of keys){ if(o[k]!=null && o[k]!=='') return o[k]; } return undefined; }
 function dbEsc(s){ return String(s==null?'':s).replace(/[<>]/g,c=>c==='<'?'&lt;':'&gt;'); }
 function dbIsTitleArr(v){ return Array.isArray(v) && v.length>0 && v.every(x=>typeof x==='string'); }
@@ -2886,8 +2898,10 @@ async function analisarDobra(){
     if(jobId && !dbGet(d,['dna','analysis','result','nicho_principal','nicho','mar_de_ideias'])) d=await dobraPoll(jobId);
     dobraLast=d;
     renderDobra(d);
+    if(d._usage) setDobraCounter(d._usage);
   }catch(e){
     box.innerHTML=dbState('⚠️', e.message||'Falha na análise.');
+    dobraLoadCount();
   }finally{ dobraBusy=false; btn.disabled=false; }
 }
 async function dobraCall(url){
