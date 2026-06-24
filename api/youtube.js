@@ -515,66 +515,69 @@ module.exports = async (req, res) => {
       };
       const canal = chInfo.snippet?.title || '';
 
-      // 4) GPT-4o-mini gera o mapa de oportunidades
+      // 4) GPT-4o-mini gera o mapa — em ETAPAS (DNA primeiro; depois Mar/Dobra/Adaptação
+      //    EM PARALELO). Cada saída fica pequena = rápida, sem estourar o tempo da função.
       const topList = vids.slice(0, 18)
         .map((v, i) => `${i + 1}. "${v.title}" — ${v.views} views · ${v.outlier}x · ${v.duration} · ${v.date}`)
         .join('\n');
-      const sys = 'Você é um estrategista de conteúdo para YouTube. A partir dos vídeos de melhor desempenho (outliers) de um canal, você (1) extrai o DNA do que faz os vídeos vencerem e (2) gera um mapa de oportunidades. RESPONDA SOMENTE JSON VÁLIDO, em português do Brasil, no schema exato pedido. Não invente as métricas numéricas do canal (já são fornecidas). "outlier" = views ÷ mediana de views do canal. Mantenha os títulos prontos no mesmo idioma dos títulos do canal analisado.';
-      const usr = `Canal: ${canal}
+      const baseCtx = `Canal: ${canal}
 Inscritos: ${metricas.inscritos} · Views totais: ${metricas.views_totais} · Analisados: ${metricas.analisados} · Outliers(>=3x): ${metricas.outliers} · Maior outlier: ${metricas.maior_outlier}
 
 Vídeos (título — views · outlier · duração · data), do maior pro menor:
-${topList}
+${topList}`;
+      const SYS = 'Você é um estrategista de conteúdo para YouTube. RESPONDA SOMENTE JSON VÁLIDO, em português do Brasil. "outlier" = views ÷ mediana de views do canal. Mantenha os títulos prontos no mesmo idioma dos títulos do canal.';
 
-Gere EXATAMENTE este JSON (sem texto fora do JSON):
-{
- "nicho_principal":"string",
- "subnicho_atual":"string",
- "publico":"string (quem assiste + motivação)",
- "territorio":"string (a promessa central do canal em 1 frase)",
- "confianca":"alta | média | baixa",
- "padrao_vencedor":{"resumo":"string","comuns":["3-5 pontos"],"gatilhos":["2-4"],"formulas_de_titulo":["1-3 fórmulas com [variáveis]"]},
- "funcao_vencedora":{"promessa":"string","emocao_dominante":"string","fantasia_de_identidade":"string"},
- "temas":["3-5"],
- "mar_de_ideias":[{"titulo":"Subnicho/Nova visão — nome","descricao":"string","funcao_vencedora":"string","search_query":"string","o_que_preserva":["..."],"o_que_muda":["..."],"como_aplicar":"string","titulos_prontos":["4-6 títulos"],"alertas_de_quebra":["1-2"]}],
- "dobra":[{"titulo":"Nicho novo — nome","publico_alvo":"string","subnicho":"string","descricao":"string","como_aplicar":"string","titulos_prontos":["4-6 títulos; inclua alguns no formato 'título campeão -> novo título'"]}],
- "adaptacao_de_mercado":[{"titulo":"Mercado/idioma alvo — nome","descricao":"string","o_que_preserva":["..."],"o_que_muda":["..."],"titulos_prontos":["4-6 títulos LOCALIZADOS, não traduzidos"]}]
-}
-Use 3 itens em "mar_de_ideias", 4 em "dobra" e 1 em "adaptacao_de_mercado".`;
+      // chama o gpt-4o-mini e devolve JSON parseado (abort de segurança em 45s)
+      const gpt = async (userMsg, maxTok) => {
+        const c = new AbortController();
+        const t = setTimeout(() => c.abort(), 45000);
+        let r;
+        try {
+          r = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${oaKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'system', content: SYS }, { role: 'user', content: userMsg }], response_format: { type: 'json_object' }, temperature: 0.7, max_tokens: maxTok }),
+            signal: c.signal,
+          });
+        } finally { clearTimeout(t); }
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error?.message || `OpenAI HTTP ${r.status}`);
+        try { return JSON.parse(d.choices?.[0]?.message?.content || '{}'); }
+        catch (e) { throw new Error('A IA retornou um JSON inválido.'); }
+      };
 
-      // Aborta a chamada da IA antes do teto da função (60s) p/ devolver erro amigável em vez de 504
-      const ctrl = new AbortController();
-      const aiTimer = setTimeout(() => ctrl.abort(), 52000);
-      let aiRes;
-      try {
-        aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${oaKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [{ role: 'system', content: sys }, { role: 'user', content: usr }],
-            response_format: { type: 'json_object' },
-            temperature: 0.7,
-            max_tokens: 3500,
-          }),
-          signal: ctrl.signal,
-        });
-      } catch (e) {
-        clearTimeout(aiTimer);
-        if (e.name === 'AbortError')
-          return res.status(504).json({ error: 'A análise demorou demais e foi interrompida. Tente novamente em instantes.' });
-        throw e;
-      }
-      clearTimeout(aiTimer);
-      const aiData = await aiRes.json();
-      if (!aiRes.ok) {
-        console.error('[dobra/openai]', aiRes.status, JSON.stringify(aiData).slice(0, 300));
-        return res.status(502).json({ error: 'Falha na IA (OpenAI).', detail: aiData.error?.message || `HTTP ${aiRes.status}` });
-      }
+      // Fase 1: DNA do canal
+      const dna = await gpt(`${baseCtx}
 
-      let parsed = {};
-      try { parsed = JSON.parse(aiData.choices?.[0]?.message?.content || '{}'); }
-      catch (e) { return res.status(502).json({ error: 'A IA retornou um JSON inválido.', detail: (aiData.choices?.[0]?.message?.content || '').slice(0, 300) }); }
+Extraia o DNA do canal. Gere EXATAMENTE este JSON:
+{"nicho_principal":"","subnicho_atual":"","publico":"quem assiste + motivação","territorio":"a promessa central em 1 frase","confianca":"alta | média | baixa","padrao_vencedor":{"resumo":"","comuns":["3-5 pontos"],"gatilhos":["2-4"],"formulas_de_titulo":["1-3 fórmulas com [variáveis]"]},"funcao_vencedora":{"promessa":"","emocao_dominante":"","fantasia_de_identidade":""},"temas":["3-5"]}`, 1200);
+
+      const dnaResumo = `Resumo do DNA — nicho: ${dna.nicho_principal || ''}; subnicho: ${dna.subnicho_atual || ''}; público: ${dna.publico || ''}; fórmulas de título: ${((dna.padrao_vencedor && dna.padrao_vencedor.formulas_de_titulo) || []).join(' | ')}; função: ${(dna.funcao_vencedora && dna.funcao_vencedora.promessa) || ''}`;
+
+      // Fase 2: as 3 seções EM PARALELO (cada uma é pequena → rápida)
+      const [mar, dob, adap] = await Promise.all([
+        gpt(`${baseCtx}
+${dnaResumo}
+
+Gere 3 oportunidades "Mar de Ideias" (MESMO público, temas vizinhos). JSON:
+{"mar_de_ideias":[{"titulo":"Subnicho/Nova visão — nome","descricao":"","funcao_vencedora":"","search_query":"","o_que_preserva":["..."],"o_que_muda":["..."],"como_aplicar":"","titulos_prontos":["4-6 títulos"],"alertas_de_quebra":["1-2"]}]}`, 1800),
+        gpt(`${baseCtx}
+${dnaResumo}
+
+Gere 4 "Dobra" (MESMO formato vencedor aplicado a nichos TOTALMENTE diferentes). JSON:
+{"dobra":[{"titulo":"Nicho novo — nome","publico_alvo":"","subnicho":"","descricao":"","como_aplicar":"","titulos_prontos":["4-6 títulos; inclua alguns no formato 'título campeão -> novo título'"]}]}`, 1800),
+        gpt(`${baseCtx}
+${dnaResumo}
+
+Gere 1 "Adaptação de Mercado" (a fórmula re-ancorada em OUTRO mercado/idioma; localizar, não traduzir). JSON:
+{"adaptacao_de_mercado":[{"titulo":"Mercado/idioma alvo — nome","descricao":"","o_que_preserva":["..."],"o_que_muda":["..."],"titulos_prontos":["4-6 títulos LOCALIZADOS"]}]}`, 1300),
+      ]);
+
+      const parsed = Object.assign({}, dna, {
+        mar_de_ideias: mar.mar_de_ideias || [],
+        dobra: dob.dobra || [],
+        adaptacao_de_mercado: adap.adaptacao_de_mercado || [],
+      });
 
       // Injeta as métricas REAIS (não confiar nas do modelo) + nome do canal
       parsed.canal = canal;
@@ -586,7 +589,9 @@ Use 3 itens em "mar_de_ideias", 4 em "dobra" e 1 em "adaptacao_de_mercado".`;
 
       return res.status(200).json(parsed);
     } catch (e) {
-      console.error('[youtube/dobra]', e.message);
+      console.error('[youtube/dobra]', e.name, e.message);
+      if (e.name === 'AbortError')
+        return res.status(504).json({ error: 'A análise demorou demais e foi interrompida. Tente novamente em instantes.' });
       return res.status(500).json({ error: 'Erro ao gerar a análise', detail: e.message });
     }
   }
