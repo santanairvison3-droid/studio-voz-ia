@@ -115,6 +115,107 @@ function mapVideoItem(item, videoMap, channelMap) {
   };
 }
 
+// ── BANCO DE MÍDIA (Pexels + Pixabay) ──────────────────────────
+// Helpers do action=stock. Tudo aqui dentro do youtube.js de propósito:
+// o Vercel Hobby só permite 12 funções em api/ e já estamos no teto,
+// então NÃO criamos api/media.js — reaproveitamos este endpoint.
+
+// Classifica orientação pela proporção (fallback quando o provedor não filtra)
+function orientOf(w, h) {
+  if (!w || !h) return 'all';
+  const r = w / h;
+  if (r >= 1.2) return 'horizontal';
+  if (r <= 0.85) return 'vertical';
+  return 'square';
+}
+function matchOrient(it, want) {
+  if (!want || want === 'all') return true;
+  return orientOf(it.width, it.height) === want;
+}
+
+// Pexels: imagens (v1/search) e vídeos (videos/search). Chave no header Authorization.
+// Filtra orientação nativamente (landscape|portrait|square) — sem pós-filtro.
+async function fetchPexels({ key, type, q, orient, page, perPage }) {
+  const orientMap = { horizontal: 'landscape', vertical: 'portrait', square: 'square' };
+  const params = new URLSearchParams({ query: q, per_page: String(perPage), page: String(page) });
+  if (orientMap[orient]) params.set('orientation', orientMap[orient]);
+  const base = type === 'video'
+    ? 'https://api.pexels.com/videos/search'
+    : 'https://api.pexels.com/v1/search';
+  const r = await fetch(`${base}?${params}`, { headers: { Authorization: key } });
+  if (!r.ok) return { items: [], hasMore: false, err: `Pexels ${r.status}` };
+  const d = await r.json();
+  let items;
+  if (type === 'video') {
+    items = (d.videos || []).map(v => {
+      const files = (v.video_files || []).slice().sort((a, b) => (b.width || 0) - (a.width || 0));
+      const best = files.find(f => f.quality === 'hd') || files[0] || {};
+      return {
+        id: 'px_' + v.id, source: 'pexels', type: 'video',
+        thumb: v.image || '', previewUrl: v.image || '',
+        downloadUrl: best.link || '',
+        width: v.width || 0, height: v.height || 0,
+        author: v.user?.name || '', pageUrl: v.url || '', duration: v.duration || 0,
+      };
+    });
+  } else {
+    items = (d.photos || []).map(p => ({
+      id: 'px_' + p.id, source: 'pexels', type: 'image',
+      thumb: p.src?.tiny || p.src?.small || '',
+      previewUrl: p.src?.large || p.src?.medium || '',
+      downloadUrl: p.src?.original || p.src?.large2x || '',
+      width: p.width || 0, height: p.height || 0,
+      author: p.photographer || '', pageUrl: p.url || '', duration: 0,
+    }));
+  }
+  const total = d.total_results || 0;
+  return { items, hasMore: page * perPage < total };
+}
+
+// Pixabay: imagens (/api/) e vídeos (/api/videos/). Chave na query (?key=).
+// Imagens: só horizontal|vertical nativo (sem "square" → pós-filtro por proporção).
+// Vídeos: sem param de orientação → pós-filtro por proporção quando pedido.
+async function fetchPixabay({ key, type, q, orient, page, perPage }) {
+  if (type === 'video') {
+    const params = new URLSearchParams({ key, q, per_page: String(perPage), page: String(page) });
+    const r = await fetch(`https://pixabay.com/api/videos/?${params}`);
+    if (!r.ok) return { items: [], hasMore: false, err: `Pixabay ${r.status}` };
+    const d = await r.json();
+    let items = (d.hits || []).map(h => {
+      const v = h.videos || {};
+      const best = v.large?.url ? v.large : v.medium?.url ? v.medium : v.small || v.tiny || {};
+      const dims = v.large || v.medium || v.small || v.tiny || {};
+      const thumb = v.large?.thumbnail || v.medium?.thumbnail ||
+        (h.picture_id ? `https://i.vimeocdn.com/video/${h.picture_id}_295x166.jpg` : '');
+      return {
+        id: 'pb_' + h.id, source: 'pixabay', type: 'video',
+        thumb, previewUrl: thumb,
+        downloadUrl: best.url || '',
+        width: dims.width || 0, height: dims.height || 0,
+        author: h.user || '', pageUrl: h.pageURL || '', duration: h.duration || 0,
+      };
+    });
+    if (orient && orient !== 'all') items = items.filter(it => matchOrient(it, orient));
+    return { items, hasMore: page * perPage < (d.totalHits || 0) };
+  }
+  const orientMap = { horizontal: 'horizontal', vertical: 'vertical' };
+  const params = new URLSearchParams({ key, q, image_type: 'photo', per_page: String(perPage), page: String(page) });
+  if (orientMap[orient]) params.set('orientation', orientMap[orient]);
+  const r = await fetch(`https://pixabay.com/api/?${params}`);
+  if (!r.ok) return { items: [], hasMore: false, err: `Pixabay ${r.status}` };
+  const d = await r.json();
+  let items = (d.hits || []).map(h => ({
+    id: 'pb_' + h.id, source: 'pixabay', type: 'image',
+    thumb: h.previewURL || h.webformatURL || '',
+    previewUrl: h.webformatURL || h.largeImageURL || '',
+    downloadUrl: h.fullHDURL || h.largeImageURL || h.webformatURL || '',
+    width: h.imageWidth || 0, height: h.imageHeight || 0,
+    author: h.user || '', pageUrl: h.pageURL || '', duration: 0,
+  }));
+  if (orient === 'square') items = items.filter(it => matchOrient(it, 'square'));
+  return { items, hasMore: page * perPage < (d.totalHits || 0) };
+}
+
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido' });
@@ -411,6 +512,81 @@ module.exports = async (req, res) => {
       });
     } catch (e) {
       console.error('[youtube/channel]', e.message);
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  // ── BANCO DE MÍDIA: Pexels + Pixabay (imagens e vídeos) ────────
+  // Busca:    action=stock&source=pexels,pixabay&type=image|video&q=&orientation=&page=
+  // Download: action=stock&dl=1&url=<enc>&name=<arquivo>  (força download + resolve CORS)
+  if (action === 'stock') {
+    // — modo download (proxy de arquivo) —
+    if (req.query.dl) {
+      const fileUrl = req.query.url || '';
+      // allowlist: só CDNs dos provedores, p/ não virar proxy aberto
+      if (!/^https?:\/\/([\w-]+\.)*(pexels\.com|pixabay\.com)\//i.test(fileUrl))
+        return res.status(400).json({ error: 'URL não permitida' });
+      try {
+        const up = await fetch(fileUrl);
+        if (!up.ok) return res.status(502).json({ error: 'Falha ao baixar do provedor' });
+        const buf = Buffer.from(await up.arrayBuffer());
+        const safeName = (req.query.name || 'midia').replace(/[^\w.\-]/g, '_');
+        res.setHeader('Content-Type', up.headers.get('content-type') || 'application/octet-stream');
+        res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
+        res.setHeader('Content-Length', buf.length);
+        return res.status(200).end(buf);
+      } catch (e) {
+        console.error('[stock/dl]', e.message);
+        return res.status(500).json({ error: 'Erro ao baixar arquivo' });
+      }
+    }
+
+    // — modo busca —
+    const q = (query || '').trim();
+    if (!q) return res.status(400).json({ error: 'query obrigatório' });
+    const type = req.query.type === 'video' ? 'video' : 'image';
+    const orient = ['horizontal', 'vertical', 'square'].includes(req.query.orientation)
+      ? req.query.orientation : 'all';
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    let sources = String(req.query.source || 'pexels,pixabay')
+      .split(',').map(s => s.trim().toLowerCase())
+      .filter(s => s === 'pexels' || s === 'pixabay');
+    if (!sources.length) sources = ['pexels', 'pixabay'];
+
+    const PEXELS_KEY = process.env.PEXELS_KEY;
+    const PIXABAY_KEY = process.env.PIXABAY_KEY;
+    const perPage = 24;
+    const tasks = [];
+    if (sources.includes('pexels')) {
+      tasks.push(PEXELS_KEY
+        ? fetchPexels({ key: PEXELS_KEY, type, q, orient, page: pageNum, perPage })
+        : Promise.resolve({ items: [], hasMore: false, err: 'PEXELS_KEY não configurada no Vercel.' }));
+    }
+    if (sources.includes('pixabay')) {
+      tasks.push(PIXABAY_KEY
+        ? fetchPixabay({ key: PIXABAY_KEY, type, q, orient, page: pageNum, perPage })
+        : Promise.resolve({ items: [], hasMore: false, err: 'PIXABAY_KEY não configurada no Vercel.' }));
+    }
+
+    try {
+      const results = await Promise.all(tasks);
+      // intercala os itens dos provedores (round-robin) p/ misturar as fontes
+      const lists = results.map(r => r.items || []);
+      const merged = [];
+      for (let i = 0, more = true; more; i++) {
+        more = false;
+        for (const list of lists) if (i < list.length) { merged.push(list[i]); more = true; }
+      }
+      const errors = results.map(r => r.err).filter(Boolean);
+      return res.status(200).json({
+        items: merged,
+        page: pageNum,
+        hasMore: results.some(r => r.hasMore),
+        total: merged.length,
+        errors,
+      });
+    } catch (e) {
+      console.error('[stock/search]', e.message);
       return res.status(500).json({ error: e.message });
     }
   }
