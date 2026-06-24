@@ -685,6 +685,115 @@ Gere 1 "Adaptação de Mercado" (a fórmula re-ancorada em OUTRO mercado/idioma;
     }
   }
 
+  // ── CAÇADOR DE CANAIS (Niche Finder grátis, via YouTube Data API) ──
+  // Busca por nicho → agrupa por canal → cards de canal. Reaproveita o sinal de
+  // "Canal-Referência" (poucos inscritos, muitas views). SEM faceless%/monetizado/
+  // base-própria (isso é do NexLev pago). Usa o YOUTUBE_API_KEY que já existe.
+  if (action === 'niches') {
+    if (!query) return res.status(400).json({ error: 'query obrigatório' });
+    try {
+      const tab = req.query.tab || 'explodindo';
+      // recência p/ abas "Tração Recente" / "Canais Novos" / filtro de data
+      let publishedAfter = '';
+      const days = tab === 'recente' ? 30 : tab === 'novos' ? 120
+        : ({ today: 1, week: 7, month: 30, year: 365 }[date] || 0);
+      if (days) { const n = new Date(); n.setTime(n.getTime() - days * 86400000); publishedAfter = n.toISOString(); }
+
+      const sp = new URLSearchParams({
+        part: 'snippet', q: query, type: 'video', order: 'viewCount', maxResults: '50', key: apiKey,
+        ...(region && { regionCode: region }),
+        ...(lang && { relevanceLanguage: lang }),
+        ...(publishedAfter && { publishedAfter }),
+        ...(page && { pageToken: page }),
+      });
+      const sr = await fetch(`https://www.googleapis.com/youtube/v3/search?${sp}`);
+      const sd = await sr.json();
+      if (!sr.ok) return res.status(500).json({ error: sd.error?.message || 'Erro na busca do YouTube' });
+      const sItems = sd.items || [];
+      if (!sItems.length) return res.status(200).json({ channels: [], nextPage: '', tab });
+
+      const videoIds = sItems.map(i => i.id?.videoId).filter(Boolean);
+      const channelIds = [...new Set(sItems.map(i => i.snippet?.channelId).filter(Boolean))];
+      const [vRes, cRes] = await Promise.all([
+        fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds.join(',')}&key=${apiKey}`),
+        fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelIds.join(',')}&key=${apiKey}`),
+      ]);
+      const vData = await vRes.json(); const cData = await cRes.json();
+      const vMap = {}; (vData.items || []).forEach(v => { vMap[v.id] = v; });
+      const cMap = {}; (cData.items || []).forEach(c => { cMap[c.id] = c; });
+
+      // agrupa os vídeos achados por canal
+      const byCh = {};
+      sItems.forEach(it => {
+        const cid = it.snippet?.channelId, vid = it.id?.videoId;
+        if (!cid || !vid) return;
+        (byCh[cid] = byCh[cid] || []).push({
+          title: it.snippet?.title || '',
+          thumb: it.snippet?.thumbnails?.medium?.url || it.snippet?.thumbnails?.default?.url || '',
+          views: parseInt(vMap[vid]?.statistics?.viewCount) || 0,
+          publishedRaw: it.snippet?.publishedAt || '',
+        });
+      });
+
+      const now = Date.now();
+      let channels = channelIds.map(cid => {
+        const ci = cMap[cid]; if (!ci) return null;
+        const st = ci.statistics || {}, sn = ci.snippet || {};
+        const subs = parseInt(st.subscriberCount) || 0;
+        const totalViews = parseInt(st.viewCount) || 0;
+        const videoCount = parseInt(st.videoCount) || 0;
+        const created = sn.publishedAt ? new Date(sn.publishedAt) : null;
+        const ageMonths = created ? Math.max(1, (now - created.getTime()) / 2629800000) : 0;
+        const ageWeeks = created ? Math.max(1, (now - created.getTime()) / 604800000) : 0;
+        const ageDays = created ? Math.round((now - created.getTime()) / 86400000) : 99999;
+        const vids = (byCh[cid] || []).sort((a, b) => b.views - a.views);
+        const bestViews = vids[0]?.views || 0;
+        const avgViews = videoCount ? Math.round(totalViews / videoCount) : 0;
+        const viewsPerMonth = ageMonths ? Math.round(totalViews / ageMonths) : 0;
+        const uploadsPerWeek = ageWeeks ? +(videoCount / ageWeeks).toFixed(1) : 0;
+        const ratio = subs ? avgViews / subs : 0;
+        const isHype = subs < 50000 && ratio >= 2; // poucos inscritos, muitas views
+        const bestPub = vids[0]?.publishedRaw ? new Date(vids[0].publishedRaw) : null;
+        const vph = bestPub ? bestViews / Math.max(1, (now - bestPub.getTime()) / 3600000) : 0;
+        let score = ratio >= 20 ? 35 : ratio >= 10 ? 30 : ratio >= 5 ? 24 : ratio >= 2 ? 17 : ratio >= 1 ? 10 : 5;
+        score += vph >= 5000 ? 30 : vph >= 1000 ? 25 : vph >= 200 ? 18 : vph >= 50 ? 11 : vph >= 10 ? 5 : 1;
+        if (subs < 50000) score += 10;
+        if (videoCount > 0 && videoCount <= 80) score += 8;
+        if (ageDays <= 180) score += 8;
+        return {
+          id: cid, title: sn.title || '', avatar: sn.thumbnails?.default?.url || '',
+          country: sn.country || '', subscribers: subs, totalViews, videoCount,
+          avgViews, viewsPerMonth, uploadsPerWeek, bestViews, isHype, ageDays,
+          score: Math.min(100, Math.round(score)),
+          thumbs: vids.slice(0, 3).map(v => v.thumb).filter(Boolean),
+          url: `https://www.youtube.com/channel/${cid}`,
+        };
+      }).filter(Boolean);
+
+      // filtros de inscritos
+      const minS = parseInt(min_subs) || 0, maxS = parseInt(max_subs) || 0;
+      channels = channels.filter(c => (!minS || c.subscribers >= minS) && (!maxS || c.subscribers <= maxS));
+      if (tab === 'pouco_inscrito') channels = channels.filter(c => c.isHype);
+      if (tab === 'novos') channels = channels.filter(c => c.ageDays <= 365);
+
+      const sorters = {
+        explodindo: (a, b) => b.score - a.score,
+        subindo: (a, b) => b.score - a.score,
+        tracao: (a, b) => b.viewsPerMonth - a.viewsPerMonth,
+        recente: (a, b) => b.viewsPerMonth - a.viewsPerMonth,
+        pouco_inscrito: (a, b) => (b.avgViews / Math.max(1, b.subscribers)) - (a.avgViews / Math.max(1, a.subscribers)),
+        novos: (a, b) => a.ageDays - b.ageDays,
+        todos: (a, b) => b.subscribers - a.subscribers,
+      };
+      channels.sort(sorters[tab] || sorters.explodindo);
+
+      return res.status(200).json({ channels, nextPage: sd.nextPageToken || '', tab });
+    } catch (e) {
+      console.error('[youtube/niches]', e.message);
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
   // ── BANCO DE MÍDIA: Pexels + Pixabay (imagens e vídeos) ────────
   // Busca:    action=stock&source=pexels,pixabay&type=image|video&q=&orientation=&page=
   // Download: action=stock&dl=1&url=<enc>&name=<arquivo>  (força download + resolve CORS)
