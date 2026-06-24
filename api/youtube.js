@@ -541,8 +541,8 @@ module.exports = async (req, res) => {
       }
     }
 
-    // — modo busca —
-    const q = (query || '').trim();
+    // — modo busca — (o frontend manda ?q=; aceita ?query= como fallback)
+    const q = (req.query.q || query || '').trim();
     if (!q) return res.status(400).json({ error: 'query obrigatório' });
     const type = req.query.type === 'video' ? 'video' : 'image';
     const orient = ['horizontal', 'vertical', 'square'].includes(req.query.orientation)
@@ -554,7 +554,11 @@ module.exports = async (req, res) => {
     if (!sources.length) sources = ['pexels', 'pixabay'];
 
     const PEXELS_KEY = process.env.PEXELS_KEY;
-    const PIXABAY_KEY = process.env.PIXABAY_KEY;
+    // Pixabay tem 2 chaves: PIXABAY_KEY = imagens · PIXABAY_KEY2 = vídeos
+    // (cai pra PIXABAY_KEY se a de vídeo não estiver setada)
+    const pbKey = type === 'video'
+      ? (process.env.PIXABAY_KEY2 || process.env.PIXABAY_KEY)
+      : process.env.PIXABAY_KEY;
     const perPage = 24;
     const tasks = [];
     if (sources.includes('pexels')) {
@@ -563,9 +567,9 @@ module.exports = async (req, res) => {
         : Promise.resolve({ items: [], hasMore: false, err: 'PEXELS_KEY não configurada no Vercel.' }));
     }
     if (sources.includes('pixabay')) {
-      tasks.push(PIXABAY_KEY
-        ? fetchPixabay({ key: PIXABAY_KEY, type, q, orient, page: pageNum, perPage })
-        : Promise.resolve({ items: [], hasMore: false, err: 'PIXABAY_KEY não configurada no Vercel.' }));
+      tasks.push(pbKey
+        ? fetchPixabay({ key: pbKey, type, q, orient, page: pageNum, perPage })
+        : Promise.resolve({ items: [], hasMore: false, err: `Chave Pixabay de ${type === 'video' ? 'vídeo (PIXABAY_KEY2)' : 'imagem (PIXABAY_KEY)'} não configurada no Vercel.` }));
     }
 
     try {
