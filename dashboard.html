@@ -1584,6 +1584,15 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .db-state{text-align:center;padding:60px 20px;color:#9db2cf}
     .db-state .ic{font-size:40px;opacity:.45;margin-bottom:12px}
     .db-spin{width:34px;height:34px;border:3px solid var(--border-a);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
+    .db-prog{max-width:540px;margin:54px auto;text-align:center}
+    .db-prog-bar{height:10px;border-radius:99px;background:var(--surface3);border:1px solid var(--border);overflow:hidden}
+    .db-prog-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .3s ease;box-shadow:0 0 12px var(--glow)}
+    .db-prog-label{margin-top:15px;color:var(--text);font-size:14px;font-weight:600}
+    .db-prog-steps{margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+    .db-step{font-size:11px;font-weight:700;letter-spacing:.4px;padding:4px 11px;border-radius:99px;background:var(--surface2);border:1px solid var(--border);color:#7e93b2}
+    .db-step.on{background:var(--accent-dim);border-color:var(--border-a);color:var(--accent)}
+    .db-step.done{background:rgba(0,214,143,.12);border-color:rgba(0,214,143,.35);color:var(--success)}
+    .db-prog-pct{margin-top:8px;color:#9db2cf;font-size:12px;font-family:'JetBrains Mono',monospace}
     .db-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px}
     .db-h{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
     .db-dna-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
@@ -2884,6 +2893,35 @@ function dbLabel(k){ return String(k).replace(/[_-]+/g,' ').replace(/\b\w/g,c=>c
 function dbArr(o,keys){ const v=dbGet(o,keys); if(Array.isArray(v))return v; if(v&&typeof v==='object')return [v]; return []; }
 function dbState(ic,msg){ return `<div class="db-state"><div class="ic">${ic}</div>${dbEsc(msg)}</div>`; }
 
+let dbProgTimer=null;
+function dbStartProgress(box){
+  box.innerHTML=`<div class="db-prog">
+    <div class="db-prog-bar"><div class="db-prog-fill" id="db-prog-fill"></div></div>
+    <div class="db-prog-label" id="db-prog-label">Lendo o canal…</div>
+    <div class="db-prog-steps">
+      <span class="db-step on">1 · Coleta</span><span class="db-step">2 · DNA</span><span class="db-step">3 · Oportunidades</span><span class="db-step">4 · Montagem</span>
+    </div>
+    <div class="db-prog-pct" id="db-prog-pct">0%</div>
+  </div>`;
+  const fill=document.getElementById('db-prog-fill'),label=document.getElementById('db-prog-label'),pct=document.getElementById('db-prog-pct');
+  const steps=[...document.querySelectorAll('#db-result .db-step')];
+  const stages=[[0,'Lendo o canal e os vídeos…',0],[18,'Calculando outliers e extraindo o DNA…',1],[40,'Gerando Mar de Ideias, Dobras e Adaptação…',2],[82,'Montando o mapa de oportunidades…',3]];
+  let p=0; const start=Date.now();
+  if(dbProgTimer)clearInterval(dbProgTimer);
+  dbProgTimer=setInterval(()=>{
+    const el=(Date.now()-start)/1000;
+    p=Math.max(p,Math.min(92, 92*(1-Math.exp(-el/15))));
+    if(fill)fill.style.width=p.toFixed(0)+'%'; if(pct)pct.textContent=p.toFixed(0)+'%';
+    let st=stages[0]; for(const s of stages){ if(p>=s[0]) st=s; }
+    if(label)label.textContent=st[1];
+    steps.forEach((c,i)=>{ c.classList.toggle('done',i<st[2]); c.classList.toggle('on',i===st[2]); });
+  },200);
+}
+function dbStopProgress(ok){
+  if(dbProgTimer){ clearInterval(dbProgTimer); dbProgTimer=null; }
+  const fill=document.getElementById('db-prog-fill'),pct=document.getElementById('db-prog-pct');
+  if(ok&&fill){ fill.style.width='100%'; if(pct)pct.textContent='100%'; document.querySelectorAll('#db-result .db-step').forEach(s=>{s.classList.remove('on');s.classList.add('done');}); }
+}
 async function analisarDobra(){
   if(dobraBusy)return;
   const url=document.getElementById('db-url').value.trim();
@@ -2891,18 +2929,20 @@ async function analisarDobra(){
   if(!url){ box.innerHTML=dbState('⚠️','Cole a URL de um canal do YouTube.'); return; }
   dobraBusy=true;
   const btn=document.getElementById('db-go'); btn.disabled=true;
-  box.innerHTML='<div class="db-state"><div class="db-spin"></div>Lendo o canal e montando o mapa de oportunidades…</div>';
+  dbStartProgress(box);
   try{
     let d=await dobraCall(url);
     const jobId=dbGet(d,['job_id','jobId']);
     if(jobId && !dbGet(d,['dna','analysis','result','nicho_principal','nicho','mar_de_ideias'])) d=await dobraPoll(jobId);
     dobraLast=d;
+    dbStopProgress(true);
     renderDobra(d);
     if(d._usage) setDobraCounter(d._usage);
   }catch(e){
+    dbStopProgress(false);
     box.innerHTML=dbState('⚠️', e.message||'Falha na análise.');
     dobraLoadCount();
-  }finally{ dobraBusy=false; btn.disabled=false; }
+  }finally{ if(dbProgTimer){clearInterval(dbProgTimer);dbProgTimer=null;} dobraBusy=false; btn.disabled=false; }
 }
 async function dobraCall(url){
   const r=await fetch(`${API}/api/youtube?action=dobra&channel_url=${encodeURIComponent(url)}`,{headers:{Authorization:`Bearer ${token}`}});
