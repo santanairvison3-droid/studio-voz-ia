@@ -857,7 +857,7 @@ select option{background:var(--surface2)}
       <span class="nav-ic">📊</span>Meus Canais
     </div>
     <div class="nav-item" onclick="goTab('dobra',this)">
-      <span class="nav-ic">🧠</span>Dobra de Nicho
+      <span class="nav-ic">📡</span>Radar de Nicho
       <span class="nav-badge">NEW</span>
     </div>
     <div class="nav-item" onclick="goTab('stats',this)">
@@ -1630,10 +1630,16 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .db-raw{margin-top:18px}
     .db-raw summary{cursor:pointer;color:#9db2cf;font-size:12px;font-weight:600}
     .db-raw pre{margin-top:8px;background:#05080f;border:1px solid var(--border);border-radius:10px;padding:12px;overflow:auto;max-height:340px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#9db2cf;white-space:pre-wrap;word-break:break-word}
+    .db-raw-note{font-size:12px;color:#9db2cf;line-height:1.5;margin:8px 0 0}
+    .db-ai{border-color:var(--border-a)}
+    .db-ai-txt{font-size:13px;color:#c2d2e8;line-height:1.55;margin-bottom:12px}
+    .db-ai-txt b{color:var(--text)}
+    .db-ai-btn{padding:11px 20px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px var(--glow)}
+    .db-ai-logos{font-size:11px;color:#9db2cf;margin-left:10px}
     </style>
     <div class="tab-pane" id="tab-dobra">
       <div class="tools-page-header">
-        <div class="tools-page-title">🧠 Dobra de Nicho</div>
+        <div class="tools-page-title">📡 Radar de Nicho</div>
         <div class="tools-page-sub">Cole um canal de referência. A ferramenta lê o que fez os vídeos vencerem e desenha um mapa de oportunidades: subnichos pra aprofundar, dobras pra outros nichos e adaptação de mercado.</div>
       </div>
 
@@ -2729,7 +2735,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Dobra de Nicho'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Radar de Nicho'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -3009,7 +3015,15 @@ function renderDobra(d){
   h+=dbSection('Dobra','db-tag-dobra','🔀',m.dobra,true);
   h+=dbSection('Adaptação de Mercado','db-tag-adap','🌍',m.adap,false);
   if(!m.mar.length && !m.dobra.length && !m.adap.length) h+='<div class="db-hint">Não reconheci as seções de oportunidade neste retorno — confira o JSON bruto abaixo (vou ajustar o mapeamento dos campos com base nele).</div>';
-  h+=`<details class="db-raw"><summary>Ver dados brutos (JSON)</summary><pre>${dbEsc(JSON.stringify(d,null,2))}</pre></details>`;
+  h+=`<div class="db-panel db-ai">
+    <div class="db-h">🤖 Continuar numa IA <span class="db-ai-logos">Claude · ChatGPT · Gemini</span></div>
+    <p class="db-ai-txt">Leve esta análise pra qualquer IA e peça pra <b>aprofundar</b>: escolher os melhores títulos pra testar, <b>escrever roteiros</b>, ou achar mais subnichos. O botão abaixo copia um <b>pedido pronto + todos os dados</b> — é só colar no chat da IA.</p>
+    <button class="db-ai-btn" onclick="dobraCopyAI(this)">⧉ Copiar pedido + dados pra IA</button>
+    <details class="db-raw" style="margin-top:16px"><summary>Ver dados brutos (JSON)</summary>
+      <p class="db-raw-note">Este JSON é a mesma análise, em formato que a IA entende fácil. Se preferir, copie só ele e cole no Claude/GPT/Gemini com o seu próprio pedido — ou use o botão acima, que já junta tudo.</p>
+      <pre>${dbEsc(JSON.stringify(d,null,2))}</pre>
+    </details>
+  </div>`;
   box.innerHTML=h;
 }
 function dbBlock(v){
@@ -3061,20 +3075,60 @@ function dobraDownloadTxt(){
   const m=dobraModel(dobraLast);
   if(m.txtUrl){ window.open(m.txtUrl,'_blank'); return; }
   const txt=m.txt||dobraBuildTxt(m);
-  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='dobra-'+String(m.canal||'canal').toLowerCase().replace(/\W+/g,'-')+'.txt';
+  const blob=new Blob(['﻿'+txt],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a'); // BOM p/ acentos abrirem certo no Bloco de Notas
+  a.href=URL.createObjectURL(blob); a.download='radar-de-nicho-'+String(m.canal||'canal').toLowerCase().replace(/\W+/g,'-')+'.txt';
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
 }
+function dbTxtField(L, label, v){
+  if(v==null||v===''||(Array.isArray(v)&&!v.length))return;
+  if(Array.isArray(v)){ L.push(label+':'); v.forEach(x=>L.push('   • '+dbFlat(x))); }
+  else L.push(label+': '+dbFlat(v));
+}
+function dbOppToTxt(L, o, num){
+  if(typeof o==='string'){ L.push(''); L.push((num?num+'. ':'')+o); return; }
+  L.push('');
+  L.push((num?num+'. ':'')+(dbGet(o,['titulo','title','nome','nicho_novo','tema','name','label'])||''));
+  dbTxtField(L,'Descrição', dbGet(o,['descricao','descrição','description','desc','resumo','summary']));
+  dbTxtField(L,'Público-alvo', dbGet(o,['publico_alvo','público_alvo','target_audience','audience','publico','público']));
+  dbTxtField(L,'Subnicho', dbGet(o,['subnicho','sub_niche']));
+  dbTxtField(L,'Função vencedora', dbGet(o,['funcao_vencedora','função_vencedora','winning_function']));
+  dbTxtField(L,'Search query', dbGet(o,['search_query','query','busca']));
+  dbTxtField(L,'O que preserva', dbGet(o,['o_que_preserva','preserva','preserves','keeps']));
+  dbTxtField(L,'O que muda', dbGet(o,['o_que_muda','muda','changes']));
+  dbTxtField(L,'Como aplicar', dbGet(o,['como_aplicar_na_pratica','como_aplicar','how_to_apply','apply']));
+  dbTxtField(L,'Títulos prontos', dbGet(o,['titulos_prontos','títulos_prontos','titulos','titles','ready_titles']));
+  dbTxtField(L,'Alertas de quebra', dbGet(o,['alertas_de_quebra','alertas','alerts','warnings','break_alerts']));
+}
 function dobraBuildTxt(m){
-  const L=[]; L.push('DOBRA DE NICHO — '+(m.canal||'')); L.push('');
+  const L=[];
+  L.push('RADAR DE NICHO — '+(m.canal||''));
+  L.push('Gerado no Studio de Voz · '+new Date().toLocaleDateString('pt-BR'));
+  L.push('');
+  L.push('— COMO USAR: cole este arquivo (ou o JSON da ferramenta) no Claude, ChatGPT ou Gemini e');
+  L.push('  peça pra aprofundar: escolher os melhores títulos, escrever roteiros, achar mais subnichos. —');
+  L.push('');
+  L.push('=== DNA DO CANAL ===');
   m.dna.forEach(([k,v])=>L.push(k+': '+dbFlat(v)));
-  if(m.metrics.length){ L.push(''); m.metrics.forEach(([k,v])=>L.push(k+': '+dbFlat(v))); }
+  if(m.confianca) L.push('Confiança: '+dbFlat(m.confianca));
+  if(m.metrics.length){ L.push(''); L.push('Métricas:'); m.metrics.forEach(([k,v])=>L.push('   '+k+': '+dbFlat(v))); }
+  if(m.padrao){ L.push(''); L.push('Padrão vencedor:');
+    if(m.padrao&&typeof m.padrao==='object'&&!Array.isArray(m.padrao)){ for(const k in m.padrao) dbTxtField(L,'   '+dbLabel(k), m.padrao[k]); }
+    else dbTxtField(L,'   Resumo', m.padrao); }
+  if(m.funcao){ L.push(''); L.push('Função vencedora:');
+    if(m.funcao&&typeof m.funcao==='object'&&!Array.isArray(m.funcao)){ for(const k in m.funcao) dbTxtField(L,'   '+dbLabel(k), m.funcao[k]); }
+    else dbTxtField(L,'   ', m.funcao); }
+  if(dbIsTitleArr(m.temas)){ L.push(''); L.push('Temas: '+m.temas.join(', ')); }
   [['MAR DE IDEIAS',m.mar],['DOBRA',m.dobra],['ADAPTAÇÃO DE MERCADO',m.adap]].forEach(([name,arr])=>{
-    if(!arr.length)return; L.push(''); L.push('=== '+name+' ===');
-    arr.forEach((o,i)=>{ L.push(''); L.push((i+1)+'. '+(dbGet(o,['titulo','title','nome','nicho_novo','tema','name'])||''));
-      const t=dbGet(o,['titulos_prontos','titulos','titles','ready_titles']); if(dbIsTitleArr(t)) t.forEach(x=>L.push('   • '+x)); });
+    if(!arr.length)return; L.push(''); L.push('=== '+name+' ==='); arr.forEach((o,i)=>dbOppToTxt(L,o,i+1));
   });
   return L.join('\n');
+}
+function dobraCopyAI(btn){
+  if(!dobraLast)return;
+  const m=dobraModel(dobraLast);
+  const pedido='Você é um estrategista de conteúdo para YouTube. Abaixo está a análise "Radar de Nicho" do canal "'+(m.canal||'')+'": o DNA do que faz os vídeos vencerem + um mapa de oportunidades (Mar de Ideias = mesmo público; Dobra = mesmo formato em nichos diferentes; Adaptação de Mercado = outro idioma/mercado).\n\nCom base nesses dados, me ajude a:\n1) escolher os 3 melhores títulos pra testar agora e explicar por que ganham;\n2) escrever o roteiro do primeiro vídeo (gancho + desenvolvimento + fechamento);\n3) sugerir mais 3 subnichos no mesmo padrão vencedor.\n\n=== DADOS DA ANÁLISE (JSON) ===\n'+JSON.stringify(dobraLast,null,2);
+  if(navigator.clipboard) navigator.clipboard.writeText(pedido);
+  if(btn){ const t=btn.textContent; btn.textContent='✓ Copiado! Agora cole no Claude / GPT / Gemini'; setTimeout(()=>{btn.textContent=t;},2200); }
 }
 
 async function loadStats(){
