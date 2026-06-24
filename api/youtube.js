@@ -7,6 +7,7 @@ const supabase = createClient(
 );
 
 const HUNT_LIMIT = 2; // caçadas de nicho por conta por dia (protege a cota da API)
+const DOBRA_LIMIT = 2; // análises "Dobra de Nicho" por conta por dia (proxy DarkPlanner = caro)
 
 // VPH = views por hora desde a publicação. Sinal mais sensível de "hype" que views/dia.
 function calcVPH(v) {
@@ -424,6 +425,78 @@ module.exports = async (req, res) => {
     } catch (e) {
       console.error('[youtube/hunt]', e.message);
       return res.status(500).json({ error: e.message });
+    }
+  }
+
+  // ── DOBRA DE NICHO (proxy da análise do DarkPlanner) ───────────
+  // Repassa pro endpoint que já gera o mapa de oportunidades (DNA + Mar de Ideias +
+  // Dobra + Adaptação). Sem função nova (teto Vercel = 12). DP_API_KEY é a mesma do
+  // áudio (header X-API-Key, ver generate-index.js).
+  if (action === 'dobra') {
+    const dpKey = process.env.DP_API_KEY;
+    if (!dpKey) return res.status(500).json({ error: 'DP_API_KEY não configurada no Vercel.' });
+    const dpHeaders = { 'X-API-Key': dpKey, 'Content-Type': 'application/json' };
+    const DP_DOBRA = 'https://app.darkplanner.com.br/api/dobra-nicho';
+
+    // Polling de um job já criado (caso a análise seja assíncrona e devolva job_id)
+    if (req.query.job_id) {
+      try {
+        const r = await fetch(`${DP_DOBRA}/status/${req.query.job_id}`, { headers: dpHeaders });
+        const txt = await r.text(); let data = {}; try { data = JSON.parse(txt); } catch {}
+        return res.status(r.ok ? 200 : r.status).json(data);
+      } catch (e) {
+        return res.status(502).json({ error: 'Erro ao consultar status no DarkPlanner', detail: e.message });
+      }
+    }
+
+    if (!channel_url) return res.status(400).json({ error: 'channel_url obrigatório' });
+
+    // Limite diário por usuário (a análise é cara no lado do DarkPlanner). Admin é isento.
+    const isAdmin = user.role === 'admin';
+    const dobraLimit = user.lim_dobra || DOBRA_LIMIT;
+    if (!isAdmin) {
+      let dobraToday = 0;
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const { count } = await supabase
+          .from('dobra_log')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.sub || user.id)
+          .gte('created_at', `${today}T00:00:00`)
+          .lte('created_at', `${today}T23:59:59`);
+        dobraToday = count || 0;
+      } catch (e) {}
+      if (dobraToday >= dobraLimit)
+        return res.status(429).json({ error: `Limite diário de análises de nicho atingido (${dobraLimit}/dia). Volte amanhã.` });
+    }
+
+    try {
+      // ⚠️ O corpo/campo exato é confirmado no 1º teste com a chave real; mandamos os
+      // aliases mais prováveis pra cobrir channel_url | url | channelUrl.
+      const body = JSON.stringify({
+        channel_url, url: channel_url, channelUrl: channel_url,
+        ...(lang ? { lang } : {}),
+      });
+      const r = await fetch(`${DP_DOBRA}/analyze`, { method: 'POST', headers: dpHeaders, body });
+      const txt = await r.text();
+      let data = {}; try { data = JSON.parse(txt); } catch {}
+
+      if (!r.ok) {
+        console.error('[youtube/dobra]', r.status, txt.slice(0, 300));
+        return res.status(r.status >= 500 ? 502 : r.status).json({
+          error: `DarkPlanner retornou ${r.status} na análise de nicho.`,
+          detail: (data && (data.error || data.message)) || txt.slice(0, 300),
+          dp_status: r.status,
+        });
+      }
+
+      // Registra o uso (não bloqueia se falhar)
+      if (!isAdmin) supabase.from('dobra_log').insert({ user_id: user.sub || user.id }).then(() => {}, () => {});
+
+      return res.status(200).json(data);
+    } catch (e) {
+      console.error('[youtube/dobra]', e.message);
+      return res.status(500).json({ error: 'Erro ao contactar o DarkPlanner', detail: e.message });
     }
   }
 
