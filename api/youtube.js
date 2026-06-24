@@ -428,30 +428,16 @@ module.exports = async (req, res) => {
     }
   }
 
-  // ── DOBRA DE NICHO (proxy da análise do DarkPlanner) ───────────
-  // Repassa pro endpoint que já gera o mapa de oportunidades (DNA + Mar de Ideias +
-  // Dobra + Adaptação). Sem função nova (teto Vercel = 12). DP_API_KEY é a mesma do
-  // áudio (header X-API-Key, ver generate-index.js).
+  // ── DOBRA DE NICHO (gerada com GPT-4o-mini) ────────────────────
+  // Coleta o canal (YouTube Data API) → calcula outliers → manda os vídeos
+  // campeões pro GPT-4o-mini, que devolve o mapa de oportunidades em JSON.
+  // Sem função nova (teto Vercel = 12). Precisa de OPENAI_API_KEY no Vercel.
   if (action === 'dobra') {
-    const dpKey = process.env.DP_API_KEY;
-    if (!dpKey) return res.status(500).json({ error: 'DP_API_KEY não configurada no Vercel.' });
-    const dpHeaders = { 'X-API-Key': dpKey, 'Content-Type': 'application/json' };
-    const DP_DOBRA = 'https://app.darkplanner.com.br/api/dobra-nicho';
-
-    // Polling de um job já criado (caso a análise seja assíncrona e devolva job_id)
-    if (req.query.job_id) {
-      try {
-        const r = await fetch(`${DP_DOBRA}/status/${req.query.job_id}`, { headers: dpHeaders });
-        const txt = await r.text(); let data = {}; try { data = JSON.parse(txt); } catch {}
-        return res.status(r.ok ? 200 : r.status).json(data);
-      } catch (e) {
-        return res.status(502).json({ error: 'Erro ao consultar status no DarkPlanner', detail: e.message });
-      }
-    }
-
+    const oaKey = process.env.OPENAI_API_KEY;
+    if (!oaKey) return res.status(500).json({ error: 'OPENAI_API_KEY não configurada no Vercel.' });
     if (!channel_url) return res.status(400).json({ error: 'channel_url obrigatório' });
 
-    // Limite diário por usuário (a análise é cara no lado do DarkPlanner). Admin é isento.
+    // Limite diário por usuário (admin é isento)
     const isAdmin = user.role === 'admin';
     const dobraLimit = user.lim_dobra || DOBRA_LIMIT;
     if (!isAdmin) {
@@ -471,32 +457,113 @@ module.exports = async (req, res) => {
     }
 
     try {
-      // ⚠️ O corpo/campo exato é confirmado no 1º teste com a chave real; mandamos os
-      // aliases mais prováveis pra cobrir channel_url | url | channelUrl.
-      const body = JSON.stringify({
-        channel_url, url: channel_url, channelUrl: channel_url,
-        ...(lang ? { lang } : {}),
-      });
-      const r = await fetch(`${DP_DOBRA}/analyze`, { method: 'POST', headers: dpHeaders, body });
-      const txt = await r.text();
-      let data = {}; try { data = JSON.parse(txt); } catch {}
+      // 1) Resolve o channelId (aceita @handle ou /channel/UC...)
+      const handleMatch = channel_url.match(/@([\w.-]+)/);
+      const idMatch = channel_url.match(/channel\/(UC[\w-]+)/);
+      let channelId = '';
+      if (idMatch) channelId = idMatch[1];
+      else if (handleMatch) {
+        const r = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent('@' + handleMatch[1])}&type=channel&maxResults=1&key=${apiKey}`);
+        const d = await r.json();
+        channelId = d.items?.[0]?.snippet?.channelId || d.items?.[0]?.id?.channelId || '';
+      }
+      if (!channelId) return res.status(404).json({ error: 'Canal não encontrado. Verifique a URL.' });
 
-      if (!r.ok) {
-        console.error('[youtube/dobra]', r.status, txt.slice(0, 300));
-        return res.status(r.status >= 500 ? 502 : r.status).json({
-          error: `DarkPlanner retornou ${r.status} na análise de nicho.`,
-          detail: (data && (data.error || data.message)) || txt.slice(0, 300),
-          dp_status: r.status,
-        });
+      // 2) Stats do canal + últimos vídeos
+      const [chRes, searchRes] = await Promise.all([
+        fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${apiKey}`),
+        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=30&key=${apiKey}`)
+      ]);
+      const chData = await chRes.json();
+      const searchData = await searchRes.json();
+      const chInfo = chData.items?.[0] || {};
+      const chStats = chInfo.statistics || {};
+      const sItems = searchData.items || [];
+      if (!sItems.length) return res.status(404).json({ error: 'Canal sem vídeos analisáveis.' });
+
+      const videoIds = sItems.map(i => i.id?.videoId).filter(Boolean).join(',');
+      const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails,snippet&id=${videoIds}&key=${apiKey}`);
+      const vData = await vRes.json();
+      const vids = (vData.items || []).map(v => ({
+        title: v.snippet?.title || '',
+        views: parseInt(v.statistics?.viewCount) || 0,
+        likes: parseInt(v.statistics?.likeCount) || 0,
+        duration: parseDuration(v.contentDetails?.duration).durationStr,
+        date: (v.snippet?.publishedAt || '').slice(0, 10),
+      }));
+
+      // 3) Outliers (multiplicador = views ÷ mediana)
+      const sorted = vids.map(v => v.views).filter(n => n > 0).sort((a, b) => a - b);
+      const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
+      vids.forEach(v => { v.outlier = median ? +(v.views / median).toFixed(2) : 0; });
+      vids.sort((a, b) => b.views - a.views);
+      const metricas = {
+        inscritos: parseInt(chStats.subscriberCount) || 0,
+        views_totais: parseInt(chStats.viewCount) || 0,
+        analisados: vids.length,
+        outliers: vids.filter(v => v.outlier >= 3).length,
+        maior_outlier: vids.length ? vids.reduce((m, v) => Math.max(m, v.outlier), 0) + 'x' : '—',
+      };
+      const canal = chInfo.snippet?.title || '';
+
+      // 4) GPT-4o-mini gera o mapa de oportunidades
+      const topList = vids.slice(0, 25)
+        .map((v, i) => `${i + 1}. "${v.title}" — ${v.views} views · ${v.outlier}x · ${v.duration} · ${v.date}`)
+        .join('\n');
+      const sys = 'Você é um estrategista de conteúdo para YouTube. A partir dos vídeos de melhor desempenho (outliers) de um canal, você (1) extrai o DNA do que faz os vídeos vencerem e (2) gera um mapa de oportunidades. RESPONDA SOMENTE JSON VÁLIDO, em português do Brasil, no schema exato pedido. Não invente as métricas numéricas do canal (já são fornecidas). "outlier" = views ÷ mediana de views do canal. Mantenha os títulos prontos no mesmo idioma dos títulos do canal analisado.';
+      const usr = `Canal: ${canal}
+Inscritos: ${metricas.inscritos} · Views totais: ${metricas.views_totais} · Analisados: ${metricas.analisados} · Outliers(>=3x): ${metricas.outliers} · Maior outlier: ${metricas.maior_outlier}
+
+Vídeos (título — views · outlier · duração · data), do maior pro menor:
+${topList}
+
+Gere EXATAMENTE este JSON (sem texto fora do JSON):
+{
+ "nicho_principal":"string",
+ "subnicho_atual":"string",
+ "publico":"string (quem assiste + motivação)",
+ "territorio":"string (a promessa central do canal em 1 frase)",
+ "confianca":"alta | média | baixa",
+ "padrao_vencedor":{"resumo":"string","comuns":["3-5 pontos"],"gatilhos":["2-4"],"formulas_de_titulo":["1-3 fórmulas com [variáveis]"]},
+ "funcao_vencedora":{"promessa":"string","emocao_dominante":"string","fantasia_de_identidade":"string"},
+ "temas":["3-5"],
+ "mar_de_ideias":[{"titulo":"Subnicho/Nova visão — nome","descricao":"string","funcao_vencedora":"string","search_query":"string","o_que_preserva":["..."],"o_que_muda":["..."],"como_aplicar":"string","titulos_prontos":["4-6 títulos"],"alertas_de_quebra":["1-2"]}],
+ "dobra":[{"titulo":"Nicho novo — nome","publico_alvo":"string","subnicho":"string","descricao":"string","como_aplicar":"string","titulos_prontos":["4-6 títulos; inclua alguns no formato 'título campeão -> novo título'"]}],
+ "adaptacao_de_mercado":[{"titulo":"Mercado/idioma alvo — nome","descricao":"string","o_que_preserva":["..."],"o_que_muda":["..."],"titulos_prontos":["4-6 títulos LOCALIZADOS, não traduzidos"]}]
+}
+Use 3 itens em "mar_de_ideias", 4 em "dobra" e 1 em "adaptacao_de_mercado".`;
+
+      const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${oaKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'system', content: sys }, { role: 'user', content: usr }],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_tokens: 4000,
+        }),
+      });
+      const aiData = await aiRes.json();
+      if (!aiRes.ok) {
+        console.error('[dobra/openai]', aiRes.status, JSON.stringify(aiData).slice(0, 300));
+        return res.status(502).json({ error: 'Falha na IA (OpenAI).', detail: aiData.error?.message || `HTTP ${aiRes.status}` });
       }
 
-      // Registra o uso (não bloqueia se falhar)
+      let parsed = {};
+      try { parsed = JSON.parse(aiData.choices?.[0]?.message?.content || '{}'); }
+      catch (e) { return res.status(502).json({ error: 'A IA retornou um JSON inválido.', detail: (aiData.choices?.[0]?.message?.content || '').slice(0, 300) }); }
+
+      // Injeta as métricas REAIS (não confiar nas do modelo) + nome do canal
+      parsed.canal = canal;
+      parsed.metricas = metricas;
+
       if (!isAdmin) supabase.from('dobra_log').insert({ user_id: user.sub || user.id }).then(() => {}, () => {});
 
-      return res.status(200).json(data);
+      return res.status(200).json(parsed);
     } catch (e) {
       console.error('[youtube/dobra]', e.message);
-      return res.status(500).json({ error: 'Erro ao contactar o DarkPlanner', detail: e.message });
+      return res.status(500).json({ error: 'Erro ao gerar a análise', detail: e.message });
     }
   }
 
