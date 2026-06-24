@@ -217,6 +217,20 @@ async function fetchPixabay({ key, type, q, orient, page, perPage }) {
   return { items, hasMore: page * perPage < (d.totalHits || 0) };
 }
 
+// Conta as análises "Dobra de Nicho" feitas hoje por um usuário (p/ limite + contador na UI)
+async function dobraCount(user) {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const { count } = await supabase
+      .from('dobra_log')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.sub || user.id)
+      .gte('created_at', `${today}T00:00:00`)
+      .lte('created_at', `${today}T23:59:59`);
+    return count || 0;
+  } catch (e) { return 0; }
+}
+
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido' });
@@ -434,27 +448,22 @@ module.exports = async (req, res) => {
   // Sem função nova (teto Vercel = 12). Precisa de OPENAI_API_KEY no Vercel.
   if (action === 'dobra') {
     const oaKey = process.env.OPENAI_API_KEY;
+    const isAdmin = user.role === 'admin';
+    const dobraLimit = user.lim_dobra || DOBRA_LIMIT;
+
+    // Contador leve p/ a UI (não roda análise): ?action=dobra&count=1
+    if (req.query.count) {
+      const used = isAdmin ? 0 : await dobraCount(user);
+      return res.status(200).json({ usadas_hoje: used, limite: dobraLimit, restantes: isAdmin ? null : Math.max(0, dobraLimit - used), admin: isAdmin });
+    }
+
     if (!oaKey) return res.status(500).json({ error: 'OPENAI_API_KEY não configurada no Vercel.' });
     if (!channel_url) return res.status(400).json({ error: 'channel_url obrigatório' });
 
     // Limite diário por usuário (admin é isento)
-    const isAdmin = user.role === 'admin';
-    const dobraLimit = user.lim_dobra || DOBRA_LIMIT;
-    if (!isAdmin) {
-      let dobraToday = 0;
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        const { count } = await supabase
-          .from('dobra_log')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.sub || user.id)
-          .gte('created_at', `${today}T00:00:00`)
-          .lte('created_at', `${today}T23:59:59`);
-        dobraToday = count || 0;
-      } catch (e) {}
-      if (dobraToday >= dobraLimit)
-        return res.status(429).json({ error: `Limite diário de análises de nicho atingido (${dobraLimit}/dia). Volte amanhã.` });
-    }
+    const dobraToday = isAdmin ? 0 : await dobraCount(user);
+    if (!isAdmin && dobraToday >= dobraLimit)
+      return res.status(429).json({ error: `Limite diário de análises de nicho atingido (${dobraLimit}/dia). Volte amanhã.`, usadas_hoje: dobraToday, limite: dobraLimit, restantes: 0 });
 
     try {
       // 1) Resolve o channelId (aceita @handle ou /channel/UC...)
@@ -507,7 +516,7 @@ module.exports = async (req, res) => {
       const canal = chInfo.snippet?.title || '';
 
       // 4) GPT-4o-mini gera o mapa de oportunidades
-      const topList = vids.slice(0, 25)
+      const topList = vids.slice(0, 18)
         .map((v, i) => `${i + 1}. "${v.title}" — ${v.views} views · ${v.outlier}x · ${v.duration} · ${v.date}`)
         .join('\n');
       const sys = 'Você é um estrategista de conteúdo para YouTube. A partir dos vídeos de melhor desempenho (outliers) de um canal, você (1) extrai o DNA do que faz os vídeos vencerem e (2) gera um mapa de oportunidades. RESPONDA SOMENTE JSON VÁLIDO, em português do Brasil, no schema exato pedido. Não invente as métricas numéricas do canal (já são fornecidas). "outlier" = views ÷ mediana de views do canal. Mantenha os títulos prontos no mesmo idioma dos títulos do canal analisado.';
@@ -533,17 +542,30 @@ Gere EXATAMENTE este JSON (sem texto fora do JSON):
 }
 Use 3 itens em "mar_de_ideias", 4 em "dobra" e 1 em "adaptacao_de_mercado".`;
 
-      const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${oaKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'system', content: sys }, { role: 'user', content: usr }],
-          response_format: { type: 'json_object' },
-          temperature: 0.7,
-          max_tokens: 4000,
-        }),
-      });
+      // Aborta a chamada da IA antes do teto da função (60s) p/ devolver erro amigável em vez de 504
+      const ctrl = new AbortController();
+      const aiTimer = setTimeout(() => ctrl.abort(), 52000);
+      let aiRes;
+      try {
+        aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${oaKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'system', content: sys }, { role: 'user', content: usr }],
+            response_format: { type: 'json_object' },
+            temperature: 0.7,
+            max_tokens: 3500,
+          }),
+          signal: ctrl.signal,
+        });
+      } catch (e) {
+        clearTimeout(aiTimer);
+        if (e.name === 'AbortError')
+          return res.status(504).json({ error: 'A análise demorou demais e foi interrompida. Tente novamente em instantes.' });
+        throw e;
+      }
+      clearTimeout(aiTimer);
       const aiData = await aiRes.json();
       if (!aiRes.ok) {
         console.error('[dobra/openai]', aiRes.status, JSON.stringify(aiData).slice(0, 300));
@@ -557,6 +579,8 @@ Use 3 itens em "mar_de_ideias", 4 em "dobra" e 1 em "adaptacao_de_mercado".`;
       // Injeta as métricas REAIS (não confiar nas do modelo) + nome do canal
       parsed.canal = canal;
       parsed.metricas = metricas;
+      const usadas = isAdmin ? dobraToday : dobraToday + 1;
+      parsed._usage = { usadas_hoje: usadas, limite: dobraLimit, restantes: isAdmin ? null : Math.max(0, dobraLimit - usadas), admin: isAdmin };
 
       if (!isAdmin) supabase.from('dobra_log').insert({ user_id: user.sub || user.id }).then(() => {}, () => {});
 
