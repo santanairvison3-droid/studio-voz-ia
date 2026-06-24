@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "api/*.js": {
+      "memory": 512,
+      "maxDuration": 60
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/reset-daily",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}
