@@ -860,6 +860,10 @@ select option{background:var(--surface2)}
       <span class="nav-ic">📡</span>Radar de Nicho
       <span class="nav-badge">NEW</span>
     </div>
+    <div class="nav-item" onclick="goTab('niches',this)">
+      <span class="nav-ic">🧭</span>Caçador de Canais
+      <span class="nav-badge">NEW</span>
+    </div>
     <div class="nav-item" onclick="goTab('stats',this)">
       <span class="nav-ic">📊</span>Estatísticas
     </div>
@@ -1650,6 +1654,74 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
       <div class="db-hint"><span id="db-counter" class="db-counter">Análises hoje: —</span> · a análise pode levar até ~1 min (a IA precisa de tempo pra entregar tudo).</div>
 
       <div id="db-result"></div>
+    </div>
+
+    <!-- ═══ CAÇADOR DE CANAIS (Niche Finder grátis, via YouTube) ═══ -->
+    <style>
+    .nf-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+    .nf-bar input,.nf-bar select{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-family:inherit;font-size:13px;outline:none;cursor:pointer}
+    .nf-bar input{flex:1;min-width:200px;cursor:text}
+    .nf-bar input::placeholder{color:#7e93b2}
+    .nf-bar input:focus,.nf-bar select:focus{border-color:var(--accent)}
+    .nf-go{padding:11px 22px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px;box-shadow:0 4px 16px var(--glow)}
+    .nf-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+    .nf-tab{padding:7px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;color:#ccdaee;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
+    .nf-tab:hover{color:#fff}
+    .nf-tab.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:700}
+    .nf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+    .nf-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;transition:border-color .15s}
+    .nf-card:hover{border-color:var(--border-a)}
+    .nf-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .nf-av{width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0}
+    .nf-av-ltr{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709;font-weight:800;font-size:18px}
+    .nf-id{flex:1;min-width:0}
+    .nf-name{font-weight:700;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .nf-sub{font-size:11.5px;color:#9db2cf;font-family:'JetBrains Mono',monospace}
+    .nf-badge{font-size:10px;font-weight:700;background:rgba(255,171,0,.14);border:1px solid rgba(255,171,0,.4);color:var(--warning);padding:3px 8px;border-radius:99px;white-space:nowrap}
+    .nf-score{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:800;color:var(--accent);min-width:26px;text-align:right}
+    .nf-thumbs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:11px}
+    .nf-th{aspect-ratio:16/9;border-radius:7px;background-size:cover;background-position:center;background-color:var(--surface3)}
+    .nf-th-empty{grid-column:1/-1;opacity:.35}
+    .nf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:11px}
+    .nf-stats div{text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 3px}
+    .nf-stats b{display:block;font-family:'JetBrains Mono',monospace;font-size:13.5px;color:var(--text)}
+    .nf-stats span{font-size:9px;color:#9db2cf;text-transform:uppercase;letter-spacing:.4px}
+    .nf-open{display:block;text-align:center;padding:9px;background:transparent;border:1px solid var(--border-a);border-radius:9px;color:var(--accent);font-weight:700;font-size:12.5px;text-decoration:none}
+    .nf-open:hover{background:var(--accent-dim)}
+    .nf-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:#9db2cf}
+    .nf-ic{font-size:40px;opacity:.45;margin-bottom:12px}
+    .nf-spin{width:32px;height:32px;border:3px solid var(--border-a);border-top-color:var(--accent);border-radius:50%;margin:0 auto 12px;animation:spin .8s linear infinite}
+    .nf-more{margin:18px auto 0;display:block;padding:11px 26px;background:var(--surface2);border:1px solid var(--border-a);border-radius:10px;color:var(--accent);font-weight:700;cursor:pointer;font-family:inherit;font-size:13px}
+    </style>
+    <div class="tab-pane" id="tab-niches">
+      <div class="tools-page-header">
+        <div class="tools-page-title">🧭 Caçador de Canais</div>
+        <div class="tools-page-sub">Ache canais por nicho e ordene por sinais de crescimento. O selo 🚀 marca canais com poucos inscritos e muitas views (canal-referência). Dados da API do YouTube — sem faceless%/monetizado (isso é do NexLev pago).</div>
+      </div>
+      <div class="nf-bar">
+        <input id="nf-q" type="text" placeholder="Nicho: receitas, finanças, true crime, mitologia…" onkeydown="if(event.key==='Enter')nfSearch(true)">
+        <select id="nf-lang" onchange="if(document.getElementById('nf-q').value.trim())nfSearch(true)">
+          <option value="">Idioma: todos</option>
+          <option value="pt">🇧🇷 Português</option>
+          <option value="en">🇺🇸 Inglês</option>
+          <option value="es">🇪🇸 Espanhol</option>
+          <option value="fr">🇫🇷 Francês</option>
+          <option value="de">🇩🇪 Alemão</option>
+        </select>
+        <select id="nf-subs" onchange="if(document.getElementById('nf-q').value.trim())nfSearch(true)">
+          <option value="">Inscritos: qualquer</option>
+          <option value="0-10000">até 10K</option>
+          <option value="10000-100000">10K–100K</option>
+          <option value="100000-1000000">100K–1M</option>
+          <option value="1000000-">1M+</option>
+        </select>
+        <button class="nf-go" onclick="nfSearch(true)">🔍 Buscar</button>
+      </div>
+      <div class="nf-tabs" id="nf-tabs"></div>
+      <div class="nf-grid" id="nf-grid">
+        <div class="nf-state"><div class="nf-ic">🧭</div>Digite um nicho e clique em Buscar pra garimpar canais.</div>
+      </div>
+      <button class="nf-more" id="nf-more" style="display:none" onclick="nfSearch(false)">Carregar mais</button>
     </div>
 
     <div class="tab-pane" id="tab-voices">
@@ -2735,7 +2807,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Radar de Nicho'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Radar de Nicho',niches:'Caçador de Canais'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -2749,6 +2821,7 @@ function goTab(name,el){
   if(name==='canais')loadChannels();
   if(name==='midias')initMidias();
   if(name==='dobra')initDobra();
+  if(name==='niches')initNf();
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
 }
@@ -3129,6 +3202,61 @@ function dobraCopyAI(btn){
   const pedido='Você é um estrategista de conteúdo para YouTube. Abaixo está a análise "Radar de Nicho" do canal "'+(m.canal||'')+'": o DNA do que faz os vídeos vencerem + um mapa de oportunidades (Mar de Ideias = mesmo público; Dobra = mesmo formato em nichos diferentes; Adaptação de Mercado = outro idioma/mercado).\n\nCom base nesses dados, me ajude a:\n1) escolher os 3 melhores títulos pra testar agora e explicar por que ganham;\n2) escrever o roteiro do primeiro vídeo (gancho + desenvolvimento + fechamento);\n3) sugerir mais 3 subnichos no mesmo padrão vencedor.\n\n=== DADOS DA ANÁLISE (JSON) ===\n'+JSON.stringify(dobraLast,null,2);
   if(navigator.clipboard) navigator.clipboard.writeText(pedido);
   if(btn){ const t=btn.textContent; btn.textContent='✓ Copiado! Agora cole no Claude / GPT / Gemini'; setTimeout(()=>{btn.textContent=t;},2200); }
+}
+
+/* ══ CAÇADOR DE CANAIS (Niche Finder grátis via /api/youtube?action=niches) ══ */
+const NF_TABS=[['explodindo','🔥 Explodindo'],['subindo','📈 Subindo Rápido'],['tracao','🚀 Alta Tração'],['recente','⏱️ Tração Recente'],['pouco_inscrito','💎 Poucos Inscritos, Muitas Views'],['novos','🌱 Canais Novos'],['todos','📊 Todos']];
+let nfTab='explodindo', nfPage='', nfBusy=false, nfInit=false;
+function initNf(){ if(!nfInit){ nfInit=true; nfRenderTabs(); setTimeout(()=>document.getElementById('nf-q').focus(),60); } }
+function nfRenderTabs(){
+  const w=document.getElementById('nf-tabs'); if(!w||w.dataset.done)return; w.dataset.done='1';
+  w.innerHTML=NF_TABS.map(([t,l])=>`<button class="nf-tab${t===nfTab?' on':''}" data-t="${t}" onclick="nfSetTab('${t}')">${l}</button>`).join('');
+}
+function nfSetTab(t){
+  nfTab=t;
+  document.querySelectorAll('#tab-niches .nf-tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  if(document.getElementById('nf-q').value.trim()) nfSearch(true);
+}
+function nfFlag(cc){ if(!cc||cc.length!==2)return''; return cc.toUpperCase().replace(/[A-Z]/g,c=>String.fromCodePoint(127397+c.charCodeAt(0))); }
+function nfNum(n){ n=+n||0; if(n>=1e6)return (n/1e6).toFixed(n>=1e7?0:1).replace('.0','')+'M'; if(n>=1e3)return (n/1e3).toFixed(n>=1e4?0:1).replace('.0','')+'K'; return String(n); }
+function nfState(ic,msg){ return `<div class="nf-state"><div class="nf-ic">${ic}</div>${dbEsc(msg)}</div>`; }
+async function nfSearch(reset){
+  const q=document.getElementById('nf-q').value.trim(), grid=document.getElementById('nf-grid'), more=document.getElementById('nf-more');
+  if(!q){ grid.innerHTML=nfState('🔍','Digite um nicho pra buscar (ex.: receitas, finanças, true crime).'); return; }
+  if(nfBusy)return; nfBusy=true;
+  if(reset){ nfPage=''; grid.innerHTML='<div class="nf-state"><div class="nf-spin"></div>Garimpando canais…</div>'; } else more.textContent='Carregando…';
+  try{
+    const lang=document.getElementById('nf-lang').value;
+    const [mn,mx]=(document.getElementById('nf-subs').value||'').split('-');
+    const p=new URLSearchParams({action:'niches', q, tab:nfTab});
+    if(lang){ p.set('lang',lang); const reg={pt:'BR',en:'US',es:'ES',fr:'FR',de:'DE'}[lang]; if(reg)p.set('region',reg); }
+    if(mn) p.set('min_subs',mn);
+    if(mx) p.set('max_subs',mx);
+    if(!reset && nfPage) p.set('page',nfPage);
+    const r=await fetch(`${API}/api/youtube?${p}`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||`Erro ${r.status}`);
+    if(reset) grid.innerHTML='';
+    const chs=d.channels||[];
+    if(reset && !chs.length) grid.innerHTML=nfState('🔍',`Nenhum canal pra "${q}" com esses filtros. Tente outro termo ou tire filtros.`);
+    chs.forEach(c=>grid.appendChild(nfCard(c)));
+    nfPage=d.nextPage||''; more.style.display=nfPage?'block':'none'; more.textContent='Carregar mais';
+  }catch(e){
+    if(reset) grid.innerHTML=nfState('⚠️', e.message||'Erro na busca.'); else more.textContent='Carregar mais';
+  }finally{ nfBusy=false; }
+}
+function nfCard(c){
+  const el=document.createElement('div'); el.className='nf-card';
+  const flag=nfFlag(c.country);
+  const av=c.avatar?`<img class="nf-av" src="${c.avatar}" loading="lazy" alt="">`:`<div class="nf-av nf-av-ltr">${dbEsc((c.title||'?').slice(0,1).toUpperCase())}</div>`;
+  const thumbs=(c.thumbs&&c.thumbs.length)?c.thumbs.map(t=>`<div class="nf-th" style="background-image:url('${t}')"></div>`).join(''):'<div class="nf-th nf-th-empty"></div>';
+  el.innerHTML=`<div class="nf-head">${av}
+    <div class="nf-id"><div class="nf-name">${dbEsc(c.title)} ${flag}</div><div class="nf-sub">${nfNum(c.subscribers)} inscritos · ${nfNum(c.videoCount)} vídeos</div></div>
+    ${c.isHype?'<span class="nf-badge">🚀 Ref</span>':''}<span class="nf-score" title="Score viral (0-100)">${c.score}</span></div>
+    <div class="nf-thumbs">${thumbs}</div>
+    <div class="nf-stats"><div><b>${nfNum(c.totalViews)}</b><span>views</span></div><div><b>${nfNum(c.viewsPerMonth)}</b><span>views/mês</span></div><div><b>${nfNum(c.avgViews)}</b><span>méd/vídeo</span></div><div><b>${c.uploadsPerWeek}</b><span>vid/sem</span></div></div>
+    <a class="nf-open" href="${c.url}" target="_blank" rel="noopener">Abrir canal ↗</a>`;
+  return el;
 }
 
 async function loadStats(){
