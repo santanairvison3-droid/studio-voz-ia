@@ -856,6 +856,10 @@ select option{background:var(--surface2)}
     <div class="nav-item" onclick="goTab('canais',this)">
       <span class="nav-ic">📊</span>Meus Canais
     </div>
+    <div class="nav-item" onclick="goTab('dobra',this)">
+      <span class="nav-ic">🧠</span>Dobra de Nicho
+      <span class="nav-badge">NEW</span>
+    </div>
     <div class="nav-item" onclick="goTab('stats',this)">
       <span class="nav-ic">📊</span>Estatísticas
     </div>
@@ -1565,6 +1569,71 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
       <button class="md-more" id="md-more" style="display:none" onclick="mdSearch(false)">Carregar mais</button>
     </div>
     <div class="md-toast" id="md-toast"></div>
+
+    <!-- ═══ DOBRA DE NICHO (proxy DarkPlanner) ═══ -->
+    <style>
+    .db-hero{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;flex-wrap:wrap}
+    .db-hero input{flex:1;min-width:240px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
+    .db-hero input:focus{border-color:var(--accent)}
+    .db-hero input::placeholder{color:#7e93b2}
+    .db-go{padding:12px 24px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px var(--glow)}
+    .db-go:disabled{opacity:.5;cursor:not-allowed}
+    .db-hint{font-size:12.5px;color:#9db2cf;margin-bottom:14px}
+    .db-state{text-align:center;padding:60px 20px;color:#9db2cf}
+    .db-state .ic{font-size:40px;opacity:.45;margin-bottom:12px}
+    .db-spin{width:34px;height:34px;border:3px solid var(--border-a);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
+    .db-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px}
+    .db-h{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .db-dna-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .db-field{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px}
+    .db-field .k{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#9db2cf;margin-bottom:4px}
+    .db-field .v{font-size:13.5px;color:var(--text);line-height:1.45}
+    .db-metrics{display:flex;flex-wrap:wrap;gap:18px;margin-top:4px}
+    .db-metric .n{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--text)}
+    .db-metric .l{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#9db2cf}
+    .db-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+    .db-chip{padding:5px 12px;background:var(--accent-dim);border:1px solid var(--border-a);border-radius:99px;color:var(--accent);font-size:11.5px;font-weight:600}
+    .db-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;background:rgba(0,214,143,.12);border:1px solid rgba(0,214,143,.35);color:var(--success)}
+    .db-sec-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin:22px 0 12px;display:flex;align-items:center;gap:9px}
+    .db-sec-title .tag{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:99px}
+    .db-tag-mar{background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.3);color:#00d4ff}
+    .db-tag-dobra{background:rgba(255,150,0,.12);border:1px solid rgba(255,150,0,.35);color:#ff9d3c}
+    .db-tag-adap{background:rgba(0,214,143,.12);border:1px solid rgba(0,214,143,.35);color:var(--success)}
+    .db-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+    .db-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;transition:border-color .15s}
+    .db-card:hover{border-color:var(--border-a)}
+    .db-card-title{font-weight:700;font-size:14.5px;color:var(--text);margin-bottom:6px;display:flex;gap:8px;align-items:flex-start}
+    .db-card-title .num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--accent-dim);border:1px solid var(--border-a);color:var(--accent);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace}
+    .db-card-desc{font-size:13px;color:#c2d2e8;line-height:1.5;margin-bottom:10px}
+    .db-kv{font-size:12.5px;color:#c2d2e8;line-height:1.5;margin-bottom:7px}
+    .db-kv b{color:#9db2cf;font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.8px;display:block;margin-bottom:2px}
+    .db-list{list-style:none;display:flex;flex-direction:column;gap:5px;margin-top:3px}
+    .db-list li{font-size:12.5px;color:#d6e3f2;line-height:1.45;padding-left:14px;position:relative}
+    .db-list li::before{content:'•';position:absolute;left:2px;color:var(--accent)}
+    .db-title-row{display:flex;gap:7px;align-items:flex-start;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.5px;color:#e2ecf7;line-height:1.4}
+    .db-title-row button{margin-left:auto;flex-shrink:0;background:transparent;border:1px solid var(--border-a);border-radius:6px;color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;padding:3px 9px;font-family:inherit}
+    .db-title-row button:hover{background:var(--accent-dim)}
+    .db-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 16px}
+    .db-btn{padding:9px 18px;background:transparent;border:1px solid var(--border-a);border-radius:9px;color:var(--accent);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+    .db-btn:hover{background:var(--accent-dim)}
+    .db-raw{margin-top:18px}
+    .db-raw summary{cursor:pointer;color:#9db2cf;font-size:12px;font-weight:600}
+    .db-raw pre{margin-top:8px;background:#05080f;border:1px solid var(--border);border-radius:10px;padding:12px;overflow:auto;max-height:340px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#9db2cf;white-space:pre-wrap;word-break:break-word}
+    </style>
+    <div class="tab-pane" id="tab-dobra">
+      <div class="tools-page-header">
+        <div class="tools-page-title">🧠 Dobra de Nicho</div>
+        <div class="tools-page-sub">Cole um canal de referência. A ferramenta lê o que fez os vídeos vencerem e desenha um mapa de oportunidades: subnichos pra aprofundar, dobras pra outros nichos e adaptação de mercado.</div>
+      </div>
+
+      <div class="db-hero">
+        <input id="db-url" type="text" placeholder="https://www.youtube.com/@CanalDeReferencia" onkeydown="if(event.key==='Enter')analisarDobra()">
+        <button class="db-go" id="db-go" onclick="analisarDobra()">🔍 Analisar →</button>
+      </div>
+      <div class="db-hint">Análises limitadas por dia por conta. A análise pode levar alguns segundos.</div>
+
+      <div id="db-result"></div>
+    </div>
 
     <div class="tab-pane" id="tab-voices">
       <div class="selected-voice-banner" id="svb">
@@ -2649,7 +2718,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Dobra de Nicho'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -2662,6 +2731,7 @@ function goTab(name,el){
   if(name==='trends'){document.getElementById('yt-query').focus();ytRenderRefs();renderSearchProfile();applyProfileDefaults();}
   if(name==='canais')loadChannels();
   if(name==='midias')initMidias();
+  if(name==='dobra')initDobra();
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
 }
@@ -2787,6 +2857,170 @@ function mdToast(msg){
   const t=document.getElementById('md-toast');
   t.textContent=msg; t.style.display='block';
   clearTimeout(mdToastT); mdToastT=setTimeout(()=>t.style.display='none',3200);
+}
+
+/* ══ DOBRA DE NICHO (proxy DarkPlanner via /api/youtube?action=dobra) ══ */
+/* Renderer tolerante: não sabemos o schema exato do DarkPlanner, então cada campo é
+   buscado por vários nomes prováveis (PT/EN) e sempre há um "Ver dados brutos (JSON)". */
+let dobraBusy=false, dobraLast=null, dobraInit=false;
+function initDobra(){ if(!dobraInit){ dobraInit=true; setTimeout(()=>document.getElementById('db-url').focus(),60); } }
+function dbGet(o,keys){ if(!o||typeof o!=='object')return undefined; for(const k of keys){ if(o[k]!=null && o[k]!=='') return o[k]; } return undefined; }
+function dbEsc(s){ return String(s==null?'':s).replace(/[<>]/g,c=>c==='<'?'&lt;':'&gt;'); }
+function dbIsTitleArr(v){ return Array.isArray(v) && v.length>0 && v.every(x=>typeof x==='string'); }
+function dbFlat(v){ if(Array.isArray(v))return v.map(dbFlat).join(', '); if(v&&typeof v==='object')return JSON.stringify(v); return String(v==null?'':v); }
+function dbLabel(k){ return String(k).replace(/[_-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+function dbArr(o,keys){ const v=dbGet(o,keys); if(Array.isArray(v))return v; if(v&&typeof v==='object')return [v]; return []; }
+function dbState(ic,msg){ return `<div class="db-state"><div class="ic">${ic}</div>${dbEsc(msg)}</div>`; }
+
+async function analisarDobra(){
+  if(dobraBusy)return;
+  const url=document.getElementById('db-url').value.trim();
+  const box=document.getElementById('db-result');
+  if(!url){ box.innerHTML=dbState('⚠️','Cole a URL de um canal do YouTube.'); return; }
+  dobraBusy=true;
+  const btn=document.getElementById('db-go'); btn.disabled=true;
+  box.innerHTML='<div class="db-state"><div class="db-spin"></div>Lendo o canal e montando o mapa de oportunidades…</div>';
+  try{
+    let d=await dobraCall(url);
+    const jobId=dbGet(d,['job_id','jobId']);
+    if(jobId && !dbGet(d,['dna','analysis','result','nicho_principal','nicho','mar_de_ideias'])) d=await dobraPoll(jobId);
+    dobraLast=d;
+    renderDobra(d);
+  }catch(e){
+    box.innerHTML=dbState('⚠️', e.message||'Falha na análise.');
+  }finally{ dobraBusy=false; btn.disabled=false; }
+}
+async function dobraCall(url){
+  const r=await fetch(`${API}/api/youtube?action=dobra&channel_url=${encodeURIComponent(url)}`,{headers:{Authorization:`Bearer ${token}`}});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d.detail||d.error||`Erro ${r.status}`);
+  return d;
+}
+async function dobraPoll(jobId){
+  for(let i=0;i<40;i++){
+    await new Promise(r=>setTimeout(r,3000));
+    const r=await fetch(`${API}/api/youtube?action=dobra&job_id=${encodeURIComponent(jobId)}`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json().catch(()=>({}));
+    const st=String(dbGet(d,['status','state'])||'').toLowerCase();
+    if(['failed','error','cancelled'].includes(st)) throw new Error('A análise falhou no DarkPlanner.');
+    if(['completed','done','success','finished'].includes(st) || dbGet(d,['dna','nicho_principal','nicho','mar_de_ideias'])) return d;
+  }
+  throw new Error('Tempo esgotado esperando a análise.');
+}
+
+function dobraModel(d){
+  const m=Object.assign({}, d, d.result||{}, d.data||{}, d.analysis||{}, d.analise_canal||{}, d.dna||{}, (d.result&&d.result.dna)||{});
+  const met=d.metricas||d.metrics||m.metricas||m.metrics||m;
+  return {
+    canal: dbGet(m,['canal','channel','channel_name','nome','title']),
+    confianca: dbGet(m,['confianca','confiança','confidence']),
+    dna:[
+      ['Nicho principal', dbGet(m,['nicho_principal','nicho','main_niche','niche'])],
+      ['Subnicho', dbGet(m,['subnicho_atual','subnicho','sub_niche','subniche'])],
+      ['Público', dbGet(m,['publico','público','audience'])],
+      ['Território', dbGet(m,['territorio','território','territory'])],
+    ].filter(x=>x[1]),
+    metrics:[
+      ['Inscritos', dbGet(met,['inscritos','subscribers','subs'])],
+      ['Views totais', dbGet(met,['views_totais','total_views','views'])],
+      ['Analisados', dbGet(met,['analisados','analyzed'])],
+      ['Outliers', dbGet(met,['outliers'])],
+      ['Maior outlier', dbGet(met,['maior_outlier','max_outlier','biggest_outlier'])],
+    ].filter(x=>x[1]!=null),
+    padrao: dbGet(m,['padrao_vencedor','padrão_vencedor','winning_pattern']),
+    funcao: dbGet(m,['funcao_vencedora','função_vencedora','winning_function']),
+    temas: dbGet(m,['temas','themes','topics']),
+    mar: dbArr(d,['mar_de_ideias','mar','sea_of_ideas','ideas']),
+    dobra: dbArr(d,['dobra','dobras','fold','folds']),
+    adap: dbArr(d,['adaptacao_de_mercado','adaptacao','adaptação','market_adaptation','adaptation','adaptacoes']),
+    txt: dbGet(d,['txt','report_txt']),
+    txtUrl: dbGet(d,['txt_url','txtUrl','report_txt_url']),
+  };
+}
+function renderDobra(d){
+  const m=dobraModel(d), box=document.getElementById('db-result');
+  let h='';
+  h+='<div class="db-panel"><div class="db-h">🧬 DNA do canal'+(m.canal?` · <span style="color:var(--text)">${dbEsc(m.canal)}</span>`:'')+(m.confianca?`<span class="db-badge" style="margin-left:auto">✓ ${dbEsc(dbFlat(m.confianca))}</span>`:'')+'</div>';
+  if(m.dna.length){ h+='<div class="db-dna-grid">'+m.dna.map(([k,v])=>`<div class="db-field"><div class="k">${k}</div><div class="v">${dbEsc(dbFlat(v))}</div></div>`).join('')+'</div>'; }
+  if(m.metrics.length){ h+='<div class="db-metrics">'+m.metrics.map(([k,v])=>`<div class="db-metric"><div class="n">${dbEsc(dbFlat(v))}</div><div class="l">${k}</div></div>`).join('')+'</div>'; }
+  if(dbIsTitleArr(m.temas)){ h+='<div class="db-chips">'+m.temas.map(t=>`<span class="db-chip">${dbEsc(t)}</span>`).join('')+'</div>'; }
+  h+='</div>';
+  if(m.padrao||m.funcao){
+    h+='<div class="db-panel"><div class="db-h">🏆 Padrão vencedor</div>'+(m.padrao?dbBlock(m.padrao):'');
+    if(m.funcao) h+='<div class="db-h" style="margin-top:16px">🎯 Função vencedora</div>'+dbBlock(m.funcao);
+    h+='</div>';
+  }
+  h+='<div class="db-toolbar"><button class="db-btn" onclick="dobraDownloadTxt()">⬇ Baixar TXT</button><button class="db-btn" onclick="analisarOutro()">+ Analisar outro canal</button></div>';
+  h+=dbSection('Mar de Ideias','db-tag-mar','🌊',m.mar,false);
+  h+=dbSection('Dobra','db-tag-dobra','🔀',m.dobra,true);
+  h+=dbSection('Adaptação de Mercado','db-tag-adap','🌍',m.adap,false);
+  if(!m.mar.length && !m.dobra.length && !m.adap.length) h+='<div class="db-hint">Não reconheci as seções de oportunidade neste retorno — confira o JSON bruto abaixo (vou ajustar o mapeamento dos campos com base nele).</div>';
+  h+=`<details class="db-raw"><summary>Ver dados brutos (JSON)</summary><pre>${dbEsc(JSON.stringify(d,null,2))}</pre></details>`;
+  box.innerHTML=h;
+}
+function dbBlock(v){
+  if(v==null) return '';
+  if(typeof v==='string') return `<div class="db-kv">${dbEsc(v)}</div>`;
+  if(Array.isArray(v)) return '<ul class="db-list">'+v.map(x=>`<li>${dbEsc(dbFlat(x))}</li>`).join('')+'</ul>';
+  let h='';
+  for(const k in v){ const val=v[k]; if(val==null||val==='')continue; const lab=dbLabel(k);
+    if(Array.isArray(val)) h+=`<div class="db-kv"><b>${lab}</b><ul class="db-list">${val.map(x=>`<li>${dbEsc(dbFlat(x))}</li>`).join('')}</ul></div>`;
+    else if(typeof val==='object') h+=`<div class="db-kv"><b>${lab}</b>${dbBlock(val)}</div>`;
+    else h+=`<div class="db-kv"><b>${lab}</b>${dbEsc(String(val))}</div>`;
+  }
+  return h;
+}
+function dbSection(name,tagcls,ic,arr,numbered){
+  if(!arr||!arr.length)return '';
+  return `<div class="db-sec-title">${ic} ${name} <span class="tag ${tagcls}">${arr.length}</span></div><div class="db-cards">`+arr.map((o,i)=>dbOppCard(o,numbered?i+1:0)).join('')+'</div>';
+}
+function dbOppCard(o,num){
+  if(typeof o==='string') return `<div class="db-card"><div class="db-card-desc">${dbEsc(o)}</div></div>`;
+  const title=dbGet(o,['titulo','title','nome','nicho_novo','tema','theme','name','label'])||'';
+  const desc=dbGet(o,['descricao','descrição','description','desc','resumo','summary'])||'';
+  let h='<div class="db-card">';
+  h+=`<div class="db-card-title">${num?`<span class="num">${num}</span>`:''}<span>${dbEsc(title)}</span></div>`;
+  if(desc) h+=`<div class="db-card-desc">${dbEsc(desc)}</div>`;
+  const labeled=[
+    ['Público-alvo',['publico_alvo','público_alvo','target_audience','audience','publico','público']],
+    ['Subnicho',['subnicho','sub_niche']],
+    ['Nicho novo',['nicho_novo_label','new_niche']],
+    ['Função vencedora',['funcao_vencedora','função_vencedora','winning_function']],
+    ['Search query',['search_query','query','busca']],
+    ['O que preserva',['o_que_preserva','preserva','preserves','keeps']],
+    ['O que muda',['o_que_muda','muda','changes']],
+    ['Como aplicar',['como_aplicar_na_pratica','como_aplicar','how_to_apply','apply']],
+    ['Alertas de quebra',['alertas_de_quebra','alertas','alerts','warnings','break_alerts']],
+  ];
+  labeled.forEach(([lab,keys])=>{ const v=dbGet(o,keys); if(v==null||v==='')return;
+    if(Array.isArray(v)) h+=`<div class="db-kv"><b>${lab}</b><ul class="db-list">${v.map(x=>`<li>${dbEsc(dbFlat(x))}</li>`).join('')}</ul></div>`;
+    else h+=`<div class="db-kv"><b>${lab}</b>${dbEsc(dbFlat(v))}</div>`;
+  });
+  const titles=dbGet(o,['titulos_prontos','títulos_prontos','titulos','titles','ready_titles']);
+  if(dbIsTitleArr(titles)) h+='<div class="db-kv"><b>Títulos prontos</b><div style="display:flex;flex-direction:column;gap:6px">'+titles.map(t=>`<div class="db-title-row"><span>${dbEsc(t)}</span><button onclick="dbCopyRow(this)">⧉</button></div>`).join('')+'</div></div>';
+  return h+'</div>';
+}
+function dbCopyRow(btn){ const t=(btn.previousElementSibling&&btn.previousElementSibling.textContent)||''; if(navigator.clipboard)navigator.clipboard.writeText(t); btn.textContent='✓'; setTimeout(()=>{btn.textContent='⧉';},1200); }
+function analisarOutro(){ document.getElementById('db-result').innerHTML=''; const i=document.getElementById('db-url'); i.value=''; i.focus(); }
+function dobraDownloadTxt(){
+  if(!dobraLast)return;
+  const m=dobraModel(dobraLast);
+  if(m.txtUrl){ window.open(m.txtUrl,'_blank'); return; }
+  const txt=m.txt||dobraBuildTxt(m);
+  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='dobra-'+String(m.canal||'canal').toLowerCase().replace(/\W+/g,'-')+'.txt';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+}
+function dobraBuildTxt(m){
+  const L=[]; L.push('DOBRA DE NICHO — '+(m.canal||'')); L.push('');
+  m.dna.forEach(([k,v])=>L.push(k+': '+dbFlat(v)));
+  if(m.metrics.length){ L.push(''); m.metrics.forEach(([k,v])=>L.push(k+': '+dbFlat(v))); }
+  [['MAR DE IDEIAS',m.mar],['DOBRA',m.dobra],['ADAPTAÇÃO DE MERCADO',m.adap]].forEach(([name,arr])=>{
+    if(!arr.length)return; L.push(''); L.push('=== '+name+' ===');
+    arr.forEach((o,i)=>{ L.push(''); L.push((i+1)+'. '+(dbGet(o,['titulo','title','nome','nicho_novo','tema','name'])||''));
+      const t=dbGet(o,['titulos_prontos','titulos','titles','ready_titles']); if(dbIsTitleArr(t)) t.forEach(x=>L.push('   • '+x)); });
+  });
+  return L.join('\n');
 }
 
 async function loadStats(){
