@@ -875,6 +875,11 @@ select option{background:var(--surface2)}
       <span class="nav-ic">🔥</span>HypeEsportivo
       <span class="nav-badge">NEW</span>
     </div>
+    <div class="nav-section">Mídia</div>
+    <div class="nav-item" onclick="goTab('midias',this)">
+      <span class="nav-ic">🎬</span>Vídeos e Imagens
+      <span class="nav-badge">NEW</span>
+    </div>
   </nav>
 
   <div class="sb-user">
@@ -1465,6 +1470,98 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
         </div>
       </div>
     </div>
+
+    <!-- ═══ VÍDEOS E IMAGENS (banco de mídia: Pexels + Pixabay) ═══ -->
+    <style>
+    .md-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px}
+    .md-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px}
+    .md-toggle button{background:transparent;border:none;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer}
+    .md-toggle button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709}
+    .md-search{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0 12px}
+    .md-search input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:inherit;font-size:14px;padding:11px 0}
+    .md-search input::placeholder{color:var(--muted)}
+    .md-go{padding:11px 22px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px var(--glow)}
+    .md-filters{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:14px}
+    .md-fgroup{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+    .md-flabel{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+    .md-chip{padding:7px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+    .md-chip:hover{color:var(--text)}
+    .md-chip.on{background:var(--accent-dim);border-color:var(--border-a);color:var(--accent)}
+    .md-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;min-height:24px}
+    .md-actbtn{padding:8px 16px;background:transparent;border:1px solid var(--border-a);border-radius:9px;color:var(--accent);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+    .md-actbtn:disabled{opacity:.4;cursor:not-allowed}
+    .md-count{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+    .md-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+    .md-card{position:relative;border-radius:12px;overflow:hidden;background:var(--surface2);border:1px solid var(--border);aspect-ratio:1/1;cursor:pointer}
+    .md-card.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+    .md-card img,.md-card video{width:100%;height:100%;object-fit:cover;display:block}
+    .md-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(4,7,9,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;pointer-events:none}
+    .md-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(4,7,9,.85) 0%,transparent 45%);opacity:0;transition:opacity .15s;display:flex;flex-direction:column;justify-content:flex-end;padding:10px}
+    .md-card:hover .md-ov,.md-card.sel .md-ov{opacity:1}
+    .md-meta{display:flex;align-items:center;justify-content:space-between;gap:6px}
+    .md-src{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:3px 7px;border-radius:6px;background:var(--accent-dim);color:var(--accent)}
+    .md-author{font-size:10px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85}
+    .md-dl{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:9px;border:none;background:rgba(4,7,9,.7);color:var(--accent);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .md-dl:hover{background:var(--accent);color:#040709}
+    .md-check{position:absolute;top:8px;left:8px;width:24px;height:24px;border-radius:7px;border:2px solid rgba(255,255,255,.5);background:rgba(4,7,9,.5);display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent}
+    .md-card.sel .md-check{background:var(--accent);border-color:var(--accent);color:#040709}
+    .md-dur{position:absolute;bottom:8px;right:8px;font-size:10px;font-weight:700;background:rgba(4,7,9,.75);color:#fff;padding:2px 7px;border-radius:6px;font-family:'JetBrains Mono',monospace}
+    .md-empty{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--muted)}
+    .md-empty-ic{font-size:42px;opacity:.4;margin-bottom:12px}
+    .md-more{margin:18px auto 0;display:block;padding:11px 26px;background:var(--surface2);border:1px solid var(--border-a);border-radius:10px;color:var(--accent);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+    .md-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border-a);color:var(--accent);padding:11px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:300;display:none}
+    </style>
+    <div class="tab-pane" id="tab-midias">
+      <div class="tools-page-header">
+        <div class="tools-page-title">🎬 Vídeos e Imagens</div>
+        <div class="tools-page-sub">B-roll grátis do Pexels e Pixabay — imagens e vídeos. Baixe um a um ou selecione vários.</div>
+      </div>
+
+      <div class="md-bar">
+        <div class="md-toggle">
+          <button id="md-t-image" class="active" onclick="mdSetType('image',this)">🖼️ Imagens</button>
+          <button id="md-t-video" onclick="mdSetType('video',this)">🎞️ Vídeos</button>
+        </div>
+        <div class="md-search">
+          <span style="color:var(--muted)">🔍</span>
+          <input id="md-q" type="text" placeholder="Busque por um tema: natureza, cidade, tecnologia…" onkeydown="if(event.key==='Enter')mdSearch(true)">
+        </div>
+        <button class="md-go" onclick="mdSearch(true)">Buscar →</button>
+      </div>
+
+      <div class="md-filters">
+        <div class="md-fgroup">
+          <span class="md-flabel">Fontes</span>
+          <button class="md-chip on" data-src="pexels" onclick="mdToggleChip(this)">Pexels</button>
+          <button class="md-chip on" data-src="pixabay" onclick="mdToggleChip(this)">Pixabay</button>
+        </div>
+        <div class="md-fgroup">
+          <span class="md-flabel">Orientação</span>
+          <button class="md-chip on" data-orient="all" onclick="mdSetOrient('all',this)">Todas</button>
+          <button class="md-chip" data-orient="horizontal" onclick="mdSetOrient('horizontal',this)">Horizontal</button>
+          <button class="md-chip" data-orient="vertical" onclick="mdSetOrient('vertical',this)">Vertical</button>
+          <button class="md-chip" data-orient="square" onclick="mdSetOrient('square',this)">Quadrada</button>
+        </div>
+      </div>
+
+      <div class="md-actions" id="md-actions" style="display:none">
+        <button class="md-actbtn" onclick="mdSelectAll()">☑️ Selecionar tudo</button>
+        <button class="md-actbtn" onclick="mdClearSel()">Limpar</button>
+        <button class="md-actbtn" id="md-dl-sel" onclick="mdDownloadSelected()" disabled>⬇️ Baixar selecionados (0)</button>
+        <span class="md-count" id="md-count"></span>
+      </div>
+
+      <div class="md-grid" id="md-grid">
+        <div class="md-empty">
+          <div class="md-empty-ic">🖼️</div>
+          <div style="font-weight:700;color:var(--text);font-size:15px;margin-bottom:4px">Busque mídias para começar</div>
+          <div>Digite um tema e escolha entre imagens ou vídeos. Os resultados vêm direto dos bancos públicos.</div>
+        </div>
+      </div>
+
+      <button class="md-more" id="md-more" style="display:none" onclick="mdSearch(false)">Carregar mais</button>
+    </div>
+    <div class="md-toast" id="md-toast"></div>
 
     <div class="tab-pane" id="tab-voices">
       <div class="selected-voice-banner" id="svb">
@@ -2549,7 +2646,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -2561,8 +2658,132 @@ function goTab(name,el){
   if(name==='stats')loadStats();
   if(name==='trends'){document.getElementById('yt-query').focus();ytRenderRefs();renderSearchProfile();applyProfileDefaults();}
   if(name==='canais')loadChannels();
+  if(name==='midias')initMidias();
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
+}
+
+/* ══ VÍDEOS E IMAGENS (banco de mídia: Pexels + Pixabay via /api/youtube?action=stock) ══ */
+let mdType='image', mdOrient='all', mdPage=1, mdHasMore=false, mdLoading=false, mdInit=false;
+let mdItems=[]; const mdSel=new Map(); let mdToastT;
+function initMidias(){ if(!mdInit){ mdInit=true; setTimeout(()=>document.getElementById('md-q').focus(),60); } }
+function mdQ(){ return document.getElementById('md-q').value.trim(); }
+function mdSources(){ return [...document.querySelectorAll('#tab-midias .md-chip[data-src].on')].map(b=>b.dataset.src).join(','); }
+function mdSetType(t,el){
+  if(mdType===t)return;
+  mdType=t;
+  document.querySelectorAll('#tab-midias .md-toggle button').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  if(mdQ())mdSearch(true);
+}
+function mdToggleChip(el){
+  el.classList.toggle('on');
+  if(![...document.querySelectorAll('#tab-midias .md-chip[data-src].on')].length){ el.classList.add('on'); return mdToast('Mantenha ao menos uma fonte ativa.'); }
+  if(mdQ())mdSearch(true);
+}
+function mdSetOrient(o,el){
+  mdOrient=o;
+  document.querySelectorAll('#tab-midias .md-chip[data-orient]').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  if(mdQ())mdSearch(true);
+}
+async function mdSearch(reset){
+  const q=mdQ(), grid=document.getElementById('md-grid'), more=document.getElementById('md-more');
+  if(!q)return mdToast('Digite um tema para buscar.');
+  if(mdLoading)return;
+  if(reset){ mdPage=1; mdItems=[]; mdSel.clear(); grid.innerHTML='<div class="md-empty"><div class="md-empty-ic">⏳</div><div>Buscando…</div></div>'; }
+  else more.textContent='Carregando…';
+  mdLoading=true;
+  try{
+    const url=`${API}/api/youtube?action=stock&source=${encodeURIComponent(mdSources())}&type=${mdType}&orientation=${mdOrient}&q=${encodeURIComponent(q)}&page=${mdPage}`;
+    const r=await fetch(url,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Erro na busca');
+    if(reset)grid.innerHTML='';
+    const items=d.items||[];
+    if(reset && !items.length){
+      grid.innerHTML=`<div class="md-empty"><div class="md-empty-ic">🔍</div><div style="font-weight:700;color:var(--text)">Nada encontrado para “${q}”.</div><div>Tente outro termo ou outra fonte.</div></div>`;
+    }
+    items.forEach(it=>{ mdItems.push(it); grid.appendChild(mdCard(it)); });
+    if(d.errors && d.errors.length)mdToast(d.errors[0]);
+    mdHasMore=!!d.hasMore; mdPage++;
+    more.style.display=mdHasMore?'block':'none'; more.textContent='Carregar mais';
+    document.getElementById('md-actions').style.display=mdItems.length?'flex':'none';
+    mdSyncSelUI();
+  }catch(e){
+    if(reset)grid.innerHTML=`<div class="md-empty"><div class="md-empty-ic">⚠️</div><div>${e.message||'Erro'}</div></div>`;
+    else mdToast(e.message||'Erro');
+    more.textContent='Carregar mais';
+  }finally{ mdLoading=false; }
+}
+function mdFilename(it){ return `${it.source}-${String(it.id).replace(/\W/g,'')}.${it.type==='video'?'mp4':'jpg'}`; }
+function mdFmtDur(s){ s=Math.round(s); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
+function mdCard(it){
+  const c=document.createElement('div');
+  c.className='md-card'; c.dataset.id=it.id;
+  const media=it.type==='video'
+    ? `<img src="${it.thumb}" loading="lazy" alt=""><span class="md-play">▶</span>`
+    : `<img src="${it.thumb}" loading="lazy" alt="">`;
+  const dur=it.type==='video' && it.duration ? `<span class="md-dur">${mdFmtDur(it.duration)}</span>` : '';
+  const author=(it.author||'').replace(/[<>]/g,'');
+  c.innerHTML=`${media}<div class="md-check">✓</div>`+
+    `<button class="md-dl" title="Baixar" onclick="event.stopPropagation();mdDownloadOne('${it.id}')">⬇</button>${dur}`+
+    `<div class="md-ov"><div class="md-meta"><span class="md-src">${it.source}</span><span class="md-author">${author}</span></div></div>`;
+  c.onclick=()=>mdToggleSel(it.id,c);
+  return c;
+}
+function mdToggleSel(id,card){
+  if(mdSel.has(id)){ mdSel.delete(id); card.classList.remove('sel'); }
+  else{ const it=mdItems.find(x=>x.id===id); if(it){ mdSel.set(id,it); card.classList.add('sel'); } }
+  mdSyncSelUI();
+}
+function mdSelectAll(){
+  document.querySelectorAll('#md-grid .md-card').forEach(card=>{
+    const it=mdItems.find(x=>x.id===card.dataset.id);
+    if(it){ mdSel.set(card.dataset.id,it); card.classList.add('sel'); }
+  });
+  mdSyncSelUI();
+}
+function mdClearSel(){
+  mdSel.clear();
+  document.querySelectorAll('#md-grid .md-card.sel').forEach(c=>c.classList.remove('sel'));
+  mdSyncSelUI();
+}
+function mdSyncSelUI(){
+  const n=mdSel.size, btn=document.getElementById('md-dl-sel');
+  btn.textContent=`⬇️ Baixar selecionados (${n})`; btn.disabled=!n;
+  document.getElementById('md-count').textContent=mdItems.length?`${mdItems.length} resultados · ${n} selecionados`:'';
+}
+async function mdDownloadOne(id){ const it=mdItems.find(x=>x.id===id); if(it)await mdFetchDownload(it); }
+async function mdFetchDownload(it){
+  const url=`${API}/api/youtube?action=stock&dl=1&url=${encodeURIComponent(it.downloadUrl)}&name=${encodeURIComponent(mdFilename(it))}`;
+  try{
+    const r=await fetch(url,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok)throw new Error('falha');
+    const blob=await r.blob(), a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=mdFilename(it);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    return true;
+  }catch(e){ return false; }
+}
+async function mdDownloadSelected(){
+  if(!mdSel.size)return;
+  const btn=document.getElementById('md-dl-sel'), items=[...mdSel.values()];
+  btn.disabled=true;
+  let done=0, fail=0;
+  for(const it of items){
+    btn.textContent=`⬇️ Baixando ${done+fail+1}/${items.length}…`;
+    (await mdFetchDownload(it))?done++:fail++;
+    await new Promise(r=>setTimeout(r,400)); // espaça os downloads p/ o navegador não bloquear a rajada
+  }
+  mdToast(`✅ ${done} baixado(s)${fail?` · ${fail} falhou(aram)`:''}.`);
+  mdSyncSelUI();
+}
+function mdToast(msg){
+  const t=document.getElementById('md-toast');
+  t.textContent=msg; t.style.display='block';
+  clearTimeout(mdToastT); mdToastT=setTimeout(()=>t.style.display='none',3200);
 }
 
 async function loadStats(){
