@@ -6,6 +6,20 @@ function getTodayBR() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
 }
 
+// ── DarkPlanner: múltiplas chaves (1 conta = ~50 áudios/dia ≈ 10 usuários) ──
+// Reparte os usuários entre as contas de forma DETERMINÍSTICA pelo id: o mesmo
+// usuário cai sempre na mesma chave, então o job_id criado no POST é consultado/
+// baixado no GET com a MESMA chave (DarkPlanner amarra o job à conta que o criou).
+function pickDpKey(uid) {
+  const keys = [process.env.DP_API_KEY, process.env.DP_API_KEY_2].filter(Boolean);
+  if (keys.length === 0) return null;
+  if (keys.length === 1) return keys[0];
+  const s = String(uid || '');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return keys[h % keys.length];
+}
+
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -26,12 +40,13 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: 'Token inválido' });
   }
 
-  // ── Verifica DP_API_KEY ──
-  const apiKey = process.env.DP_API_KEY;
+  // ── Verifica/escolhe a chave DarkPlanner do usuário ──
+  // Determinística pelo id: GET e POST do mesmo usuário usam a mesma chave.
+  const apiKey = pickDpKey(user.sub || user.id);
   if (!apiKey) {
     return res.status(500).json({
       error: 'DP_API_KEY não configurada no Vercel',
-      detail: 'Vá em Settings > Environment Variables e adicione DP_API_KEY'
+      detail: 'Vá em Settings > Environment Variables e adicione DP_API_KEY (e, opcionalmente, DP_API_KEY_2)'
     });
   }
 

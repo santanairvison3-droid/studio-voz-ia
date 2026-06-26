@@ -1,5 +1,17 @@
 const jwt = require('jsonwebtoken');
 
+// Mesma divisão de chaves do generate-index.js: cada usuário sempre na mesma
+// conta DarkPlanner (DP_API_KEY ou DP_API_KEY_2), de forma determinística.
+function pickDpKey(uid) {
+  const keys = [process.env.DP_API_KEY, process.env.DP_API_KEY_2].filter(Boolean);
+  if (keys.length === 0) return null;
+  if (keys.length === 1) return keys[0];
+  const s = String(uid || '');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return keys[h % keys.length];
+}
+
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -7,17 +19,18 @@ module.exports = async (req, res) => {
   if (!authHeader || !authHeader.startsWith('Bearer '))
     return res.status(401).json({ error: 'Token não fornecido' });
 
+  let user;
   try {
-    jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
+    user = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
   } catch {
     return res.status(401).json({ error: 'Token inválido' });
   }
 
-  const apiKey = process.env.DP_API_KEY;
+  const apiKey = pickDpKey(user.sub || user.id);
   if (!apiKey) {
     return res.status(500).json({
       error: 'DP_API_KEY não configurada no Vercel',
-      detail: 'Vá em Settings > Environment Variables e adicione DP_API_KEY'
+      detail: 'Vá em Settings > Environment Variables e adicione DP_API_KEY (e, opcionalmente, DP_API_KEY_2)'
     });
   }
 

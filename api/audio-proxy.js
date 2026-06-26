@@ -1,10 +1,23 @@
 const jwt = require('jsonwebtoken');
 
+// Mesma divisão de chaves do generate-index.js: cada usuário sempre na mesma
+// conta DarkPlanner. Usado só no fallback X-API-Key (o normal é o CDN público).
+function pickDpKey(uid) {
+  const keys = [process.env.DP_API_KEY, process.env.DP_API_KEY_2].filter(Boolean);
+  if (keys.length === 0) return null;
+  if (keys.length === 1) return keys[0];
+  const s = String(uid || '');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return keys[h % keys.length];
+}
+
 module.exports = async (req, res) => {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : (req.query.token || '');
   if (!token) return res.status(401).json({ error: 'Token não fornecido' });
-  try { jwt.verify(token, process.env.JWT_SECRET); }
+  let user;
+  try { user = jwt.verify(token, process.env.JWT_SECRET); }
   catch { return res.status(401).json({ error: 'Token inválido' }); }
 
   const audioUrl = req.query.url;
@@ -14,10 +27,11 @@ module.exports = async (req, res) => {
     // Tenta primeiro sem auth (CDN público)
     let upstream = await fetch(decodeURIComponent(audioUrl));
     
-    // Se falhou, tenta com X-API-Key
+    // Se falhou, tenta com X-API-Key (a chave da conta do próprio usuário)
     if (!upstream.ok) {
+      const dpKey = pickDpKey(user.sub || user.id);
       upstream = await fetch(decodeURIComponent(audioUrl), {
-        headers: { 'X-API-Key': process.env.DP_API_KEY }
+        headers: { 'X-API-Key': dpKey }
       });
     }
 
