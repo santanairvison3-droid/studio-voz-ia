@@ -1,15 +1,15 @@
 const jwt = require('jsonwebtoken');
 
-// Mesma divisão de chaves do generate-index.js: cada usuário sempre na mesma
-// conta DarkPlanner. Usado só no fallback X-API-Key (o normal é o CDN público).
-function pickDpKey(uid) {
+// Chaves DarkPlanner do usuário (com failover) — usado só no fallback X-API-Key
+// (o normal é o CDN público). Com failover o áudio pode estar em qualquer conta.
+function dpKeysFor(uid) {
   const keys = [process.env.DP_API_KEY, process.env.DP_API_KEY_2].filter(Boolean);
-  if (keys.length === 0) return null;
-  if (keys.length === 1) return keys[0];
+  if (keys.length <= 1) return keys;
   const s = String(uid || '');
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return keys[h % keys.length];
+  const primary = h % keys.length;
+  return [keys[primary], ...keys.filter((_, i) => i !== primary)];
 }
 
 module.exports = async (req, res) => {
@@ -27,12 +27,14 @@ module.exports = async (req, res) => {
     // Tenta primeiro sem auth (CDN público)
     let upstream = await fetch(decodeURIComponent(audioUrl));
     
-    // Se falhou, tenta com X-API-Key (a chave da conta do próprio usuário)
+    // Se falhou, tenta com X-API-Key — percorre as contas do usuário (failover)
     if (!upstream.ok) {
-      const dpKey = pickDpKey(user.sub || user.id);
-      upstream = await fetch(decodeURIComponent(audioUrl), {
-        headers: { 'X-API-Key': dpKey }
-      });
+      for (const dpKey of dpKeysFor(user.sub || user.id)) {
+        upstream = await fetch(decodeURIComponent(audioUrl), {
+          headers: { 'X-API-Key': dpKey }
+        });
+        if (upstream.ok) break;
+      }
     }
 
     if (!upstream.ok) {

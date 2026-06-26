@@ -6,19 +6,21 @@ function getTodayBR() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
 }
 
-// ── DarkPlanner: múltiplas chaves (1 conta = ~50 áudios/dia ≈ 10 usuários) ──
-// Reparte os usuários entre as contas de forma DETERMINÍSTICA pelo id: o mesmo
-// usuário cai sempre na mesma chave, então o job_id criado no POST é consultado/
-// baixado no GET com a MESMA chave (DarkPlanner amarra o job à conta que o criou).
-function pickDpKey(uid) {
+// ── DarkPlanner: múltiplas chaves c/ FAILOVER (1 conta = ~50 áudios/dia) ──
+// Devolve as contas do usuário EM ORDEM DE PRIORIDADE: a "casa" dele (hash do id)
+// primeiro, depois as outras. Na geração, se a conta primária estourar a cota, o
+// sistema cai pra próxima. No download, como o job pode ter sido criado em qualquer
+// conta, tentamos as chaves até achar a que reconhece o job_id.
+function dpKeysFor(uid) {
   const keys = [process.env.DP_API_KEY, process.env.DP_API_KEY_2].filter(Boolean);
-  if (keys.length === 0) return null;
-  if (keys.length === 1) return keys[0];
+  if (keys.length <= 1) return keys;
   const s = String(uid || '');
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return keys[h % keys.length];
+  const primary = h % keys.length;
+  return [keys[primary], ...keys.filter((_, i) => i !== primary)];
 }
+const dpHdr = k => ({ 'X-API-Key': k, 'Content-Type': 'application/json' });
 
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -40,10 +42,9 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: 'Token inválido' });
   }
 
-  // ── Verifica/escolhe a chave DarkPlanner do usuário ──
-  // Determinística pelo id: GET e POST do mesmo usuário usam a mesma chave.
-  const apiKey = pickDpKey(user.sub || user.id);
-  if (!apiKey) {
+  // ── Contas DarkPlanner do usuário (em ordem de prioridade, com failover) ──
+  const dpKeys = dpKeysFor(user.sub || user.id);
+  if (!dpKeys.length) {
     return res.status(500).json({
       error: 'DP_API_KEY não configurada no Vercel',
       detail: 'Vá em Settings > Environment Variables e adicione DP_API_KEY (e, opcionalmente, DP_API_KEY_2)'
@@ -51,7 +52,6 @@ module.exports = async (req, res) => {
   }
 
   const DP_BASE = 'https://app.darkplanner.com.br/api/v1/audio';
-  const dpHeaders = { 'X-API-Key': apiKey, 'Content-Type': 'application/json' };
 
   // ── GET: polling de status ──
   if (req.method === 'GET') {
@@ -59,8 +59,14 @@ module.exports = async (req, res) => {
     if (!job_id) return res.status(400).json({ error: 'job_id obrigatório' });
 
     try {
-      const statusRes = await fetch(`${DP_BASE}/status/${job_id}`, { headers: dpHeaders });
-      const statusText = await statusRes.text();
+      // Failover: o job pode estar em qualquer conta — tenta as chaves até a que o reconhece.
+      let statusRes, statusText = '', usedKey = dpKeys[0];
+      for (const k of dpKeys) {
+        statusRes = await fetch(`${DP_BASE}/status/${job_id}`, { headers: dpHdr(k) });
+        statusText = await statusRes.text();
+        usedKey = k;
+        if (statusRes.ok) break; // essa é a conta dona do job
+      }
       let statusData = {};
       try { statusData = JSON.parse(statusText); } catch {}
 
@@ -73,7 +79,7 @@ module.exports = async (req, res) => {
       }
 
       if (['completed', 'done', 'success', 'finished'].includes(s)) {
-        const dlRes = await fetch(`${DP_BASE}/download/${job_id}`, { headers: dpHeaders });
+        const dlRes = await fetch(`${DP_BASE}/download/${job_id}`, { headers: dpHdr(usedKey) });
         const dlText = await dlRes.text();
         let dlData = {};
         try { dlData = JSON.parse(dlText); } catch {}
@@ -243,13 +249,21 @@ module.exports = async (req, res) => {
     try {
       console.log('[generate] POST voice_id:', voice_id, 'chars:', text.length, 'user:', uid, 'admin:', isAdmin);
 
-      const r = await fetch(`${DP_BASE}/generate`, {
-        method: 'POST',
-        headers: dpHeaders,
-        body: JSON.stringify({ text, voice_id })
-      });
-
-      const rawText = await r.text();
+      // Failover: tenta a conta primária do usuário; se a cota estourar, cai pra próxima.
+      let r, rawText = '';
+      for (let ki = 0; ki < dpKeys.length; ki++) {
+        r = await fetch(`${DP_BASE}/generate`, {
+          method: 'POST',
+          headers: dpHdr(dpKeys[ki]),
+          body: JSON.stringify({ text, voice_id })
+        });
+        rawText = await r.text();
+        const last = ki === dpKeys.length - 1;
+        const quotaErr = r.status === 429 || r.status === 403
+          || /limit|quota|cota|esgotad|exceed|insufficient|saldo/i.test(rawText);
+        if (r.ok || !quotaErr || last) break;
+        console.log(`[generate] conta ${ki + 1} sem cota (HTTP ${r.status}); tentando próxima conta...`);
+      }
       console.log('[generate] HTTP', r.status, rawText.substring(0, 400));
 
       let data = {};
