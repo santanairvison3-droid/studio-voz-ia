@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Irvison Dark — Dashboard</title>
+<script>(function(){try{document.documentElement.setAttribute('data-theme',localStorage.getItem('svia_theme')||'dark');}catch(e){}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -20,11 +21,34 @@
   --accent-dim:rgba(0,229,212,0.1);
   --glow:rgba(0,229,212,0.18);
   --text:#e8edf5;
-  --muted:#3d4f6e;
+  --muted:#7c8aa6;
+  --nav:#aeb9cd;
+  --topbar-bg:rgba(7,9,16,.9);
   --success:#00d68f;
   --warning:#ffab00;
   --error:#ff4d72;
   --sidebar:240px;
+}
+
+/* ═══ TEMA CLARO (sol) ═══ */
+:root[data-theme="light"]{
+  --bg:#eaeef6;
+  --surface:#ffffff;
+  --surface2:#f1f4fa;
+  --surface3:#e6ebf4;
+  --border:rgba(13,20,40,0.10);
+  --border-a:rgba(0,150,138,0.30);
+  --accent:#009f92;
+  --accent2:#08897e;
+  --accent-dim:rgba(0,159,146,0.12);
+  --glow:rgba(0,159,146,0.16);
+  --text:#16203a;
+  --muted:#5d6c88;
+  --nav:#2c3a59;
+  --success:#0a9a6c;
+  --warning:#b1740c;
+  --error:#d23a5d;
+  --topbar-bg:rgba(255,255,255,.85);
 }
 
 body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;display:flex}
@@ -73,7 +97,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .nav-item{
   display:flex;align-items:center;gap:9px;
   padding:10px 11px;border-radius:9px;
-  color:var(--muted);font-size:13px;font-weight:500;
+  color:var(--nav);font-size:13px;font-weight:500;
   cursor:pointer;transition:all .15s;
   border:1px solid transparent;
   position:relative;
@@ -127,7 +151,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   padding:14px 28px;
   border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
-  background:rgba(7,9,16,.9);
+  background:var(--topbar-bg);
   backdrop-filter:blur(16px);
   position:sticky;top:0;z-index:100;
 }
@@ -143,6 +167,16 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 }
 .pill-dot{width:6px;height:6px;border-radius:50%;animation:blink 2s infinite;flex-shrink:0}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* botão de tema (sol/lua) */
+.theme-toggle{
+  display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:50%;
+  background:var(--surface2);border:1px solid var(--border-a);
+  color:var(--text);font-size:15px;line-height:1;cursor:pointer;
+  transition:transform .15s,background .15s;flex-shrink:0;
+}
+.theme-toggle:hover{background:var(--surface3);transform:scale(1.08)}
 
 /* hamburger */
 .hamburger{display:none;flex-direction:column;gap:4px;cursor:pointer;padding:5px}
@@ -946,6 +980,9 @@ select option{background:var(--surface2)}
         <div class="pill-dot" style="background:var(--success)"></div>
         <span id="top-today">0 de 5 hoje</span>
       </div>
+      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro">
+        <span id="theme-ic">🌙</span>
+      </button>
     </div>
   </header>
 
@@ -993,8 +1030,8 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
             </div>
             <button class="btn-gen" id="btn-gen" onclick="generateSingle()">🎙️ Gerar Áudio</button>
             <div id="voz-selecionada-bar" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(0,229,212,.07);border:1px solid rgba(0,229,212,.2);border-radius:9px;font-size:12px;align-items:center;gap:8px">
-              <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#3d4f6e">Voz selecionada:</span>
-              <span id="voz-selecionada-nome" style="font-weight:700;color:#00e5d4">—</span>
+              <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Voz selecionada:</span>
+              <span id="voz-selecionada-nome" style="font-weight:700;color:var(--accent)">—</span>
             </div>
             <div class="progress-bar" id="gen-prog"><div class="progress-fill"></div></div>
             <div class="status-msg" id="gen-status"></div>
@@ -1483,7 +1520,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     <style>
     .md-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px}
     .md-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px}
-    .md-toggle button{background:transparent;border:none;color:#c2d2e8;font-family:inherit;font-size:13px;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer}
+    .md-toggle button{background:transparent;border:none;color:var(--text);font-family:inherit;font-size:13px;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer}
     .md-toggle button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709}
     .md-search{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0 12px}
     .md-search input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:inherit;font-size:14px;padding:11px 0}
@@ -1491,17 +1528,17 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .md-go{padding:11px 22px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px var(--glow)}
     .md-filters{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:14px}
     .md-fgroup{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-    .md-flabel{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#9db2cf}
-    .md-chip{padding:7px 15px;background:var(--surface3);border:1px solid rgba(255,255,255,.13);border-radius:99px;color:#ccdaee;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
+    .md-flabel{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+    .md-chip{padding:7px 15px;background:var(--surface3);border:1px solid rgba(255,255,255,.13);border-radius:99px;color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
     .md-chip:hover{color:#fff;border-color:var(--border-a)}
     .md-chip.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:700}
     .md-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;min-height:24px}
     .md-actbtn{padding:8px 16px;background:transparent;border:1px solid var(--border-a);border-radius:9px;color:var(--accent);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
     .md-actbtn:disabled{opacity:.4;cursor:not-allowed}
-    .md-count{font-size:12px;color:#9db2cf;font-family:'JetBrains Mono',monospace}
-    #tab-midias .tools-page-sub{color:#9db2cf}
-    #tab-midias .md-search input::placeholder{color:#7e93b2}
-    #tab-midias .md-search span{color:#9db2cf!important}
+    .md-count{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+    #tab-midias .tools-page-sub{color:var(--muted)}
+    #tab-midias .md-search input::placeholder{color:var(--muted)}
+    #tab-midias .md-search span{color:var(--muted)!important}
     .md-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
     .md-card{position:relative;border-radius:12px;overflow:hidden;background:var(--surface2);border:1px solid var(--border);aspect-ratio:1/1;cursor:pointer}
     .md-card.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
@@ -1517,7 +1554,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .md-check{position:absolute;top:8px;left:8px;width:24px;height:24px;border-radius:7px;border:2px solid rgba(255,255,255,.5);background:rgba(4,7,9,.5);display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent}
     .md-card.sel .md-check{background:var(--accent);border-color:var(--accent);color:#040709}
     .md-dur{position:absolute;bottom:8px;right:8px;font-size:10px;font-weight:700;background:rgba(4,7,9,.75);color:#fff;padding:2px 7px;border-radius:6px;font-family:'JetBrains Mono',monospace}
-    .md-empty{grid-column:1/-1;text-align:center;padding:70px 20px;color:#9db2cf}
+    .md-empty{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--muted)}
     .md-empty-ic{font-size:42px;opacity:.4;margin-bottom:12px}
     .md-more{margin:18px auto 0;display:block;padding:11px 26px;background:var(--surface2);border:1px solid var(--border-a);border-radius:10px;color:var(--accent);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
     .md-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border-a);color:var(--accent);padding:11px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:300;display:none}
@@ -1579,13 +1616,13 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .db-hero{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;flex-wrap:wrap}
     .db-hero input{flex:1;min-width:240px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
     .db-hero input:focus{border-color:var(--accent)}
-    .db-hero input::placeholder{color:#7e93b2}
+    .db-hero input::placeholder{color:var(--muted)}
     .db-go{padding:12px 24px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px var(--glow)}
     .db-go:disabled{opacity:.5;cursor:not-allowed}
-    .db-hint{font-size:12.5px;color:#9db2cf;margin-bottom:14px}
+    .db-hint{font-size:12.5px;color:var(--muted);margin-bottom:14px}
     .db-counter{display:inline-block;padding:2px 10px;border-radius:99px;background:var(--accent-dim);border:1px solid var(--border-a);color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:11.5px}
     .db-counter.zero{background:rgba(255,77,114,.12);border-color:rgba(255,77,114,.35);color:var(--error)}
-    .db-state{text-align:center;padding:60px 20px;color:#9db2cf}
+    .db-state{text-align:center;padding:60px 20px;color:var(--muted)}
     .db-state .ic{font-size:40px;opacity:.45;margin-bottom:12px}
     .db-spin{width:34px;height:34px;border:3px solid var(--border-a);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
     .db-prog{max-width:540px;margin:54px auto;text-align:center}
@@ -1593,19 +1630,19 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .db-prog-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .3s ease;box-shadow:0 0 12px var(--glow)}
     .db-prog-label{margin-top:15px;color:var(--text);font-size:14px;font-weight:600}
     .db-prog-steps{margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
-    .db-step{font-size:11px;font-weight:700;letter-spacing:.4px;padding:4px 11px;border-radius:99px;background:var(--surface2);border:1px solid var(--border);color:#7e93b2}
+    .db-step{font-size:11px;font-weight:700;letter-spacing:.4px;padding:4px 11px;border-radius:99px;background:var(--surface2);border:1px solid var(--border);color:var(--muted)}
     .db-step.on{background:var(--accent-dim);border-color:var(--border-a);color:var(--accent)}
     .db-step.done{background:rgba(0,214,143,.12);border-color:rgba(0,214,143,.35);color:var(--success)}
-    .db-prog-pct{margin-top:8px;color:#9db2cf;font-size:12px;font-family:'JetBrains Mono',monospace}
+    .db-prog-pct{margin-top:8px;color:var(--muted);font-size:12px;font-family:'JetBrains Mono',monospace}
     .db-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px}
     .db-h{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
     .db-dna-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
     .db-field{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px}
-    .db-field .k{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#9db2cf;margin-bottom:4px}
+    .db-field .k{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
     .db-field .v{font-size:13.5px;color:var(--text);line-height:1.45}
     .db-metrics{display:flex;flex-wrap:wrap;gap:18px;margin-top:4px}
     .db-metric .n{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--text)}
-    .db-metric .l{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#9db2cf}
+    .db-metric .l{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
     .db-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
     .db-chip{padding:5px 12px;background:var(--accent-dim);border:1px solid var(--border-a);border-radius:99px;color:var(--accent);font-size:11.5px;font-weight:600}
     .db-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;background:rgba(0,214,143,.12);border:1px solid rgba(0,214,143,.35);color:var(--success)}
@@ -1619,27 +1656,27 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .db-card:hover{border-color:var(--border-a)}
     .db-card-title{font-weight:700;font-size:14.5px;color:var(--text);margin-bottom:6px;display:flex;gap:8px;align-items:flex-start}
     .db-card-title .num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--accent-dim);border:1px solid var(--border-a);color:var(--accent);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace}
-    .db-card-desc{font-size:13px;color:#c2d2e8;line-height:1.5;margin-bottom:10px}
-    .db-kv{font-size:12.5px;color:#c2d2e8;line-height:1.5;margin-bottom:7px}
-    .db-kv b{color:#9db2cf;font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.8px;display:block;margin-bottom:2px}
+    .db-card-desc{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:10px}
+    .db-kv{font-size:12.5px;color:var(--text);line-height:1.5;margin-bottom:7px}
+    .db-kv b{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.8px;display:block;margin-bottom:2px}
     .db-list{list-style:none;display:flex;flex-direction:column;gap:5px;margin-top:3px}
-    .db-list li{font-size:12.5px;color:#d6e3f2;line-height:1.45;padding-left:14px;position:relative}
+    .db-list li{font-size:12.5px;color:var(--text);line-height:1.45;padding-left:14px;position:relative}
     .db-list li::before{content:'•';position:absolute;left:2px;color:var(--accent)}
-    .db-title-row{display:flex;gap:7px;align-items:flex-start;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.5px;color:#e2ecf7;line-height:1.4}
+    .db-title-row{display:flex;gap:7px;align-items:flex-start;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.5px;color:var(--text);line-height:1.4}
     .db-title-row button{margin-left:auto;flex-shrink:0;background:transparent;border:1px solid var(--border-a);border-radius:6px;color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;padding:3px 9px;font-family:inherit}
     .db-title-row button:hover{background:var(--accent-dim)}
     .db-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 16px}
     .db-btn{padding:9px 18px;background:transparent;border:1px solid var(--border-a);border-radius:9px;color:var(--accent);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
     .db-btn:hover{background:var(--accent-dim)}
     .db-raw{margin-top:18px}
-    .db-raw summary{cursor:pointer;color:#9db2cf;font-size:12px;font-weight:600}
-    .db-raw pre{margin-top:8px;background:#05080f;border:1px solid var(--border);border-radius:10px;padding:12px;overflow:auto;max-height:340px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#9db2cf;white-space:pre-wrap;word-break:break-word}
-    .db-raw-note{font-size:12px;color:#9db2cf;line-height:1.5;margin:8px 0 0}
+    .db-raw summary{cursor:pointer;color:var(--muted);font-size:12px;font-weight:600}
+    .db-raw pre{margin-top:8px;background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:12px;overflow:auto;max-height:340px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);white-space:pre-wrap;word-break:break-word}
+    .db-raw-note{font-size:12px;color:var(--muted);line-height:1.5;margin:8px 0 0}
     .db-ai{border-color:var(--border-a)}
-    .db-ai-txt{font-size:13px;color:#c2d2e8;line-height:1.55;margin-bottom:12px}
+    .db-ai-txt{font-size:13px;color:var(--text);line-height:1.55;margin-bottom:12px}
     .db-ai-txt b{color:var(--text)}
     .db-ai-btn{padding:11px 20px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px var(--glow)}
-    .db-ai-logos{font-size:11px;color:#9db2cf;margin-left:10px}
+    .db-ai-logos{font-size:11px;color:var(--muted);margin-left:10px}
     </style>
     <div class="tab-pane" id="tab-dobra">
       <div class="tools-page-header">
@@ -1661,11 +1698,11 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .nf-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
     .nf-bar input,.nf-bar select{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-family:inherit;font-size:13px;outline:none;cursor:pointer}
     .nf-bar input{flex:1;min-width:200px;cursor:text}
-    .nf-bar input::placeholder{color:#7e93b2}
+    .nf-bar input::placeholder{color:var(--muted)}
     .nf-bar input:focus,.nf-bar select:focus{border-color:var(--accent)}
     .nf-go{padding:11px 22px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#040709;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px;box-shadow:0 4px 16px var(--glow)}
     .nf-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-    .nf-tab{padding:7px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;color:#ccdaee;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
+    .nf-tab{padding:7px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
     .nf-tab:hover{color:#fff}
     .nf-tab.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:700}
     .nf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
@@ -1676,7 +1713,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .nf-av-ltr{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709;font-weight:800;font-size:18px}
     .nf-id{flex:1;min-width:0}
     .nf-name{font-weight:700;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .nf-sub{font-size:11.5px;color:#9db2cf;font-family:'JetBrains Mono',monospace}
+    .nf-sub{font-size:11.5px;color:var(--muted);font-family:'JetBrains Mono',monospace}
     .nf-badge{font-size:10px;font-weight:700;background:rgba(255,171,0,.14);border:1px solid rgba(255,171,0,.4);color:var(--warning);padding:3px 8px;border-radius:99px;white-space:nowrap}
     .nf-score{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:800;color:var(--accent);min-width:26px;text-align:right}
     .nf-thumbs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:11px}
@@ -1685,10 +1722,10 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
     .nf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:11px}
     .nf-stats div{text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 3px}
     .nf-stats b{display:block;font-family:'JetBrains Mono',monospace;font-size:13.5px;color:var(--text)}
-    .nf-stats span{font-size:9px;color:#9db2cf;text-transform:uppercase;letter-spacing:.4px}
+    .nf-stats span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
     .nf-open{display:block;text-align:center;padding:9px;background:transparent;border:1px solid var(--border-a);border-radius:9px;color:var(--accent);font-weight:700;font-size:12.5px;text-decoration:none}
     .nf-open:hover{background:var(--accent-dim)}
-    .nf-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:#9db2cf}
+    .nf-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)}
     .nf-ic{font-size:40px;opacity:.45;margin-bottom:12px}
     .nf-spin{width:32px;height:32px;border:3px solid var(--border-a);border-top-color:var(--accent);border-radius:50%;margin:0 auto 12px;animation:spin .8s linear infinite}
     .nf-more{margin:18px auto 0;display:block;padding:11px 26px;background:var(--surface2);border:1px solid var(--border-a);border-radius:10px;color:var(--accent);font-weight:700;cursor:pointer;font-family:inherit;font-size:13px}
@@ -1766,6 +1803,21 @@ const API='https://studio-voz-ia-irvison-s-projects.vercel.app';
 function getToken(){return localStorage.getItem('svia_token')}
 function parseJWT(t){try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));}catch{return null;}}
 function logout(){localStorage.removeItem('svia_token');window.location.href='index.html';}
+
+// ── Tema claro/escuro (sol/lua) ──
+function applyThemeIcon(){
+  var t=document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';
+  var ic=document.getElementById('theme-ic');
+  if(ic) ic.textContent = t==='light' ? '☀️' : '🌙';
+}
+function toggleTheme(){
+  var cur=document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';
+  var next=cur==='light'?'dark':'light';
+  try{localStorage.setItem('svia_theme',next);}catch(e){}
+  document.documentElement.setAttribute('data-theme',next);
+  applyThemeIcon();
+}
+applyThemeIcon();
 const token=getToken();if(!token){window.location.href='index.html';}
 let me=parseJWT(token)||{};
 let allVoices=[],selectedVoice=null;
@@ -2716,7 +2768,7 @@ function renderHistory(){
       <div class="hi-icon">🎵</div>
       <div class="hi-info">
         <div class="hi-text">${escHtml(item.text||'Áudio')}...</div>
-        <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · <span style="color:#00e5d4;font-weight:600">${escHtml(item.voice||'—')}</span></div>
+        <div class="hi-meta">${new Date(item.ts).toLocaleString('pt-BR')} · <span style="color:var(--accent);font-weight:600">${escHtml(item.voice||'—')}</span></div>
       </div>
       <div class="hi-act">${item.url
         ?`<a href="${item.url}" download="${escHtml(safeName)}.mp3" target="_blank">⬇ Baixar</a>
