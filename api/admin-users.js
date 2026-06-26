@@ -3,6 +3,18 @@ const { supabase } = require('./_lib/supabase');
 
 const HARD_LIMIT = 50; // limite máximo absoluto por dia — ninguém passa disso, nem admin
 
+// ── DarkPlanner: qual conta cada usuário usa ──
+// MESMA lógica de generate-index.js/voices-index.js/audio-proxy.js (hash de String(id)).
+// Retorna o número da conta (1, 2, …) ou null se só houver 1 chave configurada.
+function dpAccountOf(uid) {
+  const keys = [process.env.DP_API_KEY, process.env.DP_API_KEY_2].filter(Boolean);
+  if (keys.length <= 1) return null; // sem divisão: todos na conta única
+  const s = String(uid || '');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return (h % keys.length) + 1; // 1-based para exibir
+}
+
 // Limites padrão por plano
 const PLAN_LIMITS = {
   free:    3,
@@ -112,7 +124,9 @@ module.exports = async (req, res) => {
       .select('id, username, name, email, role, plan, status, lim_day, credits, daily_used, extra_audios, last_reset, created_at')
       .order('created_at', { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
-    return res.status(200).json(data);
+    // Anexa a conta DarkPlanner (null se só houver 1 chave) para o admin enxergar a divisão
+    const withAccount = (data || []).map(u => ({ ...u, dp_account: dpAccountOf(u.id) }));
+    return res.status(200).json(withAccount);
   }
 
   if (req.method === 'POST') {
