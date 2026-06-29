@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Irvison Dark — Dashboard</title>
+<title>DarkBlue — Dashboard</title>
 <script>(function(){try{document.documentElement.setAttribute('data-theme',localStorage.getItem('svia_theme')||'dark');}catch(e){}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -860,7 +860,7 @@ select option{background:var(--surface2)}
 <aside class="sidebar" id="sidebar">
   <div class="sb-brand">
     <div class="sb-icon">🎙️</div>
-    <div><h1>Irvison Dark</h1><p>Dark Studio</p></div>
+    <div><h1>DarkBlue</h1><p>Estúdio de Voz IA</p></div>
   </div>
 
   <div class="sb-credits">
@@ -967,7 +967,7 @@ select option{background:var(--surface2)}
 <div id="tut-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.78);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeTutorial()">
   <div style="background:var(--surface);border:1px solid var(--border-a);border-radius:16px;width:100%;max-width:900px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
-      <span style="font-weight:700;font-size:15px;color:var(--text)">📺 Tutorial — Como usar o Studio de Voz</span>
+      <span style="font-weight:700;font-size:15px;color:var(--text)">📺 Tutorial — Como usar o DarkBlue</span>
       <button onclick="closeTutorial()" title="Fechar" style="background:var(--surface2);border:1px solid var(--border-a);color:var(--text);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;line-height:1">✕</button>
     </div>
     <div style="position:relative;width:100%;aspect-ratio:16/9;background:#000">
@@ -1039,7 +1039,7 @@ select option{background:var(--surface2)}
             <textarea id="text-input" placeholder="Digite o texto que será convertido em áudio...
 
 Exemplo:
-Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
+Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
             <div class="char-row">
               <div class="char-ct" id="char-ct">0 caracteres</div>
               <div style="font-size:10px;color:var(--muted)" id="char-est"></div>
@@ -1815,7 +1815,7 @@ Olá! Bem-vindo ao Studio Voz IA." oninput="updateCounter()"></textarea>
 </div>
 
 <script>
-const API='https://studio-voz-ia-irvison-s-projects.vercel.app';
+const API=location.origin;
 function getToken(){return localStorage.getItem('svia_token')}
 function parseJWT(t){try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));}catch{return null;}}
 function logout(){localStorage.removeItem('svia_token');window.location.href='index.html';}
@@ -3257,7 +3257,7 @@ function dbOppToTxt(L, o, num){
 function dobraBuildTxt(m){
   const L=[];
   L.push('RADAR DE NICHO — '+(m.canal||''));
-  L.push('Gerado no Studio de Voz · '+new Date().toLocaleDateString('pt-BR'));
+  L.push('Gerado no DarkBlue · '+new Date().toLocaleDateString('pt-BR'));
   L.push('');
   L.push('— COMO USAR: cole este arquivo (ou o JSON da ferramenta) no Claude, ChatGPT ou Gemini e');
   L.push('  peça pra aprofundar: escolher os melhores títulos, escrever roteiros, achar mais subnichos. —');
