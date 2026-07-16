@@ -106,7 +106,12 @@ module.exports = async (req, res) => {
           status:    'done',
           job_id,
           audio_url: audioUrl,
-          srt_url:   dlData.srt_url || null
+          // ── Legendas sincronizadas (atualização 16/07/2026) ──
+          // legenda normal + palavra-a-palavra + SRT Tempo VEO3 (blocos por duração,
+          // sincronizado com a fala — é o que casa narração com cena)
+          srt_url:         dlData.srt_url || null,
+          srt_palavra_url: dlData.srt_palavra_url || null,
+          srt_tempo_url:   dlData.srt_tempo_url || dlData.srt_veo_url || null
         });
       }
 
@@ -249,13 +254,33 @@ module.exports = async (req, res) => {
     try {
       console.log('[generate] POST voice_id:', voice_id, 'chars:', text.length, 'user:', uid, 'admin:', isAdmin);
 
+      // ── Legendas sincronizadas (atualização 16/07/2026) ──
+      // Sempre pedimos os 3 SRTs junto do áudio: legenda.srt (subtitle_words),
+      // srtsyncpalavra.srt (palavra a palavra) e srtsynctempo.srt (SRT Tempo VEO3 —
+      // blocos por duração, sincronizado com a fala). O usuário pode ajustar pelos
+      // campos opcionais do body; sem eles valem os padrões da casa (4–8s por bloco).
+      const dpPayload = {
+        text, voice_id,
+        subtitle_words:   Math.min(15, Math.max(1, parseInt(req.body.subtitle_words, 10) || 8)),
+        subtitle_veo_min: Math.min(60, Math.max(1, parseInt(req.body.subtitle_veo_min, 10) || 4)),
+        subtitle_veo_max: Math.min(60, Math.max(1, parseInt(req.body.subtitle_veo_max, 10) || 8)),
+      };
+      if (dpPayload.subtitle_veo_max < dpPayload.subtitle_veo_min)
+        dpPayload.subtitle_veo_max = dpPayload.subtitle_veo_min;
+      if (req.body.subtitle_case) dpPayload.subtitle_case = String(req.body.subtitle_case);
+      if (req.body.subtitle_veo_words)
+        dpPayload.subtitle_veo_words = Math.min(15, Math.max(1, parseInt(req.body.subtitle_veo_words, 10) || 0)) || undefined;
+      if (req.body.speed)  dpPayload.speed  = req.body.speed;
+      if (req.body.volume) dpPayload.volume = req.body.volume;
+      if (req.body.title)  dpPayload.title  = String(req.body.title);
+
       // Failover: tenta a conta primária do usuário; se a cota estourar, cai pra próxima.
       let r, rawText = '';
       for (let ki = 0; ki < dpKeys.length; ki++) {
         r = await fetch(`${DP_BASE}/generate`, {
           method: 'POST',
           headers: dpHdr(dpKeys[ki]),
-          body: JSON.stringify({ text, voice_id })
+          body: JSON.stringify(dpPayload)
         });
         rawText = await r.text();
         const last = ki === dpKeys.length - 1;

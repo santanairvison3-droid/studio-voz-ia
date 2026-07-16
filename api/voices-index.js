@@ -13,6 +13,41 @@ function dpKeysFor(uid) {
   return [keys[primary], ...keys.filter((_, i) => i !== primary)];
 }
 
+// ── Enriquecimento (atualização 16/07/2026) ─────────────────────────────────
+// O catálogo cresceu (~710 vozes) e cada voz vem com voice_info rico do provider:
+// language, accent, age, descriptive, use_case e verified_languages (lista de
+// idiomas VERIFICADOS — é ela que diz se a voz é multi-idioma). O campo language
+// do topo vem VAZIO, por isso o dashboard não conseguia identificar o idioma.
+// Aqui a voz é normalizada e ENXUGADA (o voice_info inteiro pesa ~2KB por voz →
+// 710 vozes = payload gigante; devolvemos só o que a interface usa).
+function slimVoice(v) {
+  const vi = (v && typeof v.voice_info === 'object' && v.voice_info) || {};
+  const verified = Array.isArray(vi.verified_languages) ? vi.verified_languages : [];
+  const langs = [...new Set(verified.map(x => String(x.locale || x.language || '')).filter(Boolean))];
+  const language = String(
+    vi.language || v.language || (langs[0] ? langs[0].split('-')[0] : '') || ''
+  ).toLowerCase();
+  // multi-idioma: 2+ idiomas verificados OU modelo multilingual do provider
+  const multi = langs.length > 1
+    || verified.some(x => /multilingual/i.test(String(x.model_id || '')));
+  return {
+    id: v.id || v.voice_id,
+    name: v.name || v.nomeApi || '',
+    gender: String(v.gender || v.genero || vi.gender || '').toLowerCase(),
+    preview_url: v.preview_url || v.urlPreview || vi.preview_url || '',
+    provider: v.provider || '',
+    language,                                   // ex.: "en", "pt"
+    locale: String((verified[0] && verified[0].locale) || ''), // ex.: "en-US"
+    langs,                                      // todos os locales verificados
+    multi,                                      // fala 2+ idiomas
+    accent: vi.accent || '',
+    age: vi.age || '',
+    style: vi.descriptive || '',
+    use_case: vi.use_case || '',
+    description: vi.description || ''
+  };
+}
+
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -72,8 +107,9 @@ module.exports = async (req, res) => {
           return res.status(200).json({ debug: true, raw: data, url_used: url });
         }
 
-        console.log(`[voices] OK via ${url} — ${voices.length} vozes`);
-        return res.status(200).json({ voices, total: voices.length });
+        const slim = voices.map(slimVoice);
+        console.log(`[voices] OK via ${url} — ${slim.length} vozes (enriquecidas: idioma/bandeira/multi)`);
+        return res.status(200).json({ voices: slim, total: slim.length });
 
       } catch (err) {
         console.error(`[voices] erro em ${url}:`, err.message);
