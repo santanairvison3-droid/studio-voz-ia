@@ -1058,6 +1058,7 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
                 <a id="btn-dl" class="btn-sm teal" download="audio.mp3">⬇ Download</a>
                 <button class="btn-sm outline" onclick="copyJobId()">📋 Copiar ID</button>
               </div>
+              <div class="audio-actions" id="srt-dl-row" style="display:none;flex-wrap:wrap;margin-top:8px"></div>
               <div style="margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Job: <span id="job-id-disp">—</span></div>
             </div>
           </div>
@@ -1797,11 +1798,15 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
           <button class="vf-btn" data-filter="es" onclick="setLibFilter('es',this)">🇪🇸 ES</button>
           <button class="vf-btn" data-filter="fr" onclick="setLibFilter('fr',this)">🇫🇷 FR</button>
           <button class="vf-btn" data-filter="de" onclick="setLibFilter('de',this)">🇩🇪 DE</button>
+          <select id="vlib-lang-sel" class="vf-btn" onchange="setLibLangSel(this.value)" title="Todos os idiomas do catálogo" style="cursor:pointer;max-width:200px;appearance:auto">
+            <option value="all">🌐 Todos os idiomas</option>
+          </select>
         </div>
         <div class="lib-toolbar-row2">
           <button class="vf-btn gender-f" data-gender="f" onclick="setGenderFilter('f',this)">👩 Feminino</button>
           <button class="vf-btn gender-m" data-gender="m" onclick="setGenderFilter('m',this)">👨 Masculino</button>
           <button class="vf-btn" data-gender="fav" onclick="setGenderFilter('fav',this)">⭐ Favoritas</button>
+          <button class="vf-btn" id="vf-multi" onclick="toggleMultiFilter(this)" title="Só vozes que falam vários idiomas">🌍 Multi-idioma</button>
           <span class="vlib-count" id="vlib-count">— vozes</span>
           <button class="btn-dl-zip" id="btn-dl-zip" onclick="downloadFavoritesZip()">⬇ ZIP Favoritas</button>
         </div>
@@ -2285,10 +2290,12 @@ async function loadVoices(){
       console.log('[voices] OK via',ep,'count:',voices.length,'sample:',voices[0]);
       renderVoices(allVoices);
       renderLibVoices();
+      const optHtml=v=>`<option value="${escHtml(v.voice_id||v.id)}">${voiceFlag(v)} ${getGenderEmoji(v)} ${escHtml(v.name)} · ${getLangCode(v).toUpperCase()}${isMulti(v)?' 🌍':''}</option>`;
       const sel=document.getElementById('bulk-voice-sel');
-      if(sel)sel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
+      if(sel)sel.innerHTML=allVoices.map(optHtml).join('');
       const txtSel=document.getElementById('txt-voice-sel');
-      if(txtSel)txtSel.innerHTML=allVoices.map(v=>`<option value="${escHtml(v.voice_id||v.id)}">${escHtml(v.name)}</option>`).join('');
+      if(txtSel)txtSel.innerHTML=allVoices.map(optHtml).join('');
+      populateLangSelect();
       document.getElementById('v-count-lbl').textContent=`${allVoices.length} vozes`;
       voicesLoading=false; return;
     }catch(e){lastErr=`${ep} → ${e.message}`;}
@@ -2307,11 +2314,13 @@ function renderVoices(voices){
   if(!voices.length){g.innerHTML='<div class="voice-loading">Nenhuma voz encontrada.</div>';return;}
   g.innerHTML=voices.map(v=>{
     const vid=escHtml(v.voice_id||v.id||'');
-    const lang=v.labels?.language||v.language||v.lang||'—';
+    const code=getLangCode(v);
+    const det=[code!=='other'?code.toUpperCase():'',v.accent||''].filter(Boolean).join(' · ');
+    const multiB=isMulti(v)?` <span style="font-size:9px;background:rgba(0,229,212,.12);border:1px solid rgba(0,229,212,.3);color:var(--accent);border-radius:99px;padding:0 6px;white-space:nowrap">🌍 multi</span>`:'';
     const isSel=selectedVoice===(v.voice_id||v.id);
     return `<div class="vc${isSel?' sel':''}" onclick="selectVoice(${JSON.stringify(v.voice_id||v.id)},this)" data-vid="${vid}">
-      <div class="vc-name">${escHtml(v.name)}</div>
-      <div class="vc-lang">${escHtml(lang)}</div>
+      <div class="vc-name">${voiceFlag(v)} ${getGenderEmoji(v)} ${escHtml(v.name)}</div>
+      <div class="vc-lang">${escHtml(det||'—')}${multiB}</div>
     </div>`;
   }).join('');
   document.getElementById('v-count').textContent=`${voices.length} de ${allVoices.length} vozes`;
@@ -2319,7 +2328,11 @@ function renderVoices(voices){
 
 function filterVoices(){
   const q=document.getElementById('voice-search').value.toLowerCase();
-  renderVoices(q?allVoices.filter(v=>(v.name||'').toLowerCase().includes(q)||(v.labels?.language||'').toLowerCase().includes(q)):allVoices);
+  renderVoices(q?allVoices.filter(v=>(v.name||'').toLowerCase().includes(q)
+    ||getLangCode(v).includes(q)
+    ||String(v.accent||'').toLowerCase().includes(q)
+    ||String(v.locale||'').toLowerCase().includes(q)
+    ||(q==='multi'&&isMulti(v))):allVoices);
 }
 
 function selectVoice(id,el){
@@ -2384,7 +2397,7 @@ async function generateSingle(){
     const d=await r.json();
     if(!r.ok){showStatus(d.error||'Erro ao gerar.','error');endGen();return;}
     if(d.audio_url){
-      showAudio(d.audio_url,d.job_id||'—');
+      showAudio(d.audio_url,d.job_id||'—',d);
       saveHistory({url:d.audio_url,jobId:d.job_id,text:text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
       sessionStorage.removeItem('auth_cache');refreshStats(true);
       endGen();
@@ -2405,11 +2418,21 @@ function showStatus(msg,type){
   if(type==='success')setTimeout(()=>el.classList.remove('show'),4000);
 }
 
-function showAudio(url,jobId){
+function showAudio(url,jobId,extra){
   const ap=document.getElementById('audio-player');
   ap.src=url;
   document.getElementById('btn-dl').href=url;
   document.getElementById('job-id-disp').textContent=jobId;
+  // ── Legendas sincronizadas (atualização 16/07/2026) ──
+  // legenda normal + palavra a palavra + SRT Tempo VEO3 (blocos por duração,
+  // sincronizado com a fala — tudo gerado JUNTO do áudio)
+  const row=document.getElementById('srt-dl-row');
+  if(row){
+    const items=[['srt_url','📜 Legenda (SRT)'],['srt_palavra_url','🔤 SRT palavra'],['srt_tempo_url','🎬 SRT Tempo VEO3']];
+    const links=items.filter(([k])=>extra&&extra[k]).map(([k,lbl])=>`<a class="btn-sm outline" href="${escHtml(extra[k])}" target="_blank" download>${lbl}</a>`);
+    row.innerHTML=links.join('');
+    row.style.display=links.length?'flex':'none';
+  }
   document.getElementById('audio-result').classList.add('show');
   showStatus('Áudio gerado com sucesso!','success');
   lastJobId=jobId;
@@ -2431,7 +2454,7 @@ function pollAudio(jobId){
       if(d.status==='done'||d.status==='completed'){
         clearInterval(t);
         const audioUrl=d.audio_url||`${API}/api/v1/audio/download/${jobId}`;
-        showAudio(audioUrl,jobId);
+        showAudio(audioUrl,jobId,d);
         saveHistory({url:d.audio_url,jobId,text:document.getElementById('text-input').value.substring(0,80),voice:selectedVoice,ts:new Date().toISOString()});
         sessionStorage.removeItem('auth_cache');refreshStats(true);
         endGen();
@@ -2495,7 +2518,7 @@ function renderTxtFavGrid(){
       <span style="font-size:14px">${isSel?'✓':'⭐'}</span>
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isSel?'var(--accent)':'var(--text)'}">${escHtml(v.name)}</div>
-        <div style="font-size:10px;color:var(--muted);letter-spacing:.5px">${escHtml(v.labels?.language||v.language||'—')}</div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:.5px">${voiceFlag(v)} ${escHtml(getLangCode(v).toUpperCase())}${isMulti(v)?' · 🌍 multi':''}</div>
       </div>
     </div>`;
   }).join('');
@@ -3456,14 +3479,45 @@ function toggleFav(vid,btn,e){
 }
 
 function getLangCode(voice){
-  const lang=(voice.labels?.language||voice.language||'').toLowerCase();
+  // Atualização 16/07/2026: o voices-index agora entrega language/locale REAIS
+  // (extraídos do voice_info do provider). O fallback antigo por nome continua.
+  const lang=(voice.language||voice.labels?.language||voice.lang||'').toLowerCase();
+  if(lang)return lang.split('-')[0].split('_')[0];
+  const loc=(voice.locale||'').toLowerCase();
+  if(loc)return loc.split('-')[0];
   const name=(voice.name||'').toLowerCase();
-  if(lang.includes('port')||lang.includes('brazi')||lang.startsWith('pt')||name.includes('brasil'))return 'pt';
-  if(lang.includes('engl')||lang.startsWith('en'))return 'en';
-  if(lang.includes('span')||lang.startsWith('es'))return 'es';
-  if(lang.includes('fren')||lang.startsWith('fr'))return 'fr';
-  if(lang.includes('germ')||lang.startsWith('de'))return 'de';
+  if(name.includes('brasil')||name.includes('português')||name.includes('portugues'))return 'pt';
   return 'other';
+}
+
+/* ── Bandeira, idioma e multi-idioma (atualização 16/07/2026) ── */
+const LANG_COUNTRY={pt:'BR',en:'US',es:'ES',fr:'FR',de:'DE',it:'IT',ja:'JP',ko:'KR',zh:'CN',hi:'IN',ar:'SA',ru:'RU',nl:'NL',pl:'PL',tr:'TR',sv:'SE',no:'NO',nb:'NO',da:'DK',fi:'FI',el:'GR',cs:'CZ',ro:'RO',hu:'HU',uk:'UA',id:'ID',th:'TH',vi:'VN',fil:'PH',tl:'PH',ms:'MY',he:'IL',ta:'IN',te:'IN',mr:'IN',bn:'BD',ur:'PK',fa:'IR',sw:'KE',bg:'BG',hr:'HR',sk:'SK',sl:'SI',lt:'LT',lv:'LV',et:'EE',ca:'ES',af:'ZA',sr:'RS',is:'IS',cy:'GB',eu:'ES',gl:'ES',hy:'AM',ka:'GE',az:'AZ',kk:'KZ',ne:'NP',si:'LK',km:'KH',lo:'LA',my:'MM',am:'ET',yo:'NG',ha:'NG',zu:'ZA',pa:'IN',gu:'IN',kn:'IN',ml:'IN'};
+function flagOf(cc){cc=String(cc||'').toUpperCase();if(!/^[A-Z]{2}$/.test(cc))return '🌐';return String.fromCodePoint(...[...cc].map(c=>0x1F1E6+c.charCodeAt(0)-65));}
+function voiceFlag(v){
+  const loc=String(v.locale||'');
+  if(loc.includes('-'))return flagOf(loc.split('-')[1]);
+  return flagOf(LANG_COUNTRY[getLangCode(v)]);
+}
+function isMulti(v){return !!v.multi||(Array.isArray(v.langs)&&v.langs.length>1);}
+let libMulti=false;
+function toggleMultiFilter(btn){
+  libMulti=!libMulti;
+  btn.classList.toggle('active',libMulti);
+  renderLibVoices();
+}
+function setLibLangSel(val){
+  libFilter=val||'all';
+  document.querySelectorAll('.vf-btn[data-filter]').forEach(b=>b.classList.toggle('active',b.dataset.filter===libFilter));
+  renderLibVoices();
+}
+function populateLangSelect(){
+  const sel=document.getElementById('vlib-lang-sel');
+  if(!sel||!allVoices.length)return;
+  const cnt={};
+  allVoices.forEach(v=>{const c=getLangCode(v);cnt[c]=(cnt[c]||0)+1;});
+  const opts=Object.entries(cnt).sort((a,b)=>b[1]-a[1])
+    .map(([c,n])=>`<option value="${c}">${c==='other'?'🌐':flagOf(LANG_COUNTRY[c])} ${c.toUpperCase()} (${n})</option>`);
+  sel.innerHTML=`<option value="all">🌐 Todos os idiomas (${allVoices.length})</option>`+opts.join('');
 }
 
 function getGender(voice){
@@ -3651,9 +3705,10 @@ function renderLibVoices(){
     if(libGender==='f'&&gender!=='f')return false;
     if(libGender==='m'&&gender!=='m')return false;
     if(libGender==='fav'&&!isFav(vid))return false;
+    if(libMulti&&!isMulti(v))return false;
     if(q){
       const name=(v.name||'').toLowerCase();
-      const vLang=(v.labels?.language||v.language||'').toLowerCase();
+      const vLang=(lang+' '+String(v.accent||'')+' '+String(v.locale||'')).toLowerCase();
       if(!name.includes(q)&&!vLang.includes(q))return false;
     }
     return true;
@@ -3668,7 +3723,8 @@ function renderLibVoices(){
     const lang=getLangCode(v);
     const gender=getGender(v);
     const emoji=getGenderEmoji(v);
-    const langLabel=escHtml(v.labels?.language||v.language||lang||'—');
+    const detalhe=[v.locale||lang.toUpperCase(),v.accent||'',v.style||''].filter(Boolean).join(' · ');
+    const langLabel=escHtml(detalhe||'—')+(isMulti(v)?` <span style="color:var(--accent);font-weight:700;white-space:nowrap">· 🌍 ${Array.isArray(v.langs)&&v.langs.length>1?v.langs.length+' idiomas':'multi'}</span>`:'');
     const vid=escHtml(v.voice_id||v.id);
     const vname=escHtml(v.name);
     const isSel=selectedVoice===(v.voice_id||v.id);
@@ -3676,9 +3732,9 @@ function renderLibVoices(){
     return `<div class="vlc${isSel?' sel-lib':''}" id="vlc-${vid}" data-vid="${vid}">
       <div class="vlc-top">
         <div class="vlc-av ${gender}">${emoji}</div>
-        <span class="vlc-badge ${lang}">${lang.toUpperCase()}</span>
+        <span class="vlc-badge ${lang}">${voiceFlag(v)} ${lang.toUpperCase()}</span>${isMulti(v)?'<span title="Fala vários idiomas" style="font-size:11px;margin-left:4px">🌍</span>':''}
       </div>
-      <div class="vlc-name" title="${vname}">${vname}</div>
+      <div class="vlc-name" title="${vname}${v.description?' — '+escHtml(v.description):''}">${vname}</div>
       <div class="vlc-lang">${langLabel}</div>
       <div class="vlc-actions">
         <button class="vlc-btn fav ${favActive}" title="${favActive?'Desfavoritar':'Favoritar'}" data-vid="${vid}" onclick="handleFav(this)">⭐</button>
