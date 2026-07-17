@@ -12,6 +12,9 @@ function dpKeysFor(uid) {
   return [keys[primary], ...keys.filter((_, i) => i !== primary)];
 }
 
+// Só arquivos da própria DarkPlanner passam pelo proxy (não somos proxy aberto)
+const HOSTS_PERMITIDOS = /(^|\.)darkplanner\.com\.br$/i;
+
 module.exports = async (req, res) => {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : (req.query.token || '');
@@ -23,16 +26,23 @@ module.exports = async (req, res) => {
   const audioUrl = req.query.url;
   if (!audioUrl) return res.status(400).json({ error: 'url obrigatória' });
 
+  const alvo = decodeURIComponent(audioUrl);
+  try {
+    const host = new URL(alvo).hostname;
+    if (!HOSTS_PERMITIDOS.test(host))
+      return res.status(400).json({ error: 'URL fora do domínio permitido' });
+  } catch {
+    return res.status(400).json({ error: 'URL inválida' });
+  }
+
   try {
     // Tenta primeiro sem auth (CDN público)
-    let upstream = await fetch(decodeURIComponent(audioUrl));
-    
+    let upstream = await fetch(alvo);
+
     // Se falhou, tenta com X-API-Key — percorre as contas do usuário (failover)
     if (!upstream.ok) {
       for (const dpKey of dpKeysFor(user.sub || user.id)) {
-        upstream = await fetch(decodeURIComponent(audioUrl), {
-          headers: { 'X-API-Key': dpKey }
-        });
+        upstream = await fetch(alvo, { headers: { 'X-API-Key': dpKey } });
         if (upstream.ok) break;
       }
     }
@@ -41,7 +51,15 @@ module.exports = async (req, res) => {
       return res.status(upstream.status).json({ error: `Falhou: HTTP ${upstream.status}` });
     }
 
-    res.setHeader('Content-Type', upstream.headers.get('content-type') || 'audio/mpeg');
+    // ── Nome do arquivo no download (atualização 16/07/2026) ──
+    // ?name=meu-audio.mp3 → o navegador baixa com ESSE nome (Content-Disposition).
+    // Sem ?name, comportamento antigo (streaming/nome do CDN).
+    const nome = String(req.query.name || '').replace(/[^\w\-. ]+/g, '').substring(0, 90);
+    const ehSrt = /\.srt(\?|$)/i.test(alvo) || /\.srt$/i.test(nome);
+    res.setHeader('Content-Type', ehSrt
+      ? 'application/x-subrip; charset=utf-8'
+      : (upstream.headers.get('content-type') || 'audio/mpeg'));
+    if (nome) res.setHeader('Content-Disposition', `attachment; filename="${nome}"`);
     res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Cache-Control', 'private, max-age=3600');
     const cl = upstream.headers.get('content-length');
