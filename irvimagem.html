@@ -11,7 +11,7 @@
   --bg:#080b10;--s1:#0e1318;--s2:#131a22;--s3:#18222d;
   --border:#1c2c3a;--border2:#243848;
   --accent:#00ff9d;--accent2:#ff6b00;--accent3:#00d4ff;
-  --text:#d8eaf5;--muted:#4d6880;--muted2:#3a5268;
+  --text:#d8eaf5;--muted:#8fa9be;--muted2:#7d95ac; /* muted era 3:1 — agora 7,6:1 AA */
   --r:10px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -69,7 +69,7 @@ header{padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:2
 .api-row input::placeholder{color:var(--muted2);font-family:'Outfit',sans-serif}
 .api-toggle{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:0 13px;color:var(--muted);cursor:pointer;font-size:15px;transition:all .2s;flex-shrink:0}
 .api-toggle:hover{border-color:var(--accent);color:var(--accent)}
-.api-saved{font-size:10px;font-family:'Fira Code',monospace;margin-top:6px;display:none}
+.api-saved{font-size:11px;font-family:'Fira Code',monospace;margin-top:6px;display:none}
 .api-saved.ok{color:var(--accent);display:block}
 .api-saved.missing{color:#ff4f6b;display:block}
 
@@ -81,7 +81,7 @@ header{padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:2
 .panel-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:7px}
 .panel-title::before{content:'';width:3px;height:14px;background:var(--accent);border-radius:2px;flex-shrink:0}
 
-label.lbl{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+label.lbl{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
 
 select{
   width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;
@@ -134,12 +134,12 @@ input[type=range]{flex:1;height:4px;accent-color:var(--accent);cursor:pointer;ba
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
 .stat{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
 .stat-val{font-family:'Fira Code',monospace;font-size:20px;font-weight:600;color:var(--accent)}
-.stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+.stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
 
 .editor-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
 .editor-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--border)}
 .editor-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent3)}
-.count-badge{font-size:10px;color:var(--muted);font-family:'Fira Code',monospace}
+.count-badge{font-size:11px;color:var(--muted);font-family:'Fira Code',monospace}
 
 textarea{width:100%;background:transparent;border:none;padding:16px;color:var(--text);font-family:'Fira Code',monospace;font-size:13px;line-height:1.8;resize:vertical;min-height:200px;outline:none;user-select:text}
 
@@ -153,11 +153,11 @@ textarea{width:100%;background:transparent;border:none;padding:16px;color:var(--
 .img-placeholder{aspect-ratio:16/9;background:var(--s2);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
 .img-placeholder img{width:100%;height:100%;object-fit:cover;cursor:pointer}
 .img-footer{padding:8px 12px;display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-top:1px solid var(--border)}
-.img-num{font-family:'Fira Code',monospace;font-size:10px;font-weight:700;color:var(--accent)}
+.img-num{font-family:'Fira Code',monospace;font-size:11px;font-weight:700;color:var(--accent)}
 
 .spin{width:20px;height:20px;border:2px solid rgba(0,255,157,.1);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.err-lbl{font-size:10px;color:#ff4f6b;font-family:'Fira Code',monospace;text-align:center;padding:10px}
+.err-lbl{font-size:11px;color:#ff4f6b;font-family:'Fira Code',monospace;text-align:center;padding:10px}
 
 /* FOOTER */
 footer{text-align:center;padding:32px 0 24px;border-top:1px solid var(--border);margin-top:32px}
