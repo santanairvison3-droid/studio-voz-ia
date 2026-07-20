@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DarkBlue Flow — automação profissional para o Google Flow (Veo)</title>
+<meta name="description" content="Coloque sua produção de vídeos com IA no piloto automático: fila de prompts, personagens fixos, download organizado e recuperação de falhas. Extensão + app desktop DarkBlue Studio." />
+<style>
+  :root{
+    --bg:#070d1a; --panel:#0c1526; --surface:#101c33; --line:#1d2c4d;
+    --ink:#e8eefb; --ink2:#9db0d4; --ink3:#64789f;
+    --azul:#4f8cff; --azul2:#3b6fe0; --verde:#41d98d; --ouro:#ffce56;
+    --r:12px; --rlg:18px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font:15px/1.65 "Segoe UI",system-ui,sans-serif}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 22px}
+  header{padding:18px 0;border-bottom:1px solid var(--line);position:sticky;top:0;background:#070d1aee;backdrop-filter:blur(8px);z-index:9}
+  header .wrap{display:flex;align-items:center;justify-content:space-between}
+  .brand{font-weight:800;font-size:18px;display:flex;align-items:center;gap:8px}
+  .brand small{color:var(--ink3);font-weight:400;font-size:11px}
+  header a.cta{background:linear-gradient(135deg,var(--azul),var(--azul2));color:#fff;text-decoration:none;
+    padding:9px 18px;border-radius:99px;font-weight:700;font-size:13.5px}
+  .hero{padding:74px 0 50px;text-align:center;
+    background:radial-gradient(900px 420px at 50% -80px,#14264d 0%,transparent 70%)}
+  .hero .tag{display:inline-block;font-size:12px;font-weight:700;color:var(--azul);
+    border:1px solid #2b4a8a;background:#12203d;padding:5px 14px;border-radius:99px;margin-bottom:18px}
+  h1{font-size:clamp(28px,5vw,44px);line-height:1.15;font-weight:800;letter-spacing:-.5px}
+  h1 b{color:var(--azul)}
+  .hero p{max-width:620px;margin:18px auto 30px;color:var(--ink2);font-size:16.5px}
+  .botoes{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-block;text-decoration:none;font-weight:700;font-size:15px;padding:14px 28px;border-radius:var(--r);transition:.15s}
+  .btn.azul{background:linear-gradient(135deg,var(--azul),var(--azul2));color:#fff;box-shadow:0 10px 30px -8px #4f8cff88}
+  .btn.azul:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .btn.borda{border:1px solid var(--line);color:var(--ink2)}
+  .btn.borda:hover{border-color:var(--azul);color:var(--ink)}
+  .selo{margin-top:16px;font-size:12px;color:var(--ink3)}
+  section{padding:56px 0}
+  h2{font-size:clamp(22px,3.5vw,30px);font-weight:800;text-align:center;margin-bottom:8px;letter-spacing:-.3px}
+  .sub{color:var(--ink2);text-align:center;max-width:560px;margin:0 auto 36px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--rlg);padding:22px}
+  .card .ico{font-size:26px}
+  .card h3{font-size:15.5px;margin:10px 0 6px}
+  .card p{font-size:13px;color:var(--ink2)}
+  .passos{counter-reset:p;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+  .passo{background:var(--panel);border:1px solid var(--line);border-radius:var(--rlg);padding:22px;position:relative}
+  .passo::before{counter-increment:p;content:counter(p);position:absolute;top:-14px;left:18px;
+    width:28px;height:28px;border-radius:50%;background:var(--azul);color:#fff;font-weight:800;font-size:14px;
+    display:flex;align-items:center;justify-content:center}
+  .passo h3{font-size:14.5px;margin:6px 0 4px}
+  .passo p{font-size:12.5px;color:var(--ink2)}
+  /* preços */
+  .planos{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;max-width:760px;margin:0 auto}
+  .plano{background:var(--panel);border:1px solid var(--line);border-radius:var(--rlg);padding:28px;display:flex;flex-direction:column}
+  .plano.destaque{border-color:var(--azul);background:linear-gradient(180deg,#12203d 0%,var(--panel) 60%);position:relative}
+  .plano.destaque .fita{position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+    background:var(--azul);color:#fff;font-size:11.5px;font-weight:800;padding:4px 16px;border-radius:99px;white-space:nowrap}
+  .plano h3{font-size:17px}
+  .plano .desc{font-size:12.5px;color:var(--ink2);margin:4px 0 16px}
+  .preco{font-size:38px;font-weight:800;letter-spacing:-1px}
+  .preco small{font-size:14px;color:var(--ink3);font-weight:400}
+  .plano ul{list-style:none;margin:18px 0 22px;flex:1}
+  .plano li{font-size:13.5px;color:var(--ink2);padding:6px 0;border-bottom:1px solid var(--line)}
+  .plano li:last-child{border:0}
+  .plano li b{color:var(--ink)}
+  .plano li::before{content:"✓  ";color:var(--verde);font-weight:800}
+  /* faq */
+  details{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;padding:16px 18px}
+  summary{cursor:pointer;font-weight:700;font-size:14.5px}
+  details p{margin-top:10px;font-size:13.5px;color:var(--ink2)}
+  footer{border-top:1px solid var(--line);padding:34px 0;text-align:center;color:var(--ink3);font-size:12px}
+  footer b{color:var(--ink2)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">🌊 DarkBlue <small>Flow & Studio</small></div>
+    <a class="cta" href="#planos">Quero minha licença</a>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="tag">⚡ Automação profissional para o Google Flow (Veo)</span>
+    <h1>Sua fábrica de vídeos com IA<br/>no <b>piloto automático</b></h1>
+    <p>Cole a lista de cenas, clique em <b>Iniciar</b> e vá viver sua vida: a DarkBlue cria o projeto,
+    gera os personagens, enfileira os prompts, aprova, recupera falhas sozinha e baixa tudo
+    numerado e organizado em pastas. Sem ficar de babá de aba do navegador.</p>
+    <div class="botoes">
+      <a class="btn azul" href="#planos">Ver planos e preços</a>
+      <a class="btn borda" href="#como">Como funciona</a>
+    </div>
+    <div class="selo">🔒 Licença individual · ativação imediata · funciona no Windows</div>
+  </div>
+</div>
+
+<section id="recursos">
+  <div class="wrap">
+    <h2>O que a DarkBlue faz por você</h2>
+    <p class="sub">Cada recurso nasceu de produção de verdade — centenas de cenas geradas todos os dias.</p>
+    <div class="cards">
+      <div class="card"><div class="ico">🚀</div><h3>Fila inteligente de prompts</h3>
+        <p>Cole a lista inteira ([v] vídeo, [i] imagem, durações 4/6/8s). O robô envia na ordem, respeita o ritmo do Flow e segue sozinho até o fim.</p></div>
+      <div class="card"><div class="ico">🎭</div><h3>Personagens com identidade fixa</h3>
+        <p>Crie o elenco uma vez (descrição ou imagem pronta) e use em qualquer cena com [NOME] — mesmo rosto, mesmo corpo, cena após cena.</p></div>
+      <div class="card"><div class="ico">🛡️</div><h3>Recuperação de falhas</h3>
+        <p>Prompt recusado? Reescreve e tenta de novo. Cena travada? Refaz. Cena muda? Detecta e regenera. Cartão de erro? Limpa. Tudo sem você.</p></div>
+      <div class="card"><div class="ico">📦</div><h3>Download numerado e organizado</h3>
+        <p>Cada mídia baixa com número e nome do projeto, separada em pastas (vídeos / imagens). Pronto pra edição, sem renomear nada.</p></div>
+      <div class="card"><div class="ico">🌐</div><h3>Navegador da produção</h3>
+        <p>No Studio, um navegador dedicado (Chrome embutido): loga sua conta Google uma vez e pronto. Pode minimizar — o robô continua.</p></div>
+      <div class="card"><div class="ico">🎞️</div><h3>Sincronizador SRT (Studio)</h3>
+        <p>Aponte a pasta de clipes + a legenda SRT da narração: ele corta, encaixa e monta o filme sincronizado com precisão de 0,1s.</p></div>
+      <div class="card"><div class="ico">🎤</div><h3>Áudio → legendas (Studio)</h3>
+        <p>Solte o áudio da narração e receba o SRT de legenda e o SRT de cortes prontos — já entram direto no Sincronizador.</p></div>
+      <div class="card"><div class="ico">👥</div><h3>Duas contas Flow (Studio)</h3>
+        <p>Produza com 2 contas ao mesmo tempo, cada uma no seu navegador, sem misturar comandos. O dobro de vazão.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="como" style="background:var(--panel)">
+  <div class="wrap">
+    <h2>Como funciona</h2>
+    <p class="sub">Do zero ao primeiro vídeo em menos de 10 minutos.</p>
+    <div class="passos">
+      <div class="passo"><h3>Adquira sua licença</h3><p>Escolha o plano e finalize a compra. Sua chave chega no e-mail.</p></div>
+      <div class="passo"><h3>Instale em 2 cliques</h3><p>Baixe, extraia e abra. Não precisa instalar Python, Chrome nem nada — vem tudo junto.</p></div>
+      <div class="passo"><h3>Ative e faça login</h3><p>Cole a chave, abra o navegador da produção e entre na SUA conta Google (uma vez só).</p></div>
+      <div class="passo"><h3>Cole as cenas e inicie</h3><p>A partir daí é só colar a lista e apertar 🚀. O robô cuida do resto.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="planos">
+  <div class="wrap">
+    <h2>Planos</h2>
+    <p class="sub">Licença mensal, individual, vinculada ao seu computador. Sem fidelidade — renove só se estiver valendo a pena.</p>
+    <div class="planos">
+      <div class="plano">
+        <h3>🧩 Extensão DarkBlue Flow</h3>
+        <div class="desc">A automação completa dentro do seu Chrome</div>
+        <div class="preco">R$ 49,90<small>/mês</small></div>
+        <ul>
+          <li>Fila inteligente de prompts no Flow</li>
+          <li>Criação de projeto e <b>personagens fixos</b></li>
+          <li>Recuperação de falhas + limpeza automática</li>
+          <li>Detector de cena muda (5 redes de segurança)</li>
+          <li>Download numerado e organizado</li>
+          <li>Painel lateral com progresso ao vivo</li>
+        </ul>
+        <a class="btn azul" data-plano="extensao" href="#comprar">Assinar a Extensão</a>
+      </div>
+      <div class="plano destaque">
+        <span class="fita">⭐ MAIS COMPLETO</span>
+        <h3>🖥️ Combo DarkBlue Studio</h3>
+        <div class="desc">Extensão + app desktop de produção</div>
+        <div class="preco">R$ 79,90<small>/mês</small></div>
+        <ul>
+          <li><b>Tudo da Extensão</b>, comandado por um app</li>
+          <li>Navegador da produção embutido (minimiza e segue)</li>
+          <li><b>Duas contas Flow</b> produzindo juntas</li>
+          <li>Biblioteca de personagens com imagem</li>
+          <li><b>Sincronizador SRT</b>: clipes + legenda = filme pronto</li>
+          <li>Áudio → legendas (SRT) automático</li>
+          <li>Cortes verticais 9:16 com legenda queimada</li>
+          <li>Prompts mestres de estilo e fábrica de cenas</li>
+        </ul>
+        <a class="btn azul" data-plano="combo" href="#comprar">Assinar o Combo</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" style="background:var(--panel)">
+  <div class="wrap" style="max-width:720px">
+    <h2>Perguntas frequentes</h2>
+    <p class="sub"></p>
+    <details><summary>Preciso ter conta no Google Flow?</summary>
+      <p>Sim. A DarkBlue automatiza a SUA conta do Google Flow (labs.google) — você faz login uma única vez no navegador da produção e a ferramenta trabalha por você. Os créditos/limites de geração são os do seu plano no Flow.</p></details>
+    <details><summary>Em quantos computadores posso usar?</summary>
+      <p>A licença é individual e vale para 1 computador. O sistema detecta uso simultâneo em máquinas diferentes e bloqueia compartilhamento. Trocou de PC? É só falar com o suporte que a gente libera.</p></details>
+    <details><summary>Preciso instalar Python, Chrome ou editar algo?</summary>
+      <p>Não. O pacote vem completo: app, extensão, navegador de produção e até o motor de vídeo (ffmpeg). Baixou, extraiu, abriu, colou a chave — está produzindo.</p></details>
+    <details><summary>Funciona no Mac?</summary>
+      <p>Por enquanto o DarkBlue Studio é para Windows 10/11. A extensão sozinha roda em qualquer Chrome de computador.</p></details>
+    <details><summary>E se eu não renovar?</summary>
+      <p>A ferramenta para de funcionar quando a licença vence — sem multa, sem fidelidade. Seus vídeos baixados continuam seus, nas suas pastas.</p></details>
+    <details><summary>Isso é um produto do Google?</summary>
+      <p>Não. A DarkBlue é uma ferramenta independente, sem vínculo com o Google. "Google Flow" e "Veo" são marcas dos seus respectivos donos.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    🌊 <b>DarkBlue</b> — ferramentas de produção de vídeo com IA · © 2026<br/>
+    Produto independente, sem vínculo com o Google. Suporte: pelo e-mail da sua compra.
+  </div>
+</footer>
+
+<script>
+/* 🛒 CHECKOUT — cole aqui os links dos produtos (Kiwify) quando criar:
+   enquanto estiverem vazios, o botão abre um e-mail de pedido pronto. */
+const CHECKOUT = {
+  extensao: "",  // ex.: https://pay.kiwify.com.br/XXXXXXX
+  combo: "",     // ex.: https://pay.kiwify.com.br/YYYYYYY
+};
+const EMAIL = "santanairvison35@gmail.com";
+document.querySelectorAll("[data-plano]").forEach((b) => {
+  b.addEventListener("click", (e) => {
+    const plano = b.dataset.plano;
+    if (CHECKOUT[plano]) { b.href = CHECKOUT[plano]; return; }
+    e.preventDefault();
+    const nome = plano === "combo" ? "Combo DarkBlue Studio (R$ 79,90/mês)" : "Extensão DarkBlue Flow (R$ 49,90/mês)";
+    location.href = "mailto:" + EMAIL +
+      "?subject=" + encodeURIComponent("Quero assinar: " + nome) +
+      "&body=" + encodeURIComponent("Olá! Quero assinar o plano " + nome + ".\nMeu nome: \nComo prefiro pagar (Pix/cartão): ");
+  });
+});
+</script>
+</body>
+</html>
