@@ -19,7 +19,8 @@ function dpAccountOf(uid) {
 const PLAN_LIMITS = {
   free:    3,
   basico:  5,
-  premium: 10
+  premium: 10,
+  credito: 10   // comprador de pacote: teto 10/dia (o saldo é que manda)
 };
 
 module.exports = async (req, res) => {
@@ -101,6 +102,28 @@ module.exports = async (req, res) => {
           message: `+${actualAdded} áudio(s) liberado(s) para ${userData.name || userData.username}. Novo limite: ${newLim}/dia.`,
           new_lim_day: newLim,
           actual_added: actualAdded
+        });
+      }
+
+      // ── GIVE CREDITS (admin dá créditos direto a um usuário — top-up manual) ──
+      if (action === 'give_credits') {
+        const { user_id, amount } = req.body;
+        const qty = parseInt(amount);
+        if (!user_id || isNaN(qty) || qty < 1)
+          return res.status(400).json({ error: 'user_id e amount (>0) são obrigatórios.' });
+
+        const { data: u, error: ue } = await supabase
+          .from('users').select('credits, username, name').eq('id', user_id).single();
+        if (ue || !u) return res.status(404).json({ error: 'Usuário não encontrado.' });
+
+        const novo = (u.credits || 0) + qty;
+        const { error: upErr } = await supabase.from('users').update({ credits: novo }).eq('id', user_id);
+        if (upErr) return res.status(500).json({ error: upErr.message });
+
+        return res.status(200).json({
+          ok: true,
+          message: `+${qty} crédito(s) para ${u.name || u.username}. Saldo agora: ${novo}.`,
+          credits: novo
         });
       }
     }
