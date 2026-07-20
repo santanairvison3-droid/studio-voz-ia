@@ -193,7 +193,7 @@ module.exports = async (req, res) => {
   // "avulso" = entrega áudios extras sem alterar o plano do usuário
   const planValue = voucher.plan || voucher.plano || voucher.tier || null;
   if (planValue && planValue !== 'avulso') {
-    const planLimits = { free: 3, basico: 5, premium: 10 };
+    const planLimits = { free: 3, basico: 5, premium: 10, credito: 10 };
     const newLim = Math.min(planLimits[planValue] ?? 5, HARD_LIMIT);
     await supabase.from('users').update({ plan: planValue, lim_day: newLim }).eq('id', userId).catch(() => {});
     responsePlan = planValue;

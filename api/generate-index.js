@@ -158,7 +158,7 @@ module.exports = async (req, res) => {
 
         const { data: dbUserRow, error: userErr } = await supabase
           .from('users')
-          .select('lim_day, daily_used, last_reset, status, plan')
+          .select('lim_day, daily_used, last_reset, status, plan, credits')
           .eq('id', uid)
           .single();
         dbUser = dbUserRow;
@@ -179,7 +179,7 @@ module.exports = async (req, res) => {
         if (lastReset !== today) {
           // FIX: Não sobrescreve lim_day customizado — só reseta o contador diário.
           // lim_day definido pelo admin é preservado; usa limite do plano só como fallback.
-          const PLAN_LIMITS = { free: 3, basico: 5, premium: 10 };
+          const PLAN_LIMITS = { free: 3, basico: 5, premium: 10, credito: 10 };
           const planLim = PLAN_LIMITS[dbUser.plan] ?? 5;
           const resetLim = dbUser.lim_day ?? Math.min(planLim, 50);
 
@@ -206,6 +206,13 @@ module.exports = async (req, res) => {
           });
         }
 
+        // ── Crédito: plano 'credito' = comprador de pacote (sem assinatura de áudio).
+        // Precisa ter saldo; o teto de 10/dia já é o lim_day acima; o saldo rola pro outro dia.
+        const isCredit = dbUser.plan === 'credito';
+        if (isCredit && (dbUser.credits || 0) <= 0) {
+          return res.status(402).json({ error: 'Sem créditos. Compre um pacote para gerar mais áudios.', credits: 0 });
+        }
+
         // ── Incremento atômico — bloqueia duplo disparo simultâneo ──────────
         // Só atualiza se daily_used ainda for o valor lido (evita consumo duplo
         // em caso de clique duplo ou duas requisições paralelas do mesmo usuário).
@@ -225,6 +232,19 @@ module.exports = async (req, res) => {
             used: usedToday,
             limit: limDay
           });
+        }
+
+        // desconta 1 crédito do comprador de pacote (atômico); se raspou numa corrida, devolve o áudio do dia
+        if (isCredit) {
+          const { data: credUpd } = await supabase
+            .from('users')
+            .update({ credits: dbUser.credits - 1 })
+            .eq('id', uid).eq('credits', dbUser.credits)
+            .select('credits').single();
+          if (!credUpd) {
+            await supabase.from('users').update({ daily_used: usedToday }).eq('id', uid).eq('daily_used', usedToday + 1);
+            return res.status(409).json({ error: 'Tente de novo em 1 segundo.' });
+          }
         }
 
         // Log no audio_log — salva geração completa (não-bloqueante)
@@ -306,6 +326,10 @@ module.exports = async (req, res) => {
                 .eq('id', uid)
                 .eq('daily_used', usedBefore + 1); // só reverte se nada mais mudou
             }
+            if (dbUser && dbUser.plan === 'credito') {
+              const { data: cu } = await supabase.from('users').select('credits').eq('id', uid).single();
+              await supabase.from('users').update({ credits: (cu?.credits || 0) + 1 }).eq('id', uid);
+            }
             console.log(`[generate] Crédito devolvido para uid=${uid} após erro da API`);
           } catch (e) {
             console.warn('[generate] Falha ao devolver crédito:', e.message);
@@ -354,6 +378,10 @@ module.exports = async (req, res) => {
               .update({ daily_used: usedBefore })
               .eq('id', uid)
               .eq('daily_used', usedBefore + 1);
+          }
+          if (dbUser && dbUser.plan === 'credito') {
+            const { data: cu } = await supabase.from('users').select('credits').eq('id', uid).single();
+            await supabase.from('users').update({ credits: (cu?.credits || 0) + 1 }).eq('id', uid);
           }
         } catch {}
       }
