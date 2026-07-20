@@ -1010,6 +1010,24 @@ select option{background:var(--surface2)}
 
     <!-- GERAR -->
     <div class="tab-pane active" id="tab-generate">
+      <!-- 🧩 CARD AUTO-FLOW (20/07): chama atenção pra vitrine EM BREVE (escondida no menu) -->
+      <style>
+        @keyframes afGlow{0%,100%{box-shadow:0 0 0 0 rgba(79,140,255,.35)}50%{box-shadow:0 0 26px 2px rgba(79,140,255,.45)}}
+        #autoflow-card:hover{transform:translateY(-2px);filter:brightness(1.06)}
+      </style>
+      <div id="autoflow-card" onclick="goTab('flow',document.querySelector('.nav-item[onclick*=flow]'))"
+           style="cursor:pointer;display:flex;align-items:center;gap:14px;margin:0 0 16px;padding:15px 18px;border-radius:14px;
+                  border:1px solid rgba(79,140,255,.45);background:linear-gradient(100deg,rgba(79,140,255,.18),rgba(0,229,212,.07) 60%,transparent);
+                  animation:afGlow 2.6s ease-in-out infinite;transition:.15s">
+        <span style="font-size:30px;flex-shrink:0">🧩</span>
+        <div style="flex:1;min-width:0;line-height:1.5">
+          <div style="font-size:14.5px;font-weight:800;letter-spacing:.3px">
+            AUTO-FLOW <span style="font-size:10px;font-weight:800;letter-spacing:1.2px;color:#ffb400;background:rgba(255,180,0,.13);border:1px solid rgba(255,180,0,.35);border-radius:99px;padding:2px 10px;vertical-align:2px">🔒 EM BREVE</span>
+          </div>
+          <div style="font-size:12px;opacity:.75">O robô que gera seus vídeos no <b>Google Flow (Veo)</b> sozinho: fila de cenas, personagens fixos e download organizado — <b>clique e espia o que vem aí</b></div>
+        </div>
+        <span style="font-size:20px;opacity:.7;flex-shrink:0">→</span>
+      </div>
       <!-- Banner de novidades 16/07/2026 — some SOZINHO em 05/08/2026 (20 dias) ou no ✕ -->
       <div id="news-banner" style="display:none;align-items:center;gap:11px;margin:0 0 16px;padding:11px 15px;border-radius:11px;border:1px solid rgba(0,229,212,.28);background:linear-gradient(90deg,rgba(0,229,212,.09),rgba(0,229,212,.02));font-size:12px;line-height:1.6">
         <span style="font-size:17px;flex-shrink:0">✨</span>
