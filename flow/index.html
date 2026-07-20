@@ -145,33 +145,31 @@
     <p class="sub">Licença mensal, individual, vinculada ao seu computador. Sem fidelidade — renove só se estiver valendo a pena.<br/><b style="color:var(--ouro)">🔜 As vendas abrem em breve</b> — clique num plano para ser avisado quando liberar.</p>
     <div class="planos">
       <div class="plano">
-        <h3>🧩 Extensão DarkBlue Flow</h3>
-        <div class="desc">A automação completa dentro do seu Chrome</div>
-        <div class="preco">R$ 49,90<small>/mês</small></div>
+        <h3>🖥️ DarkBlue Studio</h3>
+        <div class="desc">Extensão + app desktop — sua produção de vídeo no automático</div>
+        <div class="preco">R$ 39,90<small>/mês</small></div>
         <ul>
-          <li>Fila inteligente de prompts no Flow</li>
-          <li>Criação de projeto e <b>personagens fixos</b></li>
-          <li>Recuperação de falhas + limpeza automática</li>
-          <li>Detector de cena muda (5 redes de segurança)</li>
-          <li>Download numerado e organizado</li>
-          <li>Painel lateral com progresso ao vivo</li>
+          <li>Extensão DarkBlue Flow (fila de prompts no Google Flow)</li>
+          <li>App desktop com o <b>navegador da produção</b> + <b>2 contas Flow</b></li>
+          <li>Personagens fixos + recuperação de falhas</li>
+          <li><b>Sincronizador SRT</b>: clipes + legenda = filme pronto</li>
+          <li>Cortes 9:16 e download numerado/organizado</li>
+          <li>Áudio? Opcional, por <b>pacote de crédito</b> (R$ 20 = 20 áudios)</li>
         </ul>
-        <a class="btn azul" data-plano="extensao" href="#avise">🔜 Em breve — avise-me</a>
+        <a class="btn borda" data-plano="studio" href="#avise">🔜 Em breve — avise-me</a>
       </div>
       <div class="plano destaque">
         <span class="fita">⭐ MAIS COMPLETO</span>
-        <h3>🖥️ Combo DarkBlue Studio</h3>
-        <div class="desc">Extensão + app desktop de produção</div>
-        <div class="preco">R$ 79,90<small>/mês</small></div>
+        <h3>🎙️ DarkBlue Studio + Voz</h3>
+        <div class="desc">Tudo do Studio + o Estúdio de Voz online já incluído</div>
+        <div class="preco">R$ 49,90<small>/mês</small></div>
         <ul>
-          <li><b>Tudo da Extensão</b>, comandado por um app</li>
-          <li>Navegador da produção embutido (minimiza e segue)</li>
-          <li><b>Duas contas Flow</b> produzindo juntas</li>
-          <li>Biblioteca de personagens com imagem</li>
-          <li><b>Sincronizador SRT</b>: clipes + legenda = filme pronto</li>
-          <li>Áudio → legendas (SRT) automático</li>
-          <li>Cortes verticais 9:16 com legenda queimada</li>
-          <li>Prompts mestres de estilo e fábrica de cenas</li>
+          <li><b>Tudo do DarkBlue Studio</b></li>
+          <li><b>Estúdio de Voz incluído</b>: 5 áudios por dia</li>
+          <li>700+ vozes · texto → áudio · com <b>SRT pronto pro Veo</b></li>
+          <li><b>Prioridade</b> na geração de áudio</li>
+          <li>Legenda e corte que já entram no Sincronizador</li>
+          <li>Sem precisar de pacote de crédito no dia a dia</li>
         </ul>
         <a class="btn azul" data-plano="combo" href="#avise">🔜 Em breve — avise-me</a>
       </div>
@@ -210,8 +208,8 @@
    vazio, o botão é "avise-me" (captura interesse por e-mail, sem vender).
    Pra ABRIR a venda: cole o link de checkout da Kiwify no plano certo. */
 const CHECKOUT = {
-  extensao: "",  // ex.: https://pay.kiwify.com.br/XXXXXXX
-  combo: "",     // ex.: https://pay.kiwify.com.br/YYYYYYY
+  studio: "",  // R$39,90 — ex.: https://pay.kiwify.com.br/XXXXXXX
+  combo: "",   // R$49,90 (com Voz) — ex.: https://pay.kiwify.com.br/YYYYYYY
 };
 const EMAIL = "santanairvison35@gmail.com";
 document.querySelectorAll("[data-plano]").forEach((b) => {
@@ -219,7 +217,7 @@ document.querySelectorAll("[data-plano]").forEach((b) => {
     const plano = b.dataset.plano;
     if (CHECKOUT[plano]) { b.href = CHECKOUT[plano]; return; } // venda aberta
     e.preventDefault();
-    const nome = plano === "combo" ? "Combo DarkBlue Studio (R$ 79,90/mês)" : "Extensão DarkBlue Flow (R$ 49,90/mês)";
+    const nome = plano === "combo" ? "DarkBlue Studio + Voz (R$ 49,90/mês)" : "DarkBlue Studio (R$ 39,90/mês)";
     location.href = "mailto:" + EMAIL +
       "?subject=" + encodeURIComponent("Quero ser avisado: " + nome) +
       "&body=" + encodeURIComponent("Olá! Quero ser avisado quando abrir a venda do plano " + nome + ".\nMeu nome: ");
