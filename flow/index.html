@@ -78,8 +78,11 @@
 
 <header>
   <div class="wrap">
-    <div class="brand">🌊 DarkBlue <small>Flow & Studio</small></div>
-    <a class="cta" href="#planos">Quero minha licença</a>
+    <div class="brand">🌊 DarkBlue <small>Flow &amp; Studio</small></div>
+    <nav style="display:flex;align-items:center;gap:18px">
+      <a href="/" style="color:var(--ink2);text-decoration:none;font-size:13.5px;font-weight:600">🎙️ Estúdio de Voz</a>
+      <a class="cta" href="#planos">Ver planos</a>
+    </nav>
   </div>
 </header>
 
@@ -139,7 +142,7 @@
 <section id="planos">
   <div class="wrap">
     <h2>Planos</h2>
-    <p class="sub">Licença mensal, individual, vinculada ao seu computador. Sem fidelidade — renove só se estiver valendo a pena.</p>
+    <p class="sub">Licença mensal, individual, vinculada ao seu computador. Sem fidelidade — renove só se estiver valendo a pena.<br/><b style="color:var(--ouro)">🔜 As vendas abrem em breve</b> — clique num plano para ser avisado quando liberar.</p>
     <div class="planos">
       <div class="plano">
         <h3>🧩 Extensão DarkBlue Flow</h3>
@@ -153,7 +156,7 @@
           <li>Download numerado e organizado</li>
           <li>Painel lateral com progresso ao vivo</li>
         </ul>
-        <a class="btn azul" data-plano="extensao" href="#comprar">Assinar a Extensão</a>
+        <a class="btn azul" data-plano="extensao" href="#avise">🔜 Em breve — avise-me</a>
       </div>
       <div class="plano destaque">
         <span class="fita">⭐ MAIS COMPLETO</span>
@@ -170,7 +173,7 @@
           <li>Cortes verticais 9:16 com legenda queimada</li>
           <li>Prompts mestres de estilo e fábrica de cenas</li>
         </ul>
-        <a class="btn azul" data-plano="combo" href="#comprar">Assinar o Combo</a>
+        <a class="btn azul" data-plano="combo" href="#avise">🔜 Em breve — avise-me</a>
       </div>
     </div>
   </div>
@@ -203,8 +206,9 @@
 </footer>
 
 <script>
-/* 🛒 CHECKOUT — cole aqui os links dos produtos (Kiwify) quando criar:
-   enquanto estiverem vazios, o botão abre um e-mail de pedido pronto. */
+/* 🛒 VENDA AINDA NÃO LIBERADA (decisão do dono). Enquanto CHECKOUT estiver
+   vazio, o botão é "avise-me" (captura interesse por e-mail, sem vender).
+   Pra ABRIR a venda: cole o link de checkout da Kiwify no plano certo. */
 const CHECKOUT = {
   extensao: "",  // ex.: https://pay.kiwify.com.br/XXXXXXX
   combo: "",     // ex.: https://pay.kiwify.com.br/YYYYYYY
@@ -213,12 +217,12 @@ const EMAIL = "santanairvison35@gmail.com";
 document.querySelectorAll("[data-plano]").forEach((b) => {
   b.addEventListener("click", (e) => {
     const plano = b.dataset.plano;
-    if (CHECKOUT[plano]) { b.href = CHECKOUT[plano]; return; }
+    if (CHECKOUT[plano]) { b.href = CHECKOUT[plano]; return; } // venda aberta
     e.preventDefault();
     const nome = plano === "combo" ? "Combo DarkBlue Studio (R$ 79,90/mês)" : "Extensão DarkBlue Flow (R$ 49,90/mês)";
     location.href = "mailto:" + EMAIL +
-      "?subject=" + encodeURIComponent("Quero assinar: " + nome) +
-      "&body=" + encodeURIComponent("Olá! Quero assinar o plano " + nome + ".\nMeu nome: \nComo prefiro pagar (Pix/cartão): ");
+      "?subject=" + encodeURIComponent("Quero ser avisado: " + nome) +
+      "&body=" + encodeURIComponent("Olá! Quero ser avisado quando abrir a venda do plano " + nome + ".\nMeu nome: ");
   });
 });
 </script>
