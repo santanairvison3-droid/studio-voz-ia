@@ -910,6 +910,9 @@ select option{background:var(--surface2)}
     <div class="nav-item" onclick="goTab('imagens',this)">
       <span class="nav-ic">🎨</span>Ferramentas de Imagem
          </div>
+    <div class="nav-item" onclick="goTab('thumb',this)">
+      <span class="nav-ic">🖼️</span>Editor de Miniatura
+    </div>
     <div class="nav-section">Esportes</div>
     <div class="nav-item" onclick="goTab('esportes',this)">
       <span class="nav-ic">🔥</span>HypeEsportivo
@@ -1499,6 +1502,16 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- EDITOR DE MINIATURA (thumbnail) — pagina isolada em iframe, custo zero -->
+    <div class="tab-pane" id="tab-thumb">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <div style="font-size:15px;font-weight:700">🖼️ Editor de Miniatura</div>
+        <div style="font-size:12px;color:#8b99b3">Monte sua thumbnail — fontes, cores, efeitos, formas e o Modelo Red Line — e baixe em PNG. 100% no navegador, sem gastar nada.</div>
+        <a href="miniatura.html" target="_blank" rel="noopener" style="margin-left:auto;font-size:12px;color:var(--accent,#38bdf8);text-decoration:none;white-space:nowrap">Abrir em tela cheia ↗</a>
+      </div>
+      <iframe id="thumb-frame" src="" title="Editor de Miniatura" style="width:100%;height:80vh;min-height:560px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:#070a11"></iframe>
     </div>
 
     <!-- FERRAMENTAS DE IMAGEM IA -->
@@ -3037,7 +3050,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Radar de Nicho',niches:'Caçador de Canais',flow:'DarkBlue Flow'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Radar de Nicho',niches:'Caçador de Canais',flow:'DarkBlue Flow',thumb:'Editor de Miniatura'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -3052,9 +3065,12 @@ function goTab(name,el){
   if(name==='midias')initMidias();
   if(name==='dobra')initDobra();
   if(name==='niches')initNf();
+  if(name==='thumb')initThumb();
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
 }
+let thumbLoaded=false;
+function initThumb(){ if(thumbLoaded)return; thumbLoaded=true; document.getElementById('thumb-frame').src='miniatura.html'; }
 
 /* ══ VÍDEOS E IMAGENS (banco de mídia: Pexels + Pixabay via /api/youtube?action=stock) ══ */
 let mdType='image', mdOrient='all', mdPage=1, mdHasMore=false, mdLoading=false, mdInit=false;
