@@ -35,7 +35,29 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'URL inválida' });
   }
 
+  // ?name=meu-audio.mp3 → o navegador baixa com ESSE nome (Content-Disposition, no streaming).
+  const nome = String(req.query.name || '').replace(/[^\w\-. ]+/g, '').substring(0, 90);
+  const ehSrt = /\.srt(\?|$)/i.test(alvo) || /\.srt$/i.test(nome);
+
   try {
+    // ── ENXUGAR (25/07): o "Fast Origin Transfer" da Vercel ESTOUROU (27GB/10GB do
+    // Hobby → projeto PAUSADO) porque cada MP3 passava BYTE A BYTE por esta função.
+    // Correção: quando o arquivo é PÚBLICO no CDN do DarkPlanner, REDIRECIONA (302) o
+    // navegador direto pro CDN — os bytes deixam de passar pela Vercel (origem ~zero).
+    // O SRT é minúsculo → continua pelo proxy (preserva nome/charset). MP3 privado
+    // (raro, só no failover X-API-Key) → streaming como antes.
+    if (!ehSrt) {
+      let publico = false;
+      try {
+        const head = await fetch(alvo, { method: 'HEAD' });
+        publico = head.ok;
+      } catch { publico = false; }
+      if (publico) {
+        res.setHeader('Location', alvo);
+        return res.status(302).end();
+      }
+    }
+
     // Tenta primeiro sem auth (CDN público)
     let upstream = await fetch(alvo);
 
@@ -52,10 +74,6 @@ module.exports = async (req, res) => {
     }
 
     // ── Nome do arquivo no download (atualização 16/07/2026) ──
-    // ?name=meu-audio.mp3 → o navegador baixa com ESSE nome (Content-Disposition).
-    // Sem ?name, comportamento antigo (streaming/nome do CDN).
-    const nome = String(req.query.name || '').replace(/[^\w\-. ]+/g, '').substring(0, 90);
-    const ehSrt = /\.srt(\?|$)/i.test(alvo) || /\.srt$/i.test(nome);
     res.setHeader('Content-Type', ehSrt
       ? 'application/x-subrip; charset=utf-8'
       : (upstream.headers.get('content-type') || 'audio/mpeg'));
