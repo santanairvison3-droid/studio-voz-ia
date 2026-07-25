@@ -913,6 +913,9 @@ select option{background:var(--surface2)}
     <div class="nav-item" onclick="goTab('thumb',this)">
       <span class="nav-ic">🖼️</span>Editor de Miniatura
     </div>
+    <div class="nav-item" onclick="goTab('seo',this)">
+      <span class="nav-ic">🔤</span>SEO (título/tags)
+    </div>
     <div class="nav-section">Esportes</div>
     <div class="nav-item" onclick="goTab('esportes',this)">
       <span class="nav-ic">🔥</span>HypeEsportivo
@@ -1033,12 +1036,13 @@ select option{background:var(--surface2)}
       </div>
       <!-- Banner de novidades 16/07/2026 — some SOZINHO em 05/08/2026 (20 dias) ou no ✕ -->
       <div id="news-banner" style="display:none;align-items:center;gap:11px;margin:0 0 16px;padding:11px 15px;border-radius:11px;border:1px solid rgba(0,229,212,.28);background:linear-gradient(90deg,rgba(0,229,212,.09),rgba(0,229,212,.02));font-size:12px;line-height:1.6">
-        <span style="font-size:17px;flex-shrink:0">🖼️</span>
+        <span style="font-size:17px;flex-shrink:0">🚀</span>
         <div style="flex:1;min-width:0">
-          <b style="color:var(--accent)">NOVO — Editor de Miniatura:</b>
-          agora dá pra <b>criar suas thumbnails aqui dentro</b>, de graça! Envie sua imagem, escolha <b>fontes, cores, efeitos e formas</b> do jeito do seu nicho e baixe pronta pro YouTube (JPG leve, sobe sem erro). Fica na aba <b>🖼️ Editor de Miniatura</b>.
+          <b style="color:var(--accent)">2 novidades grátis:</b>
+          <b>🖼️ Editor de Miniatura</b> — envie sua foto, tire o fundo, escolha fontes/cores/efeitos e baixe pronta pro YouTube; e <b>🔤 SEO</b> — gere títulos, descrição e tags do seu vídeo pra copiar e colar. Tudo no navegador, sem gastar nada.
         </div>
-        <button onclick="goTab('thumb',document.querySelector('.nav-item[onclick*=thumb]'))" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:7px;padding:6px 12px;flex-shrink:0;white-space:nowrap">Abrir editor →</button>
+        <button onclick="goTab('thumb',document.querySelector('.nav-item[onclick*=thumb]'))" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:7px;padding:6px 12px;flex-shrink:0;white-space:nowrap">🖼️ Miniatura</button>
+        <button onclick="goTab('seo',document.querySelector('.nav-item[onclick*=seo]'))" style="background:var(--panel-2,#131c2e);border:1px solid rgba(0,229,212,.3);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:7px;padding:6px 12px;flex-shrink:0;white-space:nowrap">🔤 SEO</button>
         <button onclick="dismissNews()" title="Fechar" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 6px;flex-shrink:0">✕</button>
       </div>
       <div class="stats-row">
@@ -1511,6 +1515,16 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
         <a href="miniatura.html" target="_blank" rel="noopener" style="margin-left:auto;font-size:12px;color:var(--accent,#38bdf8);text-decoration:none;white-space:nowrap">Abrir em tela cheia ↗</a>
       </div>
       <iframe id="thumb-frame" src="" title="Editor de Miniatura" style="width:100%;height:80vh;min-height:560px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:#070a11"></iframe>
+    </div>
+
+    <!-- SEO (titulo/descricao/tags) — pagina isolada em iframe, custo zero -->
+    <div class="tab-pane" id="tab-seo">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <div style="font-size:15px;font-weight:700">🔤 SEO — Título, Descrição e Tags</div>
+        <div style="font-size:12px;color:#8b99b3">Escreva o assunto do vídeo e receba títulos, descrição pronta e tags — de graça, pra copiar e colar no YouTube.</div>
+        <a href="seo.html" target="_blank" rel="noopener" style="margin-left:auto;font-size:12px;color:var(--accent,#38bdf8);text-decoration:none;white-space:nowrap">Abrir em tela cheia ↗</a>
+      </div>
+      <iframe id="seo-frame" src="" title="SEO Kit" allow="clipboard-write" style="width:100%;height:80vh;min-height:560px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:#070a11"></iframe>
     </div>
 
     <!-- FERRAMENTAS DE IMAGEM IA -->
@@ -2502,12 +2516,12 @@ function showStatus(msg,type){
 (function(){
   const b=document.getElementById('news-banner');
   if(!b)return;
-  const expira=new Date('2026-09-10T23:59:59-03:00');   // novidade: Editor de Miniatura
-  if(new Date()>expira||localStorage.getItem('svia_news_thumb')==='1'){b.remove();return;}
+  const expira=new Date('2026-09-20T23:59:59-03:00');   // novidades: Editor de Miniatura + SEO
+  if(new Date()>expira||localStorage.getItem('svia_news_thumbseo')==='1'){b.remove();return;}
   b.style.display='flex';
 })();
 function dismissNews(){
-  try{localStorage.setItem('svia_news_thumb','1');}catch(e){}
+  try{localStorage.setItem('svia_news_thumbseo','1');}catch(e){}
   const b=document.getElementById('news-banner');
   if(b)b.remove();
 }
@@ -3049,7 +3063,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Radar de Nicho',niches:'Caçador de Canais',flow:'DarkBlue Flow',thumb:'Editor de Miniatura'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Radar de Nicho',niches:'Caçador de Canais',flow:'DarkBlue Flow',thumb:'Editor de Miniatura',seo:'SEO (título/descrição/tags)'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -3065,11 +3079,14 @@ function goTab(name,el){
   if(name==='dobra')initDobra();
   if(name==='niches')initNf();
   if(name==='thumb')initThumb();
+  if(name==='seo')initSeo();
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
 }
 let thumbLoaded=false;
 function initThumb(){ if(thumbLoaded)return; thumbLoaded=true; document.getElementById('thumb-frame').src='miniatura.html'; }
+let seoLoaded=false;
+function initSeo(){ if(seoLoaded)return; seoLoaded=true; document.getElementById('seo-frame').src='seo.html'; }
 
 /* ══ VÍDEOS E IMAGENS (banco de mídia: Pexels + Pixabay via /api/youtube?action=stock) ══ */
 let mdType='image', mdOrient='all', mdPage=1, mdHasMore=false, mdLoading=false, mdInit=false;

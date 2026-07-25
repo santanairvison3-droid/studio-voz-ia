@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEO — Título, Descrição e Tags</title>
+</head>
+<body>
+<style>
+  :root{
+    --bg:#070a11; --panel:#0e1524; --panel-2:#131c2e; --ink:#e9f0fb; --muted:#8b99b3;
+    --line:rgba(120,170,255,.14); --accent:#38bdf8; --accent-2:#6366f1; --good:#37d67a; --warn:#ffb020;
+    --sans:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"Cascadia Code",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+  .app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+  header{padding:12px 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel),transparent)}
+  .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .logo{font-weight:800;letter-spacing:-.02em;font-size:18px;white-space:nowrap}
+  .logo b{color:var(--ink)} .logo i{font-style:normal;background:linear-gradient(90deg,var(--accent),#7dd3fc);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .badge{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:3px 9px}
+  main{display:flex;gap:16px;padding:16px;flex:1;align-items:flex-start;flex-wrap:wrap}
+  .col{display:flex;flex-direction:column;gap:14px}
+  .side{flex:0 0 330px;width:330px;max-width:100%;position:sticky;top:16px}
+  .out{flex:1 1 460px;min-width:300px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:12px}
+  .card h3{margin:0;font-size:13px;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+  .card h3 .n{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-left:auto;font-weight:500}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field>label{font-size:12px;color:var(--muted);font-weight:600}
+  textarea,input[type=text],select{font-family:inherit;font-size:14px;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;width:100%;resize:vertical}
+  textarea:focus,input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{flex:1;min-width:64px;font-size:12px;padding:8px 6px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);cursor:pointer;font-family:inherit;font-weight:600}
+  .seg button.on{background:var(--accent);color:#04121f;border-color:transparent}
+  button.btn{font-family:inherit;font-size:14px;font-weight:700;color:#04121f;background:linear-gradient(90deg,var(--accent),var(--accent-2));border:none;border-radius:10px;padding:12px;cursor:pointer;width:100%;transition:.15s}
+  button.btn:hover{filter:brightness(1.08)} button.btn.ghost{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);font-weight:600}
+  .empty{color:var(--muted);font-size:13px;line-height:1.6;text-align:center;padding:34px 16px}
+  .tline{display:flex;align-items:flex-start;gap:9px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);cursor:pointer;transition:.13s}
+  .tline:hover{border-color:var(--accent)}
+  .tline .txt{flex:1;font-size:13.5px;line-height:1.4;font-weight:600}
+  .tline .len{font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;margin-top:2px}
+  .tag-form{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:2px}
+  .copy{font-family:inherit;font-size:11px;font-weight:700;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);color:var(--accent);border-radius:7px;padding:5px 9px;cursor:pointer;white-space:nowrap}
+  .copy:hover{background:rgba(56,189,248,.22)} .copy.ok{background:rgba(55,214,122,.16);border-color:rgba(55,214,122,.4);color:var(--good)}
+  pre.box{white-space:pre-wrap;word-break:break-word;font-family:var(--sans);font-size:13px;line-height:1.55;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px;margin:0}
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .tag{font-size:12px;padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)}
+  .meta{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted)}
+  .meta .warn{color:var(--warn)} .meta .good{color:var(--good)}
+  .head-row{display:flex;align-items:center;gap:10px}
+  .tip{font-size:11.5px;color:var(--muted);line-height:1.5;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#0e1524;border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.25s;z-index:50}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(max-width:820px){.side{position:static;flex-basis:100%;width:100%}}
+</style>
+
+<div class="app">
+  <header><div class="top">
+    <div class="logo"><b>SEO</b><i>Kit</i></div>
+    <span class="badge">Título · Descrição · Tags · qualquer nicho · grátis</span>
+  </div></header>
+  <main>
+    <div class="col side">
+      <div class="card">
+        <h3>📝 Sobre o vídeo</h3>
+        <div class="field"><label>Do que é o vídeo? (assunto / tema)</label>
+          <textarea id="tema" rows="2" placeholder="Ex.: economizar dinheiro guardando em 3 potes"></textarea></div>
+        <div class="field"><label>Palavra-chave principal (opcional)</label>
+          <input type="text" id="kw" placeholder="Ex.: economizar dinheiro"></div>
+        <div class="field"><label>Nicho</label>
+          <select id="nicho"></select></div>
+        <div class="field"><label>Idioma</label>
+          <div class="seg" id="lang">
+            <button data-l="pt" class="on">🇧🇷 PT</button>
+            <button data-l="en">🇺🇸 EN</button>
+            <button data-l="es">🇪🇸 ES</button>
+            <button data-l="fr">🇫🇷 FR</button>
+          </div></div>
+        <div class="field"><label>Tom dos títulos</label>
+          <div class="seg" id="tom">
+            <button data-t="all" class="on">Todos</button>
+            <button data-t="curioso">Curioso</button>
+            <button data-t="urgente">Urgente</button>
+            <button data-t="lista">Lista</button>
+            <button data-t="emocional">Emocional</button>
+          </div></div>
+        <button class="btn" id="gen">✨ Gerar SEO</button>
+        <button class="btn ghost" id="regen" style="display:none">🔄 Gerar outras opções</button>
+        <div class="tip">100% no navegador, <b>custo zero</b>. São modelos prontos — troque as palavras do jeito do seu nicho. Nada de padrão fixo: cada vídeo sai diferente.</div>
+      </div>
+    </div>
+
+    <div class="col out">
+      <div id="empty" class="card"><div class="empty">👈 Preencha o assunto e clique em <b>Gerar SEO</b>.<br>Você recebe <b>títulos</b>, uma <b>descrição pronta</b> e <b>tags</b> — cada um com botão de copiar.</div></div>
+
+      <div id="res" style="display:none;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="head-row"><h3>🎯 Opções de título <span class="n" id="tcount"></span></h3></div>
+          <div class="tip">Clique num título pra copiar. YouTube corta em ~60 caracteres no celular — os curtos aparecem inteiros.</div>
+          <div id="titles" class="col" style="gap:8px"></div>
+        </div>
+
+        <div class="card">
+          <div class="head-row"><h3>🧾 Descrição</h3><button class="copy" id="copyDesc">⧉ Copiar descrição</button></div>
+          <div class="meta"><span>As 2 primeiras linhas aparecem antes do "...mostrar mais" — capriche nelas.</span><span id="descLen"></span></div>
+          <pre class="box" id="desc"></pre>
+        </div>
+
+        <div class="card">
+          <div class="head-row"><h3>🏷️ Tags</h3><button class="copy" id="copyTags">⧉ Copiar tags</button></div>
+          <div class="meta"><span>Vão na caixa "tags" do YouTube (separadas por vírgula).</span><span id="tagLen"></span></div>
+          <div class="tags" id="tags"></div>
+        </div>
+
+        <div class="card">
+          <div class="head-row"><h3># Hashtags</h3><button class="copy" id="copyHash">⧉ Copiar hashtags</button></div>
+          <div class="meta"><span>Até 3 aparecem acima do título. Já entram no fim da descrição também.</span></div>
+          <div class="tags" id="hash"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  // ---------- Bancos por idioma ----------
+  const NICHES=[
+    ['generico','Genérico / outro'],['financas','Finanças & Dinheiro'],['motivacao','Motivação & Autoajuda'],
+    ['relacionamento','Relacionamento & Família'],['terror','Terror & Suspense'],['historia','História & Curiosidades'],
+    ['receitas','Receitas & Culinária'],['fe','Fé & Espiritualidade'],['saude','Saúde & Bem-estar'],
+    ['games','Games'],['noticias','Notícias & Atualidades'],['tecnologia','Tecnologia'],['negocios','Negócios & Empreender']
+  ];
+  const NICHE_TAGS={
+    generico:['dicas','passo a passo','tutorial','como fazer','2026'],
+    financas:['dinheiro','economizar','renda extra','educação financeira','investir','sair das dívidas','poupança','finanças pessoais'],
+    motivacao:['motivação','disciplina','mentalidade','superação','foco','autoconfiança','hábitos','desenvolvimento pessoal'],
+    relacionamento:['relacionamento','casamento','família','autoestima','maturidade emocional','conselho de vida','amor próprio'],
+    terror:['história de terror','suspense','mistério','caso real','assustador','relato sombrio','creepypasta'],
+    historia:['história','curiosidades','fatos históricos','documentário','você sabia','história real'],
+    receitas:['receita','culinária','passo a passo','comida caseira','receita fácil','cozinha','gastronomia'],
+    fe:['fé','deus','oração','reflexão','mensagem de deus','espiritualidade','palavra de deus','esperança'],
+    saude:['saúde','bem-estar','emagrecer','saúde natural','qualidade de vida','autocuidado','longevidade'],
+    games:['gameplay','jogos','dicas de game','walkthrough','review','melhores jogos'],
+    noticias:['notícias','atualidades','análise','o que aconteceu','últimas notícias'],
+    tecnologia:['tecnologia','tutorial','review','dicas de tech','inteligência artificial','gadgets'],
+    negocios:['empreendedorismo','negócios','vender mais','marketing','trabalhar em casa','renda online']
+  };
+
+  const L={
+    pt:{
+      formulas:{
+        curioso:[
+          t=>`O que ninguém te contou sobre ${t}`,
+          t=>`A verdade sobre ${t} que quase ninguém sabe`,
+          t=>`Por que ${t} funciona (e você não faz)`,
+          t=>`O segredo de ${t} que mudou tudo`
+        ],
+        urgente:[
+          t=>`PARE de errar em ${t} — assista antes`,
+          t=>`Cuidado: o erro em ${t} que te faz perder tudo`,
+          t=>`Faça isso com ${t} HOJE (não deixe pra depois)`,
+          t=>`Ninguém te avisa sobre ${t} até ser tarde`
+        ],
+        lista:[
+          t=>`5 formas de ${t} que realmente funcionam`,
+          t=>`3 erros em ${t} que quase todo mundo comete`,
+          t=>`7 dicas de ${t} pra começar hoje`,
+          t=>`${cap(t)}: o passo a passo em 4 etapas`
+        ],
+        emocional:[
+          t=>`Ela mudou de vida com ${t} — e você também pode`,
+          t=>`A história de ${t} que vai te emocionar`,
+          t=>`De tudo a nada: como ${t} virou o jogo`,
+          t=>`Você não está sozinho com ${t}`
+        ]
+      },
+      desc:(t,kw,hash)=>`${cap(t)} — neste vídeo eu te mostro de um jeito simples e direto.\nSe isso te ajudou, deixa o 👍 e se inscreve pra não perder os próximos.\n\n▶️ NESTE VÍDEO você vai ver:\n• O ponto principal sobre ${kw}\n• O passo a passo pra aplicar hoje\n• O erro mais comum (e como evitar)\n\n⏱️ CAPÍTULOS\n00:00 Introdução\n00:00 Parte 1\n00:00 Parte 2\n00:00 Conclusão\n\n🔔 Inscreva-se: [seu link]\n📩 Contato: [seu e-mail]\n\n${hash}`,
+      genTags:['como fazer','passo a passo','dicas','tutorial','2026']
+    },
+    en:{
+      formulas:{
+        curioso:[
+          t=>`What nobody tells you about ${t}`,
+          t=>`The truth about ${t} almost no one knows`,
+          t=>`Why ${t} actually works (and you're missing it)`,
+          t=>`The secret to ${t} that changed everything`
+        ],
+        urgente:[
+          t=>`STOP doing ${t} wrong — watch this first`,
+          t=>`Warning: the ${t} mistake that costs you everything`,
+          t=>`Do this with ${t} TODAY (don't wait)`,
+          t=>`No one warns you about ${t} until it's too late`
+        ],
+        lista:[
+          t=>`5 ways to ${t} that actually work`,
+          t=>`3 ${t} mistakes almost everyone makes`,
+          t=>`7 ${t} tips to start today`,
+          t=>`${cap(t)}: the step-by-step in 4 stages`
+        ],
+        emocional:[
+          t=>`She changed her life with ${t} — and you can too`,
+          t=>`The ${t} story that will move you`,
+          t=>`From nothing to everything: how ${t} flipped the game`,
+          t=>`You're not alone with ${t}`
+        ]
+      },
+      desc:(t,kw,hash)=>`${cap(t)} — in this video I break it down simply and directly.\nIf this helped, drop a 👍 and subscribe so you don't miss the next ones.\n\n▶️ IN THIS VIDEO:\n• The main point about ${kw}\n• The step-by-step to apply today\n• The most common mistake (and how to avoid it)\n\n⏱️ CHAPTERS\n00:00 Intro\n00:00 Part 1\n00:00 Part 2\n00:00 Wrap-up\n\n🔔 Subscribe: [your link]\n📩 Contact: [your email]\n\n${hash}`,
+      genTags:['how to','step by step','tips','tutorial','2026']
+    },
+    es:{
+      formulas:{
+        curioso:[
+          t=>`Lo que nadie te cuenta sobre ${t}`,
+          t=>`La verdad sobre ${t} que casi nadie sabe`,
+          t=>`Por qué ${t} funciona (y tú no lo haces)`,
+          t=>`El secreto de ${t} que lo cambió todo`
+        ],
+        urgente:[
+          t=>`DEJA de hacer ${t} mal — míralo antes`,
+          t=>`Cuidado: el error en ${t} que te cuesta todo`,
+          t=>`Haz esto con ${t} HOY (no lo dejes)`,
+          t=>`Nadie te avisa sobre ${t} hasta que es tarde`
+        ],
+        lista:[
+          t=>`5 formas de ${t} que sí funcionan`,
+          t=>`3 errores en ${t} que casi todos cometen`,
+          t=>`7 consejos de ${t} para empezar hoy`,
+          t=>`${cap(t)}: el paso a paso en 4 etapas`
+        ],
+        emocional:[
+          t=>`Ella cambió su vida con ${t} — y tú también puedes`,
+          t=>`La historia de ${t} que te va a emocionar`,
+          t=>`De la nada a todo: cómo ${t} cambió el juego`,
+          t=>`No estás solo con ${t}`
+        ]
+      },
+      desc:(t,kw,hash)=>`${cap(t)} — en este video te lo explico de forma simple y directa.\nSi te ayudó, deja tu 👍 y suscríbete para no perderte los próximos.\n\n▶️ EN ESTE VIDEO:\n• El punto principal sobre ${kw}\n• El paso a paso para aplicar hoy\n• El error más común (y cómo evitarlo)\n\n⏱️ CAPÍTULOS\n00:00 Introducción\n00:00 Parte 1\n00:00 Parte 2\n00:00 Cierre\n\n🔔 Suscríbete: [tu enlace]\n📩 Contacto: [tu correo]\n\n${hash}`,
+      genTags:['cómo hacer','paso a paso','consejos','tutorial','2026']
+    },
+    fr:{
+      formulas:{
+        curioso:[
+          t=>`Ce que personne ne vous dit sur ${t}`,
+          t=>`La vérité sur ${t} que presque personne ne connaît`,
+          t=>`Pourquoi ${t} marche (et pas vous)`,
+          t=>`Le secret de ${t} qui a tout changé`
+        ],
+        urgente:[
+          t=>`ARRÊTEZ de mal faire ${t} — regardez d'abord`,
+          t=>`Attention : l'erreur de ${t} qui vous coûte tout`,
+          t=>`Faites ceci avec ${t} AUJOURD'HUI (n'attendez pas)`,
+          t=>`Personne ne vous prévient sur ${t} avant qu'il soit trop tard`
+        ],
+        lista:[
+          t=>`5 façons de ${t} qui marchent vraiment`,
+          t=>`3 erreurs de ${t} que presque tout le monde fait`,
+          t=>`7 conseils de ${t} pour commencer aujourd'hui`,
+          t=>`${cap(t)} : le pas à pas en 4 étapes`
+        ],
+        emocional:[
+          t=>`Elle a changé de vie avec ${t} — et vous aussi`,
+          t=>`L'histoire de ${t} qui va vous émouvoir`,
+          t=>`De rien à tout : comment ${t} a tout changé`,
+          t=>`Vous n'êtes pas seul avec ${t}`
+        ]
+      },
+      desc:(t,kw,hash)=>`${cap(t)} — dans cette vidéo, je vous explique simplement et directement.\nSi ça vous a aidé, laissez un 👍 et abonnez-vous pour ne rien manquer.\n\n▶️ DANS CETTE VIDÉO :\n• Le point essentiel sur ${kw}\n• Le pas à pas à appliquer aujourd'hui\n• L'erreur la plus courante (et comment l'éviter)\n\n⏱️ CHAPITRES\n00:00 Introduction\n00:00 Partie 1\n00:00 Partie 2\n00:00 Conclusion\n\n🔔 Abonnez-vous : [votre lien]\n📩 Contact : [votre e-mail]\n\n${hash}`,
+      genTags:['comment faire','pas à pas','conseils','tutoriel','2026']
+    }
+  };
+  const TOM_LABEL={curioso:'Curioso',urgente:'Urgente',lista:'Lista',emocional:'Emocional'};
+
+  function cap(s){ s=(s||'').trim(); return s? s.charAt(0).toUpperCase()+s.slice(1):s; }
+  function low(s){ s=(s||'').trim(); return s? s.charAt(0).toLowerCase()+s.slice(1):s; }
+  function words(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>2); }
+  const STOP=new Set(['para','com','uma','que','dos','das','the','and','for','with','como','how','you','your','sobre','about','los','las','des','les','pour','avec']);
+  function pick(arr,n){ const a=arr.slice(); const o=[]; while(a.length&&o.length<n)o.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); return o; }
+
+  // ---------- Estado / UI ----------
+  const el=id=>document.getElementById(id);
+  const nSel=el('nicho'); NICHES.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;nSel.appendChild(o);});
+  let lang='pt', tom='all';
+  el('lang').querySelectorAll('button').forEach(b=>b.onclick=()=>{lang=b.dataset.l;el('lang').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));});
+  el('tom').querySelectorAll('button').forEach(b=>b.onclick=()=>{tom=b.dataset.t;el('tom').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));});
+
+  function toast(m){ const t=el('toast')||(()=>{const d=document.createElement('div');d.id='toast';document.body.appendChild(d);return d;})(); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1800); }
+  function copyText(str,btn){ navigator.clipboard.writeText(str).then(()=>{ if(btn){const o=btn.textContent;btn.textContent='✓ Copiado';btn.classList.add('ok');setTimeout(()=>{btn.textContent=o;btn.classList.remove('ok');},1400);} toast('Copiado! 📋'); }).catch(()=>toast('Selecione e copie manual')); }
+
+  function buildTitles(tema){ const F=L[lang].formulas; const toms = tom==='all'?['curioso','urgente','lista','emocional']:[tom];
+    let out=[]; toms.forEach(k=>{ const chosen = tom==='all'? pick(F[k],2) : F[k]; chosen.forEach(fn=>out.push({tom:k,t:fn(low(tema))})); });
+    return out; }
+
+  function tagsFor(tema,kw){ const base=NICHE_TAGS[nSel.value]||NICHE_TAGS.generico; const gen=L[lang].genTags;
+    let raw=[...words(kw), ...words(tema)].filter(w=>!STOP.has(w));
+    const kws=[]; raw.forEach(w=>{ if(!kws.includes(w))kws.push(w); });
+    const key=(kw||tema).trim().toLowerCase();
+    let set=[]; const push=x=>{ x=x.trim(); if(x&&!set.some(s=>s.toLowerCase()===x.toLowerCase()))set.push(x); };
+    if(key)push(key); kws.slice(0,4).forEach(push); base.forEach(push); gen.forEach(push);
+    // corta pra caber no limite de 500 caracteres do YouTube
+    let acc=[],len=0; for(const t of set){ const add=(acc.length?2:0)+t.length; if(len+add>480)break; acc.push(t); len+=add; }
+    return acc; }
+
+  function hashFor(tema,kw){ const base=NICHE_TAGS[nSel.value]||NICHE_TAGS.generico; const seed=[...words(kw),...words(tema)].filter(w=>!STOP.has(w));
+    const pool=[...seed.slice(0,3), ...base.slice(0,3)].map(w=>'#'+w.replace(/\s+/g,'')); const uniq=[]; pool.forEach(h=>{if(!uniq.includes(h)&&h.length>2)uniq.push(h);}); return uniq.slice(0,6); }
+
+  let last=null;
+  function generate(){ const tema=el('tema').value.trim(); if(!tema){ toast('Escreva o assunto do vídeo 🙂'); el('tema').focus(); return; }
+    const kw=el('kw').value.trim()||tema; last={tema,kw};
+    el('empty').style.display='none'; el('res').style.display='flex'; el('regen').style.display='block';
+    // Títulos
+    const titles=buildTitles(tema); el('tcount').textContent=titles.length+' opções';
+    const box=el('titles'); box.innerHTML='';
+    titles.forEach(o=>{ const d=document.createElement('div'); d.className='tline';
+      const long=o.t.length>60; d.innerHTML='<div class="txt"><span class="tag-form">'+TOM_LABEL[o.tom]+'</span></div><button class="copy">⧉</button>';
+      d.querySelector('.txt').insertAdjacentText('beforeend',o.t);
+      const len=document.createElement('span'); len.className='len'; len.textContent=o.t.length+'c'; len.style.color=long?'var(--warn)':'var(--good)'; d.querySelector('.txt').appendChild(document.createElement('br')); d.querySelector('.txt').appendChild(len);
+      const cp=()=>copyText(o.t,d.querySelector('.copy')); d.onclick=cp; box.appendChild(d); });
+    // Descrição
+    const hashArr=hashFor(tema,kw); const hashLine=hashArr.join(' ');
+    const desc=L[lang].desc(tema,kw,hashLine); el('desc').textContent=desc; el('descLen').textContent=desc.length+' caracteres';
+    // Tags
+    const tags=tagsFor(tema,kw); const tb=el('tags'); tb.innerHTML=''; tags.forEach(t=>{const s=document.createElement('span');s.className='tag';s.textContent=t;tb.appendChild(s);});
+    const tlen=tags.join(', ').length; el('tagLen').innerHTML='<span class="'+(tlen>500?'warn':'good')+'">'+tlen+'/500 caracteres</span>';
+    // Hashtags
+    const hb=el('hash'); hb.innerHTML=''; hashArr.forEach(h=>{const s=document.createElement('span');s.className='tag';s.textContent=h;hb.appendChild(s);});
+    el('copyDesc').onclick=()=>copyText(desc,el('copyDesc'));
+    el('copyTags').onclick=()=>copyText(tags.join(', '),el('copyTags'));
+    el('copyHash').onclick=()=>copyText(hashLine,el('copyHash'));
+    el('res').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  el('gen').onclick=generate;
+  el('regen').onclick=generate;
+  el('tema').addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))generate(); });
+})();
+</script>
+
+</body>
+</html>
