@@ -63,6 +63,8 @@
   .layer{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);cursor:pointer;font-size:12.5px}
   .layer.sel{border-color:var(--accent);background:#152034}.layer .lbl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   @media(max-width:820px){aside{flex-basis:100%;width:100%;max-height:none}}
+  #dt-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#0e1524;border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:90vw;text-align:center}
+  #dt-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 
 <div class="app">
@@ -87,7 +89,8 @@
       <button class="btn tgl" id="b-gold">🥇 Dourado</button>
       <span class="sep"></span>
       <button class="btn danger" id="b-del">🗑 Apagar</button>
-      <button class="btn pri" id="b-dl">⬇ Baixar PNG</button>
+      <button class="btn pri" id="b-dl">⬇ Baixar JPG</button>
+      <button class="btn" id="b-dlpng" title="PNG sem perda (pode ficar maior que 2 MB)">PNG</button>
       <input type="file" id="file" accept="image/*" hidden>
     </div>
   </header>
@@ -202,7 +205,15 @@
   tg('b-scrim',()=>scrim=!scrim); tg('b-guides',()=>guides=!guides); tg('b-gold',()=>gold=!gold);
   const file=document.getElementById('file'); document.getElementById('b-img').onclick=()=>file.click();
   file.onchange=()=>{ const f=file.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{ const im=new Image(); im.onload=()=>{bg=im;sel=-1;render();showInsp();}; im.src=rd.result; }; rd.readAsDataURL(f); };
-  document.getElementById('b-dl').onclick=()=>{ const s=sel; sel=-1; exporting=true; render(); cv.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='miniatura-darkblue.png'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000); exporting=false; sel=s; render(); },'image/png'); };
+  function toast(msg){ let t=document.getElementById('dt-toast'); if(!t){ t=document.createElement('div'); t.id='dt-toast'; document.body.appendChild(t); } t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),3400); }
+  function dl(blob,ext){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='miniatura-darkblue.'+ext; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000); }
+  function baixar(kind){ const s=sel; sel=-1; exporting=true; render(); const done=()=>{ exporting=false; sel=s; render(); };
+    if(kind==='png'){ cv.toBlob(b=>{ dl(b,'png'); const mb=b.size/1048576; toast(mb>2? '⚠ PNG ficou '+mb.toFixed(1)+' MB — acima do limite do YouTube (2 MB). Prefira o JPG.' : 'PNG baixado: '+((b.size/1024)|0)+' KB · pronto pro YouTube ✓'); done(); },'image/png'); return; }
+    const tryQ=q=>cv.toBlob(b=>{ if(b.size>1900000 && q>0.5){ tryQ(+(q-0.08).toFixed(2)); return; } dl(b,'jpg'); toast('JPG baixado: '+((b.size/1024)|0)+' KB · dentro do limite do YouTube (2 MB) ✓'); done(); },'image/jpeg',q);
+    tryQ(0.92);
+  }
+  document.getElementById('b-dl').onclick=()=>baixar('jpg');
+  document.getElementById('b-dlpng').onclick=()=>baixar('png');
   window.addEventListener('keydown',e=>{ if(sel<0)return; const t=e.target.tagName; if(t==='TEXTAREA'||t==='INPUT'||t==='SELECT')return; const l=layers[sel],st=e.shiftKey?20:3;
     if(e.key==='Delete'||e.key==='Backspace'){layers.splice(sel,1);sel=-1;render();showInsp();e.preventDefault();return;}
     if(e.key==='ArrowLeft')l.x-=st; else if(e.key==='ArrowRight')l.x+=st; else if(e.key==='ArrowUp')l.y-=st; else if(e.key==='ArrowDown')l.y+=st; else return; e.preventDefault(); render(); });
