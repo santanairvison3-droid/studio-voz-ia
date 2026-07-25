@@ -74,7 +74,7 @@
       <span class="badge">Editor de miniatura · 1280×720 · qualquer nicho</span>
     </div>
     <div class="toolbar">
-      <button class="btn hot" id="b-preset">⚡ Modelo Red Line</button>
+      <button class="btn hot" id="b-title">⚡ Título rápido</button>
       <div class="posctl">Texto:<div class="grp" id="pos"><button data-z="left">Esq</button><button data-z="center">Centro</button><button data-z="right" class="on">Dir</button></div></div>
       <span class="sep"></span>
       <button class="btn pri" id="b-img">📁 Imagem</button>
@@ -86,7 +86,6 @@
       <span class="sep"></span>
       <button class="btn tgl" id="b-scrim">🌑 Escurecer</button>
       <button class="btn tgl on" id="b-guides">📐 Guias</button>
-      <button class="btn tgl" id="b-gold">🥇 Dourado</button>
       <span class="sep"></span>
       <button class="btn danger" id="b-del">🗑 Apagar</button>
       <button class="btn pri" id="b-dl">⬇ Baixar JPG</button>
@@ -133,7 +132,7 @@
   function drawBg(){
     if(bg){ ctx.save(); ctx.filter=filterStr(); const ir=bg.width/bg.height,cr=W/H; let dw,dh; if(ir>cr){dh=H;dw=H*ir;}else{dw=W;dh=W/ir;} ctx.drawImage(bg,(W-dw)/2,(H-dh)/2,dw,dh); ctx.restore();
       if(img.vig){ const g=ctx.createRadialGradient(W/2,H/2,H*0.34,W/2,H/2,W*0.62); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.55)'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); } }
-    else{ const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,'#0c1322'); g.addColorStop(1,'#0a1526'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); ctx.fillStyle='rgba(139,153,179,.55)'; ctx.font='600 32px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('📁  Envie sua imagem — ou ⚡ Modelo Red Line', W/2, H/2); ctx.textAlign='left'; ctx.textBaseline='alphabetic'; }
+    else{ const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,'#0c1322'); g.addColorStop(1,'#0a1526'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); ctx.fillStyle='rgba(139,153,179,.55)'; ctx.font='600 32px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('📁  Envie sua imagem pra começar', W/2, H/2); ctx.textAlign='left'; ctx.textBaseline='alphabetic'; }
   }
   function drawScrim(){ const z=zoneBox(),dir=textZone==='left'?1:textZone==='right'?-1:0; let g;
     if(dir===0){ g=ctx.createRadialGradient(W/2,H/2,120,W/2,H/2,W/2); g.addColorStop(0,'rgba(0,0,0,.5)'); g.addColorStop(1,'rgba(0,0,0,0)'); }
@@ -187,22 +186,16 @@
   const tdef=o=>Object.assign({type:'text',x:zoneC(),y:H*0.42,size:120,font:IMPACT,color:'#FFD700',color2:'#ff5c00',grad:false,outline:14,outlineColor:'#000000',shadow:false,shadowColor:'#000000',neon:false,highlight:false,highlightColor:'#CC0000',upper:false,spacing:0,align:'center'},o);
   document.getElementById('b-text').onclick=()=>add(tdef({text:'SEU TEXTO'}));
   document.getElementById('b-emoji').onclick=()=>add(tdef({text:'🔥',size:170,outline:0,color:'#ffffff',y:H*0.32}));
-  document.getElementById('b-brush').onclick=()=>add({type:'brush',x:zoneC(),y:H*0.62,len:Math.min(460,ZW),thick:20,angle:-3,color:gold?'#B08D3E':'#CC0000',taper:true});
+  document.getElementById('b-brush').onclick=()=>add({type:'brush',x:zoneC(),y:H*0.62,len:Math.min(460,ZW),thick:20,angle:-3,color:'#CC0000',taper:true});
   document.getElementById('b-shape').onclick=()=>add({type:'shape',kind:'ring',x:W*0.28,y:H*0.5,w:320,h:320,angle:0,color:'#FF2E63',filled:false,stroke:16,strokeColor:'#000000',opacity:1});
-  document.getElementById('b-seal').onclick=()=>add({type:'seal',x:W-210,y:H-104,text:'55 ANOS',size:42,bgColor:'#000000',brd:'#ffffff',color:'#ffffff'});
+  document.getElementById('b-seal').onclick=()=>add({type:'seal',x:W-210,y:H-104,text:'NOVO',size:42,bgColor:'#000000',brd:'#ffffff',color:'#ffffff'});
   document.getElementById('b-del').onclick=()=>{ if(sel>=0){layers.splice(sel,1);sel=-1;render();showInsp();} };
 
-  document.getElementById('b-preset').onclick=()=>{ const z=zoneBox(),zc=z.x+z.w/2; const yC=gold?'#E8B23A':'#FFD700',rC=gold?'#D4AF37':'#CC0000',bC=gold?'#B08D3E':'#CC0000';
-    const s1=fit('CONTEXTO',IMPACT,z.w,140,46),s2=fit('IMPACTO',IMPACT,z.w,178,58),s3=fit('RESULTADO',IMPACT,z.w,168,52); const gap=16,bh=28,total=s1+gap+s2+gap+bh+gap+s3; let y=(H-total)/2;
-    const mk=(t,size,color)=>tdef({text:t,size,color,outline:Math.round(size*0.12),align:'center',x:zc,y:y});
-    const a=[]; a.push(mk('CONTEXTO',s1,'#FFFFFF')); y+=s1+gap; a.push(mk('IMPACTO',s2,yC)); y+=s2+gap;
-    a.push({type:'brush',x:zc,y:y+bh/2,len:Math.min(measure('IMPACTO',s2,IMPACT,0)*1.05,z.w),thick:20,angle:-3,color:bC,taper:true}); y+=bh+gap;
-    a.push(mk('RESULTADO',s3,rC)); a.push({type:'seal',x:W-210,y:H-104,text:'55 ANOS',size:42,bgColor:'#000',brd:'#fff',color:'#fff'});
-    layers=a; sel=1; render(); showInsp(); };
+  document.getElementById('b-title').onclick=()=>{ const z=zoneBox(),s=fit('SEU TÍTULO',IMPACT,z.w,150,60); add(tdef({text:'SEU TÍTULO',size:s,color:'#FFFFFF',outline:Math.round(s*0.11),align:'center',x:z.x+z.w/2,y:Math.round(H*0.4)})); };
 
   document.querySelectorAll('#pos button').forEach(b=>b.onclick=()=>{ textZone=b.dataset.z; document.querySelectorAll('#pos button').forEach(x=>x.classList.toggle('on',x===b)); render(); });
   const tg=(id,fn)=>{ const b=document.getElementById(id); b.onclick=()=>{ fn(); b.classList.toggle('on'); render(); }; };
-  tg('b-scrim',()=>scrim=!scrim); tg('b-guides',()=>guides=!guides); tg('b-gold',()=>gold=!gold);
+  tg('b-scrim',()=>scrim=!scrim); tg('b-guides',()=>guides=!guides);
   const file=document.getElementById('file'); document.getElementById('b-img').onclick=()=>file.click();
   file.onchange=()=>{ const f=file.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{ const im=new Image(); im.onload=()=>{bg=im;sel=-1;render();showInsp();}; im.src=rd.result; }; rd.readAsDataURL(f); };
   function toast(msg){ let t=document.getElementById('dt-toast'); if(!t){ t=document.createElement('div'); t.id='dt-toast'; document.body.appendChild(t); } t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),3400); }
