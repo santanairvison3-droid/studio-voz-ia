@@ -1033,13 +1033,12 @@ select option{background:var(--surface2)}
       </div>
       <!-- Banner de novidades 16/07/2026 — some SOZINHO em 05/08/2026 (20 dias) ou no ✕ -->
       <div id="news-banner" style="display:none;align-items:center;gap:11px;margin:0 0 16px;padding:11px 15px;border-radius:11px;border:1px solid rgba(0,229,212,.28);background:linear-gradient(90deg,rgba(0,229,212,.09),rgba(0,229,212,.02));font-size:12px;line-height:1.6">
-        <span style="font-size:17px;flex-shrink:0">✨</span>
+        <span style="font-size:17px;flex-shrink:0">🖼️</span>
         <div style="flex:1;min-width:0">
-          <b style="color:var(--accent)">NOVIDADES:</b>
-          todo áudio agora sai com <b>legendas .SRT</b> — inclusive o <b>SRT sincronizado</b> (baixe no resultado ou no <b>Histórico</b>) ·
-          dê um <b>nome ao arquivo</b> antes de gerar e ele baixa com esse nome ·
-          <b>710 vozes</b> com <b>bandeira do idioma</b> 🇧🇷🇺🇸🇫🇷 e filtro <b>🌍 multi-idioma</b> na Biblioteca.
+          <b style="color:var(--accent)">NOVO — Editor de Miniatura:</b>
+          agora dá pra <b>criar suas thumbnails aqui dentro</b>, de graça! Envie sua imagem, escolha fontes, cores e efeitos, use o <b>Modelo Red Line</b> e baixe pronta pro YouTube (JPG leve, sobe sem erro). Fica na aba <b>🖼️ Editor de Miniatura</b>.
         </div>
+        <button onclick="goTab('thumb',document.querySelector('.nav-item[onclick*=thumb]'))" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:7px;padding:6px 12px;flex-shrink:0;white-space:nowrap">Abrir editor →</button>
         <button onclick="dismissNews()" title="Fechar" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 6px;flex-shrink:0">✕</button>
       </div>
       <div class="stats-row">
@@ -2503,12 +2502,12 @@ function showStatus(msg,type){
 (function(){
   const b=document.getElementById('news-banner');
   if(!b)return;
-  const expira=new Date('2026-08-05T23:59:59-03:00');   // 20 dias após o lançamento
-  if(new Date()>expira||localStorage.getItem('svia_news_1607')==='1'){b.remove();return;}
+  const expira=new Date('2026-09-10T23:59:59-03:00');   // novidade: Editor de Miniatura
+  if(new Date()>expira||localStorage.getItem('svia_news_thumb')==='1'){b.remove();return;}
   b.style.display='flex';
 })();
 function dismissNews(){
-  try{localStorage.setItem('svia_news_1607','1');}catch(e){}
+  try{localStorage.setItem('svia_news_thumb','1');}catch(e){}
   const b=document.getElementById('news-banner');
   if(b)b.remove();
 }
