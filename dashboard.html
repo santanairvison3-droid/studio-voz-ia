@@ -1081,6 +1081,34 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
               <div style="font-size:11px;color:var(--muted)" id="char-est"></div>
             </div>
             <input id="audio-name-inp" type="text" maxlength="80" placeholder="📝 Nome do arquivo (opcional) — ex.: licao-17-v1" style="width:100%;margin:8px 0 4px;padding:10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:inherit;font-size:12px;box-sizing:border-box">
+            <details id="adv-panel" style="margin:8px 0 4px;border:1px solid var(--border);border-radius:9px;background:var(--surface2);padding:0 12px">
+              <summary style="cursor:pointer;padding:11px 0;font-size:12px;font-weight:700;color:var(--accent)">⚙️ Ajustes avançados <span style="color:var(--muted);font-weight:500">— velocidade, volume, legenda</span></summary>
+              <div style="padding:2px 0 13px;display:flex;flex-direction:column;gap:13px">
+                <div>
+                  <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px"><span>🏃 Velocidade da fala</span><span id="adv-speed-v" style="color:var(--accent);font-weight:700">1.00×</span></label>
+                  <input type="range" id="adv-speed" min="0.5" max="1.5" step="0.05" value="1" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('adv-speed-v').textContent=(+this.value).toFixed(2)+'×'">
+                </div>
+                <div>
+                  <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px"><span>🔊 Volume</span><span id="adv-vol-v" style="color:var(--accent);font-weight:700">1.00×</span></label>
+                  <input type="range" id="adv-vol" min="0.5" max="1.5" step="0.05" value="1" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('adv-vol-v').textContent=(+this.value).toFixed(2)+'×'">
+                </div>
+                <div>
+                  <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px"><span>✍️ Palavras por bloco da legenda</span><span id="adv-words-v" style="color:var(--accent);font-weight:700">8</span></label>
+                  <input type="range" id="adv-words" min="1" max="15" step="1" value="8" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('adv-words-v').textContent=this.value">
+                </div>
+                <div>
+                  <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px"><span>🎬 Palavras por bloco do SRT VEO <span style="opacity:.6">(cenas)</span></span><span id="adv-veow-v" style="color:var(--accent);font-weight:700">auto</span></label>
+                  <input type="range" id="adv-veow" min="0" max="15" step="1" value="0" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('adv-veow-v').textContent=this.value=='0'?'auto':this.value">
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer">
+                  <input type="checkbox" id="adv-upper" style="width:16px;height:16px;accent-color:var(--accent)"> Legenda em MAIÚSCULAS
+                </label>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                  <span style="font-size:10.5px;color:var(--muted);line-height:1.5">Valem só pra ESTE áudio. Na dúvida, deixe no padrão e teste com um trecho curto.</span>
+                  <button type="button" onclick="resetAdv()" style="flex-shrink:0;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:5px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">↺ Padrão</button>
+                </div>
+              </div>
+            </details>
             <button class="btn-gen" id="btn-gen" onclick="generateSingle()">🎙️ Gerar Áudio</button>
             <div id="voz-selecionada-bar" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(0,229,212,.07);border:1px solid rgba(0,229,212,.2);border-radius:9px;font-size:12px;align-items:center;gap:8px">
               <span style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Voz selecionada:</span>
@@ -1108,8 +1136,11 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
             </div>
             <div class="voice-search-wrap">
               <span class="voice-search-icon">🔍</span>
-              <input class="voice-search" id="voice-search" type="text" placeholder="Buscar voz..." oninput="filterVoices()">
+              <input class="voice-search" id="voice-search" type="text" placeholder="Buscar voz (nome, sotaque, estilo, uso)..." oninput="filterVoices()">
             </div>
+            <select id="voice-accent" onchange="filterVoices()" style="width:100%;margin-bottom:10px;padding:9px 11px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:inherit;font-size:12px">
+              <option value="">🎙️ Todos os sotaques</option>
+            </select>
             <div class="voices-grid" id="voices-grid">
               <div class="voice-loading">Carregando vozes...</div>
             </div>
@@ -2404,6 +2435,7 @@ function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt
 
 function renderVoices(voices){
   const g=document.getElementById('voices-grid');
+  ensureAccentOptions();
   if(!voices.length){g.innerHTML='<div class="voice-loading">Nenhuma voz encontrada.</div>';return;}
   g.innerHTML=voices.map(v=>{
     const vid=escHtml(v.voice_id||v.id||'');
@@ -2419,13 +2451,29 @@ function renderVoices(voices){
   document.getElementById('v-count').textContent=`${voices.length} de ${allVoices.length} vozes`;
 }
 
+function ensureAccentOptions(){
+  const sel=document.getElementById('voice-accent');
+  if(!sel||sel.dataset.filled||!Array.isArray(allVoices)||!allVoices.length)return;
+  const accs=[...new Set(allVoices.map(v=>String(v.accent||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  accs.forEach(a=>{const o=document.createElement('option');o.value=a.toLowerCase();o.textContent='🎙️ '+a.charAt(0).toUpperCase()+a.slice(1);sel.appendChild(o);});
+  sel.dataset.filled='1';
+}
 function filterVoices(){
-  const q=document.getElementById('voice-search').value.toLowerCase();
-  renderVoices(q?allVoices.filter(v=>(v.name||'').toLowerCase().includes(q)
+  ensureAccentOptions();
+  const q=document.getElementById('voice-search').value.toLowerCase().trim();
+  const ac=(document.getElementById('voice-accent')?.value||'').toLowerCase();
+  let list=allVoices;
+  if(ac) list=list.filter(v=>String(v.accent||'').toLowerCase()===ac);
+  if(q) list=list.filter(v=>(v.name||'').toLowerCase().includes(q)
     ||getLangCode(v).includes(q)
     ||String(v.accent||'').toLowerCase().includes(q)
+    ||String(v.style||'').toLowerCase().includes(q)
+    ||String(v.age||'').toLowerCase().includes(q)
+    ||String(v.use_case||'').toLowerCase().includes(q)
+    ||String(v.description||'').toLowerCase().includes(q)
     ||String(v.locale||'').toLowerCase().includes(q)
-    ||(q==='multi'&&isMulti(v))):allVoices);
+    ||(q==='multi'&&isMulti(v)));
+  renderVoices(list);
 }
 
 function selectVoice(id,el){
@@ -2484,7 +2532,7 @@ async function generateSingle(){
     const r=await fetch(`${API}/api/generate-index`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-      body:JSON.stringify({text,voice_id:selectedVoice,voice_name:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||null),characters:text.length,title:nomeDoAudio('')||undefined})
+      body:JSON.stringify({text,voice_id:selectedVoice,voice_name:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||null),characters:text.length,title:nomeDoAudio('')||undefined,...genOpts()})
     });
     if(r.status===401){logout();return;}
     const d=await r.json();
@@ -2531,6 +2579,27 @@ function sanitizeName(s){return String(s||'').trim().replace(/[^\w\-. ]+/g,'').r
 function nomeDoAudio(jobId){
   return sanitizeName(document.getElementById('audio-name-inp')?.value)
     ||('audio-'+String(jobId||'').substring(0,8));
+}
+/* ── Ajustes avançados (parâmetros que a API do DarkPlanner aceita: velocidade,
+   volume, legenda). Só manda o que foi MUDADO do padrão — assim o comportamento
+   normal fica intacto e nada quebra pra quem não mexer. ── */
+function genOpts(){
+  const o={}, g=id=>document.getElementById(id);
+  const sp=parseFloat(g('adv-speed')?.value), vol=parseFloat(g('adv-vol')?.value);
+  const w=parseInt(g('adv-words')?.value,10), vw=parseInt(g('adv-veow')?.value,10);
+  if(sp && Math.abs(sp-1)>0.001) o.speed=sp;
+  if(vol && Math.abs(vol-1)>0.001) o.volume=vol;
+  if(w && w!==8) o.subtitle_words=w;
+  if(vw && vw>0) o.subtitle_veo_words=vw;
+  if(g('adv-upper')?.checked) o.subtitle_case='upper';
+  return o;
+}
+function resetAdv(){
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v;};
+  set('adv-speed',1);set('adv-vol',1);set('adv-words',8);set('adv-veow',0);
+  const up=document.getElementById('adv-upper');if(up)up.checked=false;
+  const t=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  t('adv-speed-v','1.00×');t('adv-vol-v','1.00×');t('adv-words-v','8');t('adv-veow-v','auto');
 }
 function proxyDl(url,filename){
   return `${API}/api/audio-proxy?url=${encodeURIComponent(url)}&name=${encodeURIComponent(filename)}&token=${encodeURIComponent(token)}`;
@@ -2762,7 +2831,7 @@ async function generateAllTxt(){
       const r=await fetch(`${API}/api/generate-index`,{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body:JSON.stringify({text:f.text,voice_id:voiceId,voice_name:(allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||null),characters:f.text.length})
+        body:JSON.stringify({text:f.text,voice_id:voiceId,voice_name:(allVoices.find(v=>(v.voice_id||v.id)===voiceId)?.name||null),characters:f.text.length,...genOpts()})
       });
       if(r.status===401){logout();return;}
       const d=await r.json();
@@ -3765,7 +3834,7 @@ async function generateFromLib(vid, vname, btnEl, e){
     const r=await fetch(`${API}/api/generate-index`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-      body:JSON.stringify({text,voice_id:vid,voice_name:vname||(allVoices.find(x=>(x.voice_id||x.id)===vid)?.name||null),characters:text.length})
+      body:JSON.stringify({text,voice_id:vid,voice_name:vname||(allVoices.find(x=>(x.voice_id||x.id)===vid)?.name||null),characters:text.length,...genOpts()})
     });
     if(r.status===401){logout();return;}
     const d=await r.json();
@@ -3819,7 +3888,7 @@ async function downloadFavoritesZip(){
       const r=await fetch(`${API}/api/generate-index`,{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body:JSON.stringify({text,voice_id:vid,voice_name:(v?.name||null),characters:text.length})
+        body:JSON.stringify({text,voice_id:vid,voice_name:(v?.name||null),characters:text.length,...genOpts()})
       });
       const d=await r.json();
       let url=d.audio_url||null;
