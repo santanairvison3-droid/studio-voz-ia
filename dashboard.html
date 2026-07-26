@@ -1096,9 +1096,15 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
                   <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px"><span>✍️ Palavras por bloco da legenda</span><span id="adv-words-v" style="color:var(--accent);font-weight:700">8</span></label>
                   <input type="range" id="adv-words" min="1" max="15" step="1" value="8" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('adv-words-v').textContent=this.value">
                 </div>
-                <div>
-                  <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px"><span>🎬 Palavras por bloco do SRT VEO <span style="opacity:.6">(cenas)</span></span><span id="adv-veow-v" style="color:var(--accent);font-weight:700">auto</span></label>
-                  <input type="range" id="adv-veow" min="0" max="15" step="1" value="0" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('adv-veow-v').textContent=this.value=='0'?'auto':this.value">
+                <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:2px">
+                  <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:2px">🎬 Blocos do SRT VEO3 (cenas)</div>
+                  <div style="font-size:10.5px;color:var(--muted);margin-bottom:10px;line-height:1.4">Escolha por <b>TEMPO</b> (segundos por bloco) <b>ou</b> por <b>PALAVRAS</b>.</div>
+                  <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px"><span>⏱️ Tempo mínimo do bloco</span><span id="adv-veomin-v" style="color:var(--accent);font-weight:700">4 s</span></label>
+                  <input type="range" id="adv-veomin" min="1" max="8" step="1" value="4" style="width:100%;accent-color:var(--accent)" oninput="veoTimeSync('min')">
+                  <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:10px 0 5px"><span>⏱️ Tempo máximo do bloco <span style="opacity:.6">(até 8 s)</span></span><span id="adv-veomax-v" style="color:var(--accent);font-weight:700">8 s</span></label>
+                  <input type="range" id="adv-veomax" min="1" max="8" step="1" value="8" style="width:100%;accent-color:var(--accent)" oninput="veoTimeSync('max')">
+                  <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:10px 0 5px"><span>✍️ OU palavras por bloco</span><span id="adv-veow-v" style="color:var(--accent);font-weight:700">auto</span></label>
+                  <input type="range" id="adv-veow" min="0" max="15" step="1" value="0" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('adv-veow-v').textContent=this.value=='0'?'auto (pelo tempo)':this.value">
                 </div>
                 <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer">
                   <input type="checkbox" id="adv-upper" style="width:16px;height:16px;accent-color:var(--accent)"> Legenda em MAIÚSCULAS
@@ -2587,19 +2593,31 @@ function genOpts(){
   const o={}, g=id=>document.getElementById(id);
   const sp=parseFloat(g('adv-speed')?.value), vol=parseFloat(g('adv-vol')?.value);
   const w=parseInt(g('adv-words')?.value,10), vw=parseInt(g('adv-veow')?.value,10);
+  const vmin=parseInt(g('adv-veomin')?.value,10), vmax=parseInt(g('adv-veomax')?.value,10);
   if(sp && Math.abs(sp-1)>0.001) o.speed=sp;
   if(vol && Math.abs(vol-1)>0.001) o.volume=vol;
   if(w && w!==8) o.subtitle_words=w;
-  if(vw && vw>0) o.subtitle_veo_words=vw;
+  if(vmin && vmin!==4) o.subtitle_veo_min=vmin;      // SRT VEO3 por TEMPO (segundos)
+  if(vmax && vmax!==8) o.subtitle_veo_max=vmax;      // até 8 s
+  if(vw && vw>0) o.subtitle_veo_words=vw;             // OU por palavras
   if(g('adv-upper')?.checked) o.subtitle_case='upper';
   return o;
 }
+// mantém tempo mínimo <= tempo máximo do bloco VEO3 e atualiza os rótulos
+function veoTimeSync(which){
+  const mn=document.getElementById('adv-veomin'), mx=document.getElementById('adv-veomax');
+  if(!mn||!mx)return;
+  if(which==='min'&&+mn.value>+mx.value) mx.value=mn.value;
+  if(which==='max'&&+mx.value<+mn.value) mn.value=mx.value;
+  document.getElementById('adv-veomin-v').textContent=mn.value+' s';
+  document.getElementById('adv-veomax-v').textContent=mx.value+' s';
+}
 function resetAdv(){
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v;};
-  set('adv-speed',1);set('adv-vol',1);set('adv-words',8);set('adv-veow',0);
+  set('adv-speed',1);set('adv-vol',1);set('adv-words',8);set('adv-veomin',4);set('adv-veomax',8);set('adv-veow',0);
   const up=document.getElementById('adv-upper');if(up)up.checked=false;
   const t=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  t('adv-speed-v','1.00×');t('adv-vol-v','1.00×');t('adv-words-v','8');t('adv-veow-v','auto');
+  t('adv-speed-v','1.00×');t('adv-vol-v','1.00×');t('adv-words-v','8');t('adv-veomin-v','4 s');t('adv-veomax-v','8 s');t('adv-veow-v','auto (pelo tempo)');
 }
 function proxyDl(url,filename){
   return `${API}/api/audio-proxy?url=${encodeURIComponent(url)}&name=${encodeURIComponent(filename)}&token=${encodeURIComponent(token)}`;
