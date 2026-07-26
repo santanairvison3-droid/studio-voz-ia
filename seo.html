@@ -60,7 +60,7 @@
 <div class="app">
   <header><div class="top">
     <div class="logo"><b>SEO</b><i>Kit</i></div>
-    <span class="badge">Título · Descrição · Tags · qualquer nicho · grátis</span>
+    <span class="badge">Título · Descrição · Tags · 20 idiomas · grátis</span>
   </div></header>
   <main>
     <div class="col side">
@@ -72,13 +72,8 @@
           <input type="text" id="kw" placeholder="Ex.: economizar dinheiro"></div>
         <div class="field"><label>Nicho</label>
           <select id="nicho"></select></div>
-        <div class="field"><label>Idioma</label>
-          <div class="seg" id="lang">
-            <button data-l="pt" class="on">🇧🇷 PT</button>
-            <button data-l="en">🇺🇸 EN</button>
-            <button data-l="es">🇪🇸 ES</button>
-            <button data-l="fr">🇫🇷 FR</button>
-          </div></div>
+        <div class="field"><label>Idioma (20 mais usados)</label>
+          <select id="lang"></select></div>
         <div class="field"><label>Tom dos títulos</label>
           <div class="seg" id="tom">
             <button data-t="all" class="on">Todos</button>
@@ -89,12 +84,12 @@
           </div></div>
         <button class="btn" id="gen">✨ Gerar SEO</button>
         <button class="btn ghost" id="regen" style="display:none">🔄 Gerar outras opções</button>
-        <div class="tip">100% no navegador, <b>custo zero</b>. São modelos prontos — troque as palavras do jeito do seu nicho. Nada de padrão fixo: cada vídeo sai diferente.</div>
+        <div class="tip">100% no navegador, <b>custo zero</b>. São modelos prontos no idioma escolhido — troque as palavras do jeito do seu nicho. Nada de padrão fixo: cada vídeo sai diferente.</div>
       </div>
     </div>
 
     <div class="col out">
-      <div id="empty" class="card"><div class="empty">👈 Preencha o assunto e clique em <b>Gerar SEO</b>.<br>Você recebe <b>títulos</b>, uma <b>descrição pronta</b> e <b>tags</b> — cada um com botão de copiar.</div></div>
+      <div id="empty" class="card"><div class="empty">👈 Preencha o assunto, escolha o <b>idioma</b> e clique em <b>Gerar SEO</b>.<br>Você recebe <b>títulos</b>, uma <b>descrição pronta</b> e <b>tags</b> — cada um com botão de copiar.</div></div>
 
       <div id="res" style="display:none;flex-direction:column;gap:14px">
         <div class="card">
@@ -106,7 +101,7 @@
         <div class="card">
           <div class="head-row"><h3>🧾 Descrição</h3><button class="copy" id="copyDesc">⧉ Copiar descrição</button></div>
           <div class="meta"><span>As 2 primeiras linhas aparecem antes do "...mostrar mais" — capriche nelas.</span><span id="descLen"></span></div>
-          <pre class="box" id="desc"></pre>
+          <pre class="box" id="desc" dir="auto"></pre>
         </div>
 
         <div class="card">
@@ -127,7 +122,7 @@
 
 <script>
 (function(){
-  // ---------- Bancos por idioma ----------
+  // ---------- Nichos (rótulos em PT; enriquecem as tags PT) ----------
   const NICHES=[
     ['generico','Genérico / outro'],['financas','Finanças & Dinheiro'],['motivacao','Motivação & Autoajuda'],
     ['relacionamento','Relacionamento & Família'],['terror','Terror & Suspense'],['historia','História & Curiosidades'],
@@ -150,183 +145,231 @@
     negocios:['empreendedorismo','negócios','vender mais','marketing','trabalhar em casa','renda online']
   };
 
-  const L={
-    pt:{
-      formulas:{
-        curioso:[
-          t=>`O que ninguém te contou sobre ${t}`,
-          t=>`A verdade sobre ${t} que quase ninguém sabe`,
-          t=>`Por que ${t} funciona (e você não faz)`,
-          t=>`O segredo de ${t} que mudou tudo`
-        ],
-        urgente:[
-          t=>`PARE de errar em ${t} — assista antes`,
-          t=>`Cuidado: o erro em ${t} que te faz perder tudo`,
-          t=>`Faça isso com ${t} HOJE (não deixe pra depois)`,
-          t=>`Ninguém te avisa sobre ${t} até ser tarde`
-        ],
-        lista:[
-          t=>`5 formas de ${t} que realmente funcionam`,
-          t=>`3 erros em ${t} que quase todo mundo comete`,
-          t=>`7 dicas de ${t} pra começar hoje`,
-          t=>`${cap(t)}: o passo a passo em 4 etapas`
-        ],
-        emocional:[
-          t=>`Ela mudou de vida com ${t} — e você também pode`,
-          t=>`A história de ${t} que vai te emocionar`,
-          t=>`De tudo a nada: como ${t} virou o jogo`,
-          t=>`Você não está sozinho com ${t}`
-        ]
-      },
-      desc:(t,kw,hash)=>`${cap(t)} — neste vídeo eu te mostro de um jeito simples e direto.\nSe isso te ajudou, deixa o 👍 e se inscreve pra não perder os próximos.\n\n▶️ NESTE VÍDEO você vai ver:\n• O ponto principal sobre ${kw}\n• O passo a passo pra aplicar hoje\n• O erro mais comum (e como evitar)\n\n⏱️ CAPÍTULOS\n00:00 Introdução\n00:00 Parte 1\n00:00 Parte 2\n00:00 Conclusão\n\n🔔 Inscreva-se: [seu link]\n📩 Contato: [seu e-mail]\n\n${hash}`,
-      genTags:['como fazer','passo a passo','dicas','tutorial','2026']
-    },
-    en:{
-      formulas:{
-        curioso:[
-          t=>`What nobody tells you about ${t}`,
-          t=>`The truth about ${t} almost no one knows`,
-          t=>`Why ${t} actually works (and you're missing it)`,
-          t=>`The secret to ${t} that changed everything`
-        ],
-        urgente:[
-          t=>`STOP doing ${t} wrong — watch this first`,
-          t=>`Warning: the ${t} mistake that costs you everything`,
-          t=>`Do this with ${t} TODAY (don't wait)`,
-          t=>`No one warns you about ${t} until it's too late`
-        ],
-        lista:[
-          t=>`5 ways to ${t} that actually work`,
-          t=>`3 ${t} mistakes almost everyone makes`,
-          t=>`7 ${t} tips to start today`,
-          t=>`${cap(t)}: the step-by-step in 4 stages`
-        ],
-        emocional:[
-          t=>`She changed her life with ${t} — and you can too`,
-          t=>`The ${t} story that will move you`,
-          t=>`From nothing to everything: how ${t} flipped the game`,
-          t=>`You're not alone with ${t}`
-        ]
-      },
-      desc:(t,kw,hash)=>`${cap(t)} — in this video I break it down simply and directly.\nIf this helped, drop a 👍 and subscribe so you don't miss the next ones.\n\n▶️ IN THIS VIDEO:\n• The main point about ${kw}\n• The step-by-step to apply today\n• The most common mistake (and how to avoid it)\n\n⏱️ CHAPTERS\n00:00 Intro\n00:00 Part 1\n00:00 Part 2\n00:00 Wrap-up\n\n🔔 Subscribe: [your link]\n📩 Contact: [your email]\n\n${hash}`,
-      genTags:['how to','step by step','tips','tutorial','2026']
-    },
-    es:{
-      formulas:{
-        curioso:[
-          t=>`Lo que nadie te cuenta sobre ${t}`,
-          t=>`La verdad sobre ${t} que casi nadie sabe`,
-          t=>`Por qué ${t} funciona (y tú no lo haces)`,
-          t=>`El secreto de ${t} que lo cambió todo`
-        ],
-        urgente:[
-          t=>`DEJA de hacer ${t} mal — míralo antes`,
-          t=>`Cuidado: el error en ${t} que te cuesta todo`,
-          t=>`Haz esto con ${t} HOY (no lo dejes)`,
-          t=>`Nadie te avisa sobre ${t} hasta que es tarde`
-        ],
-        lista:[
-          t=>`5 formas de ${t} que sí funcionan`,
-          t=>`3 errores en ${t} que casi todos cometen`,
-          t=>`7 consejos de ${t} para empezar hoy`,
-          t=>`${cap(t)}: el paso a paso en 4 etapas`
-        ],
-        emocional:[
-          t=>`Ella cambió su vida con ${t} — y tú también puedes`,
-          t=>`La historia de ${t} que te va a emocionar`,
-          t=>`De la nada a todo: cómo ${t} cambió el juego`,
-          t=>`No estás solo con ${t}`
-        ]
-      },
-      desc:(t,kw,hash)=>`${cap(t)} — en este video te lo explico de forma simple y directa.\nSi te ayudó, deja tu 👍 y suscríbete para no perderte los próximos.\n\n▶️ EN ESTE VIDEO:\n• El punto principal sobre ${kw}\n• El paso a paso para aplicar hoy\n• El error más común (y cómo evitarlo)\n\n⏱️ CAPÍTULOS\n00:00 Introducción\n00:00 Parte 1\n00:00 Parte 2\n00:00 Cierre\n\n🔔 Suscríbete: [tu enlace]\n📩 Contacto: [tu correo]\n\n${hash}`,
-      genTags:['cómo hacer','paso a paso','consejos','tutorial','2026']
-    },
-    fr:{
-      formulas:{
-        curioso:[
-          t=>`Ce que personne ne vous dit sur ${t}`,
-          t=>`La vérité sur ${t} que presque personne ne connaît`,
-          t=>`Pourquoi ${t} marche (et pas vous)`,
-          t=>`Le secret de ${t} qui a tout changé`
-        ],
-        urgente:[
-          t=>`ARRÊTEZ de mal faire ${t} — regardez d'abord`,
-          t=>`Attention : l'erreur de ${t} qui vous coûte tout`,
-          t=>`Faites ceci avec ${t} AUJOURD'HUI (n'attendez pas)`,
-          t=>`Personne ne vous prévient sur ${t} avant qu'il soit trop tard`
-        ],
-        lista:[
-          t=>`5 façons de ${t} qui marchent vraiment`,
-          t=>`3 erreurs de ${t} que presque tout le monde fait`,
-          t=>`7 conseils de ${t} pour commencer aujourd'hui`,
-          t=>`${cap(t)} : le pas à pas en 4 étapes`
-        ],
-        emocional:[
-          t=>`Elle a changé de vie avec ${t} — et vous aussi`,
-          t=>`L'histoire de ${t} qui va vous émouvoir`,
-          t=>`De rien à tout : comment ${t} a tout changé`,
-          t=>`Vous n'êtes pas seul avec ${t}`
-        ]
-      },
-      desc:(t,kw,hash)=>`${cap(t)} — dans cette vidéo, je vous explique simplement et directement.\nSi ça vous a aidé, laissez un 👍 et abonnez-vous pour ne rien manquer.\n\n▶️ DANS CETTE VIDÉO :\n• Le point essentiel sur ${kw}\n• Le pas à pas à appliquer aujourd'hui\n• L'erreur la plus courante (et comment l'éviter)\n\n⏱️ CHAPITRES\n00:00 Introduction\n00:00 Partie 1\n00:00 Partie 2\n00:00 Conclusion\n\n🔔 Abonnez-vous : [votre lien]\n📩 Contact : [votre e-mail]\n\n${hash}`,
-      genTags:['comment faire','pas à pas','conseils','tutoriel','2026']
-    }
-  };
+  // ---------- 20 idiomas mais usados ----------
+  const LANGS=[
+    ['pt','🇧🇷 Português'],['en','🇺🇸 English'],['es','🇪🇸 Español'],['fr','🇫🇷 Français'],
+    ['de','🇩🇪 Deutsch'],['it','🇮🇹 Italiano'],['ru','🇷🇺 Русский'],['ar','🇸🇦 العربية'],
+    ['hi','🇮🇳 हिन्दी'],['id','🇮🇩 Bahasa Indonesia'],['ja','🇯🇵 日本語'],['ko','🇰🇷 한국어'],
+    ['zh','🇨🇳 中文'],['tr','🇹🇷 Türkçe'],['nl','🇳🇱 Nederlands'],['pl','🇵🇱 Polski'],
+    ['vi','🇻🇳 Tiếng Việt'],['th','🇹🇭 ไทย'],['fil','🇵🇭 Filipino'],['uk','🇺🇦 Українська']
+  ];
   const TOM_LABEL={curioso:'Curioso',urgente:'Urgente',lista:'Lista',emocional:'Emocional'};
 
   function cap(s){ s=(s||'').trim(); return s? s.charAt(0).toUpperCase()+s.slice(1):s; }
   function low(s){ s=(s||'').trim(); return s? s.charAt(0).toLowerCase()+s.slice(1):s; }
-  function words(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>2); }
-  const STOP=new Set(['para','com','uma','que','dos','das','the','and','for','with','como','how','you','your','sobre','about','los','las','des','les','pour','avec']);
+
+  // Descrição montada a partir de rótulos por idioma (evita 20 textos gigantes propensos a erro)
+  function buildDesc(lg,t,kw,hash){ const D=lg.D;
+    return `${D.hook(cap(t))}\n${D.help}\n\n▶️ ${D.inThis}\n• ${D.b1(kw)}\n• ${D.b2}\n• ${D.b3}\n\n⏱️ ${D.chap}\n00:00 ${D.intro}\n00:00 ${D.part} 1\n00:00 ${D.part} 2\n00:00 ${D.end}\n\n🔔 ${D.sub}: [link]\n📩 ${D.contact}: [e-mail]\n\n${hash}`; }
+
+  const L={
+    pt:{ formulas:{
+        curioso:[t=>`O que ninguém te contou sobre ${t}`,t=>`A verdade sobre ${t} que quase ninguém sabe`,t=>`Por que ${t} funciona (e você não faz)`,t=>`O segredo de ${t} que mudou tudo`],
+        urgente:[t=>`PARE de errar em ${t} — assista antes`,t=>`Cuidado: o erro em ${t} que te faz perder tudo`,t=>`Faça isso com ${t} HOJE (não deixe pra depois)`,t=>`Ninguém te avisa sobre ${t} até ser tarde`],
+        lista:[t=>`5 formas de ${t} que realmente funcionam`,t=>`3 erros em ${t} que quase todo mundo comete`,t=>`7 dicas de ${t} pra começar hoje`,t=>`${cap(t)}: o passo a passo em 4 etapas`],
+        emocional:[t=>`Ela mudou de vida com ${t} — e você também pode`,t=>`A história de ${t} que vai te emocionar`,t=>`De tudo a nada: como ${t} virou o jogo`,t=>`Você não está sozinho com ${t}`]},
+      D:{hook:t=>`${t} — neste vídeo eu te mostro de um jeito simples e direto.`,help:'Se isso te ajudou, deixa o 👍 e se inscreve pra não perder os próximos.',inThis:'NESTE VÍDEO você vai ver:',b1:kw=>`O ponto principal sobre ${kw}`,b2:'O passo a passo pra aplicar hoje',b3:'O erro mais comum (e como evitar)',chap:'CAPÍTULOS',intro:'Introdução',part:'Parte',end:'Conclusão',sub:'Inscreva-se',contact:'Contato'},
+      tags:['como fazer','passo a passo','dicas','tutorial','2026'] },
+
+    en:{ formulas:{
+        curioso:[t=>`What nobody tells you about ${t}`,t=>`The truth about ${t} almost no one knows`,t=>`Why ${t} actually works (and you're missing it)`,t=>`The secret to ${t} that changed everything`],
+        urgente:[t=>`STOP doing ${t} wrong — watch this first`,t=>`Warning: the ${t} mistake that costs you everything`,t=>`Do this with ${t} TODAY (don't wait)`,t=>`No one warns you about ${t} until it's too late`],
+        lista:[t=>`5 ways to ${t} that actually work`,t=>`3 ${t} mistakes almost everyone makes`,t=>`7 ${t} tips to start today`,t=>`${cap(t)}: the step-by-step in 4 stages`],
+        emocional:[t=>`She changed her life with ${t} — and you can too`,t=>`The ${t} story that will move you`,t=>`From nothing to everything: how ${t} flipped the game`,t=>`You're not alone with ${t}`]},
+      D:{hook:t=>`${t} — in this video I break it down simply and directly.`,help:"If this helped, drop a 👍 and subscribe so you don't miss the next ones.",inThis:'IN THIS VIDEO:',b1:kw=>`The main point about ${kw}`,b2:'The step-by-step to apply today',b3:'The most common mistake (and how to avoid it)',chap:'CHAPTERS',intro:'Intro',part:'Part',end:'Wrap-up',sub:'Subscribe',contact:'Contact'},
+      tags:['how to','step by step','tips','tutorial','2026'] },
+
+    es:{ formulas:{
+        curioso:[t=>`Lo que nadie te cuenta sobre ${t}`,t=>`La verdad sobre ${t} que casi nadie sabe`,t=>`Por qué ${t} funciona (y tú no lo haces)`,t=>`El secreto de ${t} que lo cambió todo`],
+        urgente:[t=>`DEJA de hacer ${t} mal — míralo antes`,t=>`Cuidado: el error en ${t} que te cuesta todo`,t=>`Haz esto con ${t} HOY (no lo dejes)`,t=>`Nadie te avisa sobre ${t} hasta que es tarde`],
+        lista:[t=>`5 formas de ${t} que sí funcionan`,t=>`3 errores en ${t} que casi todos cometen`,t=>`7 consejos de ${t} para empezar hoy`,t=>`${cap(t)}: el paso a paso en 4 etapas`],
+        emocional:[t=>`Ella cambió su vida con ${t} — y tú también puedes`,t=>`La historia de ${t} que te va a emocionar`,t=>`De la nada a todo: cómo ${t} cambió el juego`,t=>`No estás solo con ${t}`]},
+      D:{hook:t=>`${t} — en este video te lo explico de forma simple y directa.`,help:'Si te ayudó, deja tu 👍 y suscríbete para no perderte los próximos.',inThis:'EN ESTE VIDEO:',b1:kw=>`El punto principal sobre ${kw}`,b2:'El paso a paso para aplicar hoy',b3:'El error más común (y cómo evitarlo)',chap:'CAPÍTULOS',intro:'Introducción',part:'Parte',end:'Cierre',sub:'Suscríbete',contact:'Contacto'},
+      tags:['cómo hacer','paso a paso','consejos','tutorial','2026'] },
+
+    fr:{ formulas:{
+        curioso:[t=>`Ce que personne ne vous dit sur ${t}`,t=>`La vérité sur ${t} que presque personne ne connaît`,t=>`Pourquoi ${t} marche (et pas vous)`,t=>`Le secret de ${t} qui a tout changé`],
+        urgente:[t=>`ARRÊTEZ de mal faire ${t} — regardez d'abord`,t=>`Attention : l'erreur de ${t} qui vous coûte tout`,t=>`Faites ceci avec ${t} AUJOURD'HUI (n'attendez pas)`,t=>`Personne ne vous prévient sur ${t} avant qu'il soit trop tard`],
+        lista:[t=>`5 façons de ${t} qui marchent vraiment`,t=>`3 erreurs de ${t} que presque tout le monde fait`,t=>`7 conseils de ${t} pour commencer aujourd'hui`,t=>`${cap(t)} : le pas à pas en 4 étapes`],
+        emocional:[t=>`Elle a changé de vie avec ${t} — et vous aussi`,t=>`L'histoire de ${t} qui va vous émouvoir`,t=>`De rien à tout : comment ${t} a tout changé`,t=>`Vous n'êtes pas seul avec ${t}`]},
+      D:{hook:t=>`${t} — dans cette vidéo, je vous explique simplement et directement.`,help:"Si ça vous a aidé, laissez un 👍 et abonnez-vous pour ne rien manquer.",inThis:'DANS CETTE VIDÉO :',b1:kw=>`Le point essentiel sur ${kw}`,b2:"Le pas à pas à appliquer aujourd'hui",b3:"L'erreur la plus courante (et comment l'éviter)",chap:'CHAPITRES',intro:'Introduction',part:'Partie',end:'Conclusion',sub:'Abonnez-vous',contact:'Contact'},
+      tags:['comment faire','pas à pas','conseils','tutoriel','2026'] },
+
+    de:{ formulas:{
+        curioso:[t=>`Die Wahrheit über ${t}, die dir niemand sagt`,t=>`Was du über ${t} nicht weißt`,t=>`Warum ${t} wirklich funktioniert`],
+        urgente:[t=>`HÖR AUF, ${t} falsch zu machen — sieh dir das an`,t=>`Warum du ${t} noch heute ändern solltest`,t=>`Niemand warnt dich vor ${t}, bis es zu spät ist`],
+        lista:[t=>`5 Methoden für ${t}, die wirklich funktionieren`,t=>`3 Fehler bei ${t}, die fast jeder macht`,t=>`7 Tipps für ${t} — fang heute an`],
+        emocional:[t=>`Sie veränderte ihr Leben mit ${t} — und du kannst es auch`,t=>`Die Geschichte von ${t}, die dich berührt`,t=>`Von null auf alles: wie ${t} alles veränderte`]},
+      D:{hook:t=>`${t} — in diesem Video erkläre ich es einfach und direkt.`,help:'Wenn es dir geholfen hat, lass ein 👍 da und abonniere.',inThis:'IN DIESEM VIDEO:',b1:kw=>`Das Wichtigste über ${kw}`,b2:'Die Schritt-für-Schritt-Anleitung für heute',b3:'Der häufigste Fehler (und wie du ihn vermeidest)',chap:'KAPITEL',intro:'Einleitung',part:'Teil',end:'Fazit',sub:'Abonnieren',contact:'Kontakt'},
+      tags:['Anleitung','Tipps','Tutorial','Schritt für Schritt','2026'] },
+
+    it:{ formulas:{
+        curioso:[t=>`La verità su ${t} che nessuno ti dice`,t=>`Quello che non sai su ${t}`,t=>`Perché ${t} funziona davvero`],
+        urgente:[t=>`SMETTI di sbagliare ${t} — guarda prima questo`,t=>`Perché dovresti cambiare ${t} oggi`,t=>`Nessuno ti avverte su ${t} finché non è troppo tardi`],
+        lista:[t=>`5 modi per ${t} che funzionano davvero`,t=>`3 errori su ${t} che fanno quasi tutti`,t=>`7 consigli su ${t} da iniziare oggi`],
+        emocional:[t=>`Ha cambiato vita con ${t} — e puoi farlo anche tu`,t=>`La storia di ${t} che ti emozionerà`,t=>`Dal nulla al successo: la storia di ${t}`]},
+      D:{hook:t=>`${t} — in questo video te lo spiego in modo semplice e diretto.`,help:'Se ti è stato utile, lascia un 👍 e iscriviti per non perdere i prossimi.',inThis:'IN QUESTO VIDEO:',b1:kw=>`Il punto principale su ${kw}`,b2:'Il passo dopo passo da applicare oggi',b3:"L'errore più comune (e come evitarlo)",chap:'CAPITOLI',intro:'Introduzione',part:'Parte',end:'Conclusione',sub:'Iscriviti',contact:'Contatti'},
+      tags:['come fare','passo dopo passo','consigli','tutorial','2026'] },
+
+    ru:{ formulas:{
+        curioso:[t=>`Правда о ${t}, которую вам никто не расскажет`,t=>`То, чего вы не знаете о ${t}`,t=>`Почему ${t} действительно работает`],
+        urgente:[t=>`ХВАТИТ делать ${t} неправильно — сначала посмотрите`,t=>`Почему стоит изменить ${t} уже сегодня`,t=>`Никто не предупреждает о ${t}, пока не поздно`],
+        lista:[t=>`5 способов ${t}, которые реально работают`,t=>`3 ошибки в ${t}, которые делают почти все`,t=>`7 советов о ${t} — начните сегодня`],
+        emocional:[t=>`Она изменила жизнь благодаря ${t} — и вы сможете`,t=>`История ${t}, которая вас тронет`,t=>`С нуля к успеху: история ${t}`]},
+      D:{hook:t=>`${t} — в этом видео объясняю просто и по делу.`,help:'Если это помогло, поставьте 👍 и подпишитесь, чтобы не пропустить новое.',inThis:'В ЭТОМ ВИДЕО:',b1:kw=>`Главное о ${kw}`,b2:'Пошаговый план, чтобы применить сегодня',b3:'Самая частая ошибка (и как её избежать)',chap:'ГЛАВЫ',intro:'Вступление',part:'Часть',end:'Итог',sub:'Подписаться',contact:'Контакт'},
+      tags:['как сделать','советы','пошагово','инструкция','2026'] },
+
+    ar:{ formulas:{
+        curioso:[t=>`الحقيقة عن ${t} التي لا يخبرك بها أحد`,t=>`ما لا تعرفه عن ${t}`,t=>`لماذا ينجح ${t} فعلاً`],
+        urgente:[t=>`توقف عن ${t} بطريقة خاطئة — شاهد أولاً`,t=>`لماذا يجب تغيير ${t} الآن`,t=>`لا أحد يحذرك من ${t} حتى فوات الأوان`],
+        lista:[t=>`5 طرق لـ ${t} تعمل حقاً`,t=>`3 أخطاء في ${t} يقع فيها الجميع`,t=>`7 نصائح عن ${t} ابدأ اليوم`],
+        emocional:[t=>`غيّرت حياتها بـ ${t} — وأنت أيضاً تستطيع`,t=>`قصة ${t} التي ستلمس قلبك`,t=>`من الصفر إلى القمة: قصة ${t}`]},
+      D:{hook:t=>`${t} — في هذا الفيديو أشرح لك ببساطة ووضوح.`,help:'إذا أفادك هذا، اترك 👍 واشترك حتى لا تفوتك الفيديوهات القادمة.',inThis:'في هذا الفيديو:',b1:kw=>`النقطة الأساسية حول ${kw}`,b2:'الخطوات العملية لتطبيقها اليوم',b3:'الخطأ الأكثر شيوعاً (وكيف تتجنبه)',chap:'الفصول',intro:'مقدمة',part:'الجزء',end:'الخاتمة',sub:'اشترك',contact:'للتواصل'},
+      tags:['كيفية','شرح','نصائح','خطوة بخطوة','2026'] },
+
+    hi:{ formulas:{
+        curioso:[t=>`${t} के बारे में वो सच जो कोई नहीं बताता`,t=>`${t} की वो बात जो आप नहीं जानते`,t=>`${t} असल में क्यों काम करता है`],
+        urgente:[t=>`${t} में गलती करने से पहले ये देखें`,t=>`अभी ${t} बदलने की वजह`,t=>`देर होने से पहले जानें ${t}`],
+        lista:[t=>`${t} के 5 तरीके जो सच में काम करते हैं`,t=>`${t} की 3 गलतियाँ जो सब करते हैं`,t=>`आज से शुरू करें ${t} के 7 टिप्स`],
+        emocional:[t=>`${t} से बदली ज़िंदगी — आप भी बदल सकते हैं`,t=>`${t} की कहानी जो दिल छू लेगी`,t=>`शून्य से शुरुआत: ${t} की कहानी`]},
+      D:{hook:t=>`${t} — इस वीडियो में मैं आसान और सीधे तरीके से बताता हूँ।`,help:'अगर मदद मिली तो 👍 दबाएँ और चैनल सब्सक्राइब करें।',inThis:'इस वीडियो में:',b1:kw=>`${kw} की सबसे ज़रूरी बात`,b2:'आज से लागू करने का स्टेप बाय स्टेप',b3:'सबसे आम गलती (और उससे कैसे बचें)',chap:'चैप्टर',intro:'परिचय',part:'भाग',end:'निष्कर्ष',sub:'सब्सक्राइब करें',contact:'संपर्क'},
+      tags:['कैसे करें','टिप्स','ट्यूटोरियल','स्टेप बाय स्टेप','2026'] },
+
+    id:{ formulas:{
+        curioso:[t=>`Kebenaran tentang ${t} yang tak ada yang beri tahu`,t=>`Yang tidak kamu tahu tentang ${t}`,t=>`Kenapa ${t} benar-benar berhasil`],
+        urgente:[t=>`BERHENTI melakukan ${t} yang salah — tonton dulu`,t=>`Alasan kamu harus ubah ${t} hari ini`,t=>`Tak ada yang peringatkan soal ${t} sampai terlambat`],
+        lista:[t=>`5 cara ${t} yang benar-benar berhasil`,t=>`3 kesalahan ${t} yang hampir semua orang lakukan`,t=>`7 tips ${t} mulai hari ini`],
+        emocional:[t=>`Dia mengubah hidup dengan ${t} — kamu juga bisa`,t=>`Kisah ${t} yang menyentuh hatimu`,t=>`Dari nol ke sukses: kisah ${t}`]},
+      D:{hook:t=>`${t} — di video ini aku jelaskan dengan sederhana dan langsung.`,help:'Kalau ini membantu, tinggalkan 👍 dan subscribe biar nggak ketinggalan.',inThis:'DI VIDEO INI:',b1:kw=>`Poin utama tentang ${kw}`,b2:'Langkah demi langkah untuk diterapkan hari ini',b3:'Kesalahan paling umum (dan cara menghindarinya)',chap:'BAB',intro:'Pembuka',part:'Bagian',end:'Penutup',sub:'Subscribe',contact:'Kontak'},
+      tags:['cara','tips','tutorial','langkah demi langkah','2026'] },
+
+    ja:{ formulas:{
+        curioso:[t=>`誰も教えてくれない${t}の真実`,t=>`${t}について実は知らないこと`,t=>`${t}がうまくいく本当の理由`],
+        urgente:[t=>`【警告】${t}で失敗する前に見て`,t=>`今すぐ${t}を見直すべき理由`,t=>`手遅れになる前に知る${t}`],
+        lista:[t=>`本当に効果がある${t}の5つの方法`,t=>`ほとんどの人がやる${t}の3つの間違い`,t=>`今日から始める${t}の7つのコツ`],
+        emocional:[t=>`${t}で人生が変わった話`,t=>`${t}に悩むあなたへ`,t=>`ゼロから始めた${t}の物語`]},
+      D:{hook:t=>`${t} — この動画ではシンプルにわかりやすく解説します。`,help:'役に立ったら👍とチャンネル登録をお願いします。',inThis:'この動画の内容:',b1:kw=>`${kw}の一番大事なポイント`,b2:'今日から使えるステップ',b3:'よくある間違い（と回避法）',chap:'チャプター',intro:'イントロ',part:'パート',end:'まとめ',sub:'チャンネル登録',contact:'お問い合わせ'},
+      tags:['やり方','コツ','初心者','解説','2026'] },
+
+    ko:{ formulas:{
+        curioso:[t=>`아무도 알려주지 않는 ${t}의 진실`,t=>`${t}에 대해 몰랐던 사실`,t=>`${t}이 통하는 진짜 이유`],
+        urgente:[t=>`${t} 실수하기 전에 꼭 보세요`,t=>`지금 당장 ${t}를 바꿔야 하는 이유`,t=>`늦기 전에 알아야 할 ${t}`],
+        lista:[t=>`정말 효과 있는 ${t} 5가지 방법`,t=>`대부분 하는 ${t} 실수 3가지`,t=>`오늘부터 시작하는 ${t} 팁 7가지`],
+        emocional:[t=>`${t}로 인생이 바뀐 이야기`,t=>`${t} 때문에 힘든 당신에게`,t=>`맨손에서 시작한 ${t} 이야기`]},
+      D:{hook:t=>`${t} — 이 영상에서 쉽고 간단하게 알려드립니다.`,help:'도움이 됐다면 👍와 구독 부탁드려요.',inThis:'이 영상에서:',b1:kw=>`${kw}의 핵심 포인트`,b2:'오늘 바로 적용하는 단계',b3:'가장 흔한 실수 (와 피하는 법)',chap:'챕터',intro:'인트로',part:'파트',end:'마무리',sub:'구독',contact:'문의'},
+      tags:['방법','꿀팁','초보','튜토리얼','2026'] },
+
+    zh:{ formulas:{
+        curioso:[t=>`没人告诉你的${t}真相`,t=>`关于${t}你其实不知道的事`,t=>`${t}真正有效的原因`],
+        urgente:[t=>`别再做错${t}了，先看这个`,t=>`现在就该改变${t}的理由`,t=>`太晚之前一定要知道的${t}`],
+        lista:[t=>`真正有效的5个${t}方法`,t=>`几乎所有人都会犯的3个${t}错误`,t=>`今天就能开始的7个${t}技巧`],
+        emocional:[t=>`她用${t}改变了人生，你也可以`,t=>`一个关于${t}的故事`,t=>`从零开始的${t}故事`]},
+      D:{hook:t=>`${t} — 这个视频用最简单直接的方式讲给你听。`,help:'如果对你有帮助，点个👍并订阅，别错过下一期。',inThis:'本视频内容：',b1:kw=>`关于${kw}的关键点`,b2:'今天就能用的步骤',b3:'最常见的错误（以及如何避免）',chap:'章节',intro:'开场',part:'第',end:'总结',sub:'订阅',contact:'联系'},
+      tags:['怎么做','教程','技巧','新手','2026'] },
+
+    tr:{ formulas:{
+        curioso:[t=>`${t} hakkında kimsenin söylemediği gerçek`,t=>`${t} hakkında bilmediğin şey`,t=>`${t} neden gerçekten işe yarıyor`],
+        urgente:[t=>`${t} yanlış yapmayı BIRAK — önce bunu izle`,t=>`${t} bugün değiştirmen için sebep`,t=>`Çok geç olmadan ${t} hakkında bil`],
+        lista:[t=>`Gerçekten işe yarayan 5 ${t} yöntemi`,t=>`Neredeyse herkesin yaptığı 3 ${t} hatası`,t=>`Bugün başla: 7 ${t} ipucu`],
+        emocional:[t=>`${t} ile hayatını değiştirdi — sen de yapabilirsin`,t=>`Seni etkileyecek ${t} hikayesi`,t=>`Sıfırdan zirveye: ${t} hikayesi`]},
+      D:{hook:t=>`${t} — bu videoda sana basit ve net anlatıyorum.`,help:'Faydalı olduysa 👍 bırak ve abone ol, yenilerini kaçırma.',inThis:'BU VİDEODA:',b1:kw=>`${kw} hakkında en önemli nokta`,b2:'Bugün uygulayabileceğin adımlar',b3:'En sık yapılan hata (ve nasıl önlenir)',chap:'BÖLÜMLER',intro:'Giriş',part:'Bölüm',end:'Kapanış',sub:'Abone ol',contact:'İletişim'},
+      tags:['nasıl yapılır','ipuçları','rehber','adım adım','2026'] },
+
+    nl:{ formulas:{
+        curioso:[t=>`De waarheid over ${t} die niemand je vertelt`,t=>`Wat je niet weet over ${t}`,t=>`Waarom ${t} echt werkt`],
+        urgente:[t=>`STOP met ${t} verkeerd doen — bekijk dit eerst`,t=>`Waarom je ${t} vandaag nog moet veranderen`,t=>`Niemand waarschuwt je voor ${t} tot het te laat is`],
+        lista:[t=>`5 manieren voor ${t} die echt werken`,t=>`3 fouten bij ${t} die bijna iedereen maakt`,t=>`7 tips voor ${t} — begin vandaag`],
+        emocional:[t=>`Ze veranderde haar leven met ${t} — en jij kan het ook`,t=>`Het verhaal van ${t} dat je raakt`,t=>`Van niets naar succes: het verhaal van ${t}`]},
+      D:{hook:t=>`${t} — in deze video leg ik het simpel en direct uit.`,help:'Als dit hielp, laat een 👍 achter en abonneer je.',inThis:'IN DEZE VIDEO:',b1:kw=>`Het belangrijkste over ${kw}`,b2:'De stap-voor-stap om vandaag toe te passen',b3:'De meest gemaakte fout (en hoe je die voorkomt)',chap:'HOOFDSTUKKEN',intro:'Intro',part:'Deel',end:'Afsluiting',sub:'Abonneren',contact:'Contact'},
+      tags:['hoe doe je','tips','tutorial','stap voor stap','2026'] },
+
+    pl:{ formulas:{
+        curioso:[t=>`Prawda o ${t}, której nikt ci nie powie`,t=>`Czego nie wiesz o ${t}`,t=>`Dlaczego ${t} naprawdę działa`],
+        urgente:[t=>`PRZESTAŃ robić ${t} źle — najpierw to zobacz`,t=>`Dlaczego warto zmienić ${t} już dziś`,t=>`Nikt cię nie ostrzega przed ${t}, aż będzie za późno`],
+        lista:[t=>`5 sposobów na ${t}, które naprawdę działają`,t=>`3 błędy w ${t}, które robi prawie każdy`,t=>`7 wskazówek o ${t} — zacznij dziś`],
+        emocional:[t=>`Zmieniła życie dzięki ${t} — i ty też możesz`,t=>`Historia ${t}, która cię poruszy`,t=>`Od zera do sukcesu: historia ${t}`]},
+      D:{hook:t=>`${t} — w tym filmie tłumaczę prosto i konkretnie.`,help:'Jeśli to pomogło, zostaw 👍 i zasubskrybuj.',inThis:'W TYM FILMIE:',b1:kw=>`Najważniejsze o ${kw}`,b2:'Krok po kroku do zastosowania dziś',b3:'Najczęstszy błąd (i jak go uniknąć)',chap:'ROZDZIAŁY',intro:'Wstęp',part:'Część',end:'Podsumowanie',sub:'Subskrybuj',contact:'Kontakt'},
+      tags:['jak zrobić','porady','poradnik','krok po kroku','2026'] },
+
+    vi:{ formulas:{
+        curioso:[t=>`Sự thật về ${t} mà không ai nói cho bạn`,t=>`Điều bạn chưa biết về ${t}`,t=>`Vì sao ${t} thực sự hiệu quả`],
+        urgente:[t=>`DỪNG làm ${t} sai cách — xem ngay`,t=>`Lý do bạn nên thay đổi ${t} ngay hôm nay`,t=>`Không ai cảnh báo bạn về ${t} cho đến khi quá muộn`],
+        lista:[t=>`5 cách ${t} thực sự hiệu quả`,t=>`3 sai lầm về ${t} hầu như ai cũng mắc`,t=>`7 mẹo ${t} bắt đầu ngay hôm nay`],
+        emocional:[t=>`Cô ấy thay đổi cuộc đời nhờ ${t} — bạn cũng có thể`,t=>`Câu chuyện ${t} sẽ chạm đến trái tim bạn`,t=>`Từ số 0 đến thành công: câu chuyện ${t}`]},
+      D:{hook:t=>`${t} — trong video này mình giải thích đơn giản và trực tiếp.`,help:'Nếu hữu ích, hãy để lại 👍 và đăng ký để không bỏ lỡ.',inThis:'TRONG VIDEO NÀY:',b1:kw=>`Điểm chính về ${kw}`,b2:'Các bước để áp dụng ngay hôm nay',b3:'Sai lầm phổ biến nhất (và cách tránh)',chap:'CHƯƠNG',intro:'Mở đầu',part:'Phần',end:'Kết',sub:'Đăng ký',contact:'Liên hệ'},
+      tags:['cách làm','mẹo','hướng dẫn','từng bước','2026'] },
+
+    th:{ formulas:{
+        curioso:[t=>`ความจริงเกี่ยวกับ${t}ที่ไม่มีใครบอกคุณ`,t=>`สิ่งที่คุณไม่รู้เกี่ยวกับ${t}`,t=>`ทำไม${t}ถึงได้ผลจริง`],
+        urgente:[t=>`หยุดทำ${t}ผิดๆ — ดูอันนี้ก่อน`,t=>`เหตุผลที่ต้องเปลี่ยน${t}เดี๋ยวนี้`,t=>`รู้ไว้ก่อนสายเกินไปเรื่อง${t}`],
+        lista:[t=>`5 วิธี${t}ที่ได้ผลจริง`,t=>`3 ข้อผิดพลาดเรื่อง${t}ที่เกือบทุกคนทำ`,t=>`7 เคล็ดลับ${t}เริ่มวันนี้`],
+        emocional:[t=>`เธอเปลี่ยนชีวิตด้วย${t} — คุณก็ทำได้`,t=>`เรื่องราวของ${t}ที่จะสัมผัสใจคุณ`,t=>`จากศูนย์สู่ความสำเร็จ: เรื่องของ${t}`]},
+      D:{hook:t=>`${t} — ในคลิปนี้ผมอธิบายแบบง่ายและตรงประเด็น`,help:'ถ้าเป็นประโยชน์ กด 👍 และกดติดตามไว้นะครับ',inThis:'ในคลิปนี้:',b1:kw=>`จุดสำคัญเกี่ยวกับ ${kw}`,b2:'ขั้นตอนที่ใช้ได้เลยวันนี้',b3:'ข้อผิดพลาดที่พบบ่อยที่สุด (และวิธีเลี่ยง)',chap:'บท',intro:'เกริ่นนำ',part:'ตอนที่',end:'สรุป',sub:'ติดตาม',contact:'ติดต่อ'},
+      tags:['วิธีทำ','เคล็ดลับ','สอน','ทีละขั้นตอน','2026'] },
+
+    fil:{ formulas:{
+        curioso:[t=>`Ang totoo tungkol sa ${t} na walang nagsasabi sa'yo`,t=>`Ang hindi mo alam tungkol sa ${t}`,t=>`Bakit talaga gumagana ang ${t}`],
+        urgente:[t=>`ITIGIL ang maling ${t} — panoorin muna ito`,t=>`Dahilan kung bakit dapat baguhin ang ${t} ngayon`,t=>`Walang magsasabi sa'yo tungkol sa ${t} hanggang huli na`],
+        lista:[t=>`5 paraan ng ${t} na talagang epektibo`,t=>`3 pagkakamali sa ${t} na halos lahat ginagawa`,t=>`7 tips sa ${t} — simulan ngayon`],
+        emocional:[t=>`Binago niya ang buhay gamit ang ${t} — kaya mo rin`,t=>`Ang kwento ng ${t} na tatagos sa puso mo`,t=>`Mula sa wala tungo sa tagumpay: kwento ng ${t}`]},
+      D:{hook:t=>`${t} — sa video na ito, ipapaliwanag ko nang simple at diretso.`,help:'Kung nakatulong ito, mag-iwan ng 👍 at mag-subscribe.',inThis:'SA VIDEO NA ITO:',b1:kw=>`Ang pinakamahalaga tungkol sa ${kw}`,b2:'Ang hakbang-hakbang na magagamit ngayon',b3:'Ang pinakakaraniwang pagkakamali (at paano iwasan)',chap:'MGA KABANATA',intro:'Panimula',part:'Bahagi',end:'Pagtatapos',sub:'Mag-subscribe',contact:'Kontak'},
+      tags:['paano gawin','tips','tutorial','hakbang-hakbang','2026'] },
+
+    uk:{ formulas:{
+        curioso:[t=>`Правда про ${t}, яку ніхто не розповідає`,t=>`Те, чого ви не знаєте про ${t}`,t=>`Чому ${t} справді працює`],
+        urgente:[t=>`ПРИПИНІТЬ робити ${t} неправильно — спершу подивіться`,t=>`Чому варто змінити ${t} вже сьогодні`,t=>`Ніхто не попереджає про ${t}, поки не пізно`],
+        lista:[t=>`5 способів ${t}, що справді працюють`,t=>`3 помилки в ${t}, які роблять майже всі`,t=>`7 порад щодо ${t} — почніть сьогодні`],
+        emocional:[t=>`Вона змінила життя завдяки ${t} — і ви зможете`,t=>`Історія ${t}, що зачепить за живе`,t=>`Від нуля до успіху: історія ${t}`]},
+      D:{hook:t=>`${t} — у цьому відео пояснюю просто й по суті.`,help:'Якщо це допомогло, залиште 👍 та підпишіться.',inThis:'У ЦЬОМУ ВІДЕО:',b1:kw=>`Головне про ${kw}`,b2:'Покроковий план, щоб застосувати сьогодні',b3:'Найпоширеніша помилка (і як її уникнути)',chap:'РОЗДІЛИ',intro:'Вступ',part:'Частина',end:'Підсумок',sub:'Підписатися',contact:'Контакт'},
+      tags:['як зробити','поради','покроково','туторіал','2026'] }
+  };
+
+  // extração de palavras que funciona em qualquer alfabeto (latino, cirílico, árabe, CJK…)
+  function words(s){ return (s||'').toLowerCase().replace(/[^\p{L}\p{N}\s]+/gu,' ').split(/\s+/).filter(w=>w.length>1); }
+  const STOP=new Set(['para','com','uma','que','dos','das','the','and','for','with','como','how','you','your','sobre','about','los','las','des','les','pour','avec','der','die','und','für','mit']);
   function pick(arr,n){ const a=arr.slice(); const o=[]; while(a.length&&o.length<n)o.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); return o; }
 
-  // ---------- Estado / UI ----------
   const el=id=>document.getElementById(id);
   const nSel=el('nicho'); NICHES.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;nSel.appendChild(o);});
+  const lSel=el('lang'); LANGS.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;lSel.appendChild(o);});
   let lang='pt', tom='all';
-  el('lang').querySelectorAll('button').forEach(b=>b.onclick=()=>{lang=b.dataset.l;el('lang').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));});
+  lSel.onchange=()=>lang=lSel.value;
   el('tom').querySelectorAll('button').forEach(b=>b.onclick=()=>{tom=b.dataset.t;el('tom').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));});
 
   function toast(m){ const t=el('toast')||(()=>{const d=document.createElement('div');d.id='toast';document.body.appendChild(d);return d;})(); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1800); }
   function copyText(str,btn){ navigator.clipboard.writeText(str).then(()=>{ if(btn){const o=btn.textContent;btn.textContent='✓ Copiado';btn.classList.add('ok');setTimeout(()=>{btn.textContent=o;btn.classList.remove('ok');},1400);} toast('Copiado! 📋'); }).catch(()=>toast('Selecione e copie manual')); }
 
   function buildTitles(tema){ const F=L[lang].formulas; const toms = tom==='all'?['curioso','urgente','lista','emocional']:[tom];
-    let out=[]; toms.forEach(k=>{ const chosen = tom==='all'? pick(F[k],2) : F[k]; chosen.forEach(fn=>out.push({tom:k,t:fn(low(tema))})); });
+    let out=[]; toms.forEach(k=>{ const arr=F[k]||[]; const chosen = tom==='all'? pick(arr,Math.min(2,arr.length)) : arr; chosen.forEach(fn=>out.push({tom:k,t:fn(low(tema))})); });
     return out; }
 
-  function tagsFor(tema,kw){ const base=NICHE_TAGS[nSel.value]||NICHE_TAGS.generico; const gen=L[lang].genTags;
-    let raw=[...words(kw), ...words(tema)].filter(w=>!STOP.has(w));
-    const kws=[]; raw.forEach(w=>{ if(!kws.includes(w))kws.push(w); });
-    const key=(kw||tema).trim().toLowerCase();
-    let set=[]; const push=x=>{ x=x.trim(); if(x&&!set.some(s=>s.toLowerCase()===x.toLowerCase()))set.push(x); };
-    if(key)push(key); kws.slice(0,4).forEach(push); base.forEach(push); gen.forEach(push);
-    // corta pra caber no limite de 500 caracteres do YouTube
-    let acc=[],len=0; for(const t of set){ const add=(acc.length?2:0)+t.length; if(len+add>480)break; acc.push(t); len+=add; }
-    return acc; }
+  function tagsFor(tema,kw){ const lg=L[lang]; const set=[]; const push=x=>{ x=(x||'').trim(); if(x&&!set.some(s=>s.toLowerCase()===x.toLowerCase()))set.push(x); };
+    const key=(kw||tema).trim(); if(key)push(key);
+    const kws=[...words(kw),...words(tema)].filter(w=>!STOP.has(w)); kws.slice(0,5).forEach(push);
+    if(lang==='pt')(NICHE_TAGS[nSel.value]||NICHE_TAGS.generico).forEach(push);
+    (lg.tags||[]).forEach(push);
+    let acc=[],len=0; for(const t of set){ const add=(acc.length?2:0)+t.length; if(len+add>480)break; acc.push(t); len+=add; } return acc; }
 
-  function hashFor(tema,kw){ const base=NICHE_TAGS[nSel.value]||NICHE_TAGS.generico; const seed=[...words(kw),...words(tema)].filter(w=>!STOP.has(w));
-    const pool=[...seed.slice(0,3), ...base.slice(0,3)].map(w=>'#'+w.replace(/\s+/g,'')); const uniq=[]; pool.forEach(h=>{if(!uniq.includes(h)&&h.length>2)uniq.push(h);}); return uniq.slice(0,6); }
+  function hashFor(tema,kw){ const lg=L[lang]; const seed=[...words(kw),...words(tema)].filter(w=>!STOP.has(w));
+    const pool=[...seed.slice(0,3), ...(lg.tags||[]).slice(0,3)].map(w=>'#'+w.replace(/\s+/g,'')); const uniq=[]; pool.forEach(h=>{if(!uniq.includes(h)&&h.length>2)uniq.push(h);}); return uniq.slice(0,6); }
 
-  let last=null;
   function generate(){ const tema=el('tema').value.trim(); if(!tema){ toast('Escreva o assunto do vídeo 🙂'); el('tema').focus(); return; }
-    const kw=el('kw').value.trim()||tema; last={tema,kw};
+    const kw=el('kw').value.trim()||tema; const lg=L[lang];
     el('empty').style.display='none'; el('res').style.display='flex'; el('regen').style.display='block';
-    // Títulos
     const titles=buildTitles(tema); el('tcount').textContent=titles.length+' opções';
     const box=el('titles'); box.innerHTML='';
     titles.forEach(o=>{ const d=document.createElement('div'); d.className='tline';
-      const long=o.t.length>60; d.innerHTML='<div class="txt"><span class="tag-form">'+TOM_LABEL[o.tom]+'</span></div><button class="copy">⧉</button>';
-      d.querySelector('.txt').insertAdjacentText('beforeend',o.t);
-      const len=document.createElement('span'); len.className='len'; len.textContent=o.t.length+'c'; len.style.color=long?'var(--warn)':'var(--good)'; d.querySelector('.txt').appendChild(document.createElement('br')); d.querySelector('.txt').appendChild(len);
-      const cp=()=>copyText(o.t,d.querySelector('.copy')); d.onclick=cp; box.appendChild(d); });
-    // Descrição
+      d.innerHTML='<div class="txt" dir="auto"><span class="tag-form">'+TOM_LABEL[o.tom]+'</span></div><button class="copy">⧉</button>';
+      const txt=d.querySelector('.txt'); txt.insertAdjacentText('beforeend',o.t);
+      const long=o.t.length>60; const len=document.createElement('span'); len.className='len'; len.textContent=o.t.length+'c'; len.style.color=long?'var(--warn)':'var(--good)';
+      txt.appendChild(document.createElement('br')); txt.appendChild(len);
+      d.onclick=()=>copyText(o.t,d.querySelector('.copy')); box.appendChild(d); });
     const hashArr=hashFor(tema,kw); const hashLine=hashArr.join(' ');
-    const desc=L[lang].desc(tema,kw,hashLine); el('desc').textContent=desc; el('descLen').textContent=desc.length+' caracteres';
-    // Tags
-    const tags=tagsFor(tema,kw); const tb=el('tags'); tb.innerHTML=''; tags.forEach(t=>{const s=document.createElement('span');s.className='tag';s.textContent=t;tb.appendChild(s);});
+    const desc = lg.desc ? lg.desc(tema,kw,hashLine) : buildDesc(lg,tema,kw,hashLine);
+    el('desc').textContent=desc; el('descLen').textContent=desc.length+' caracteres';
+    const tags=tagsFor(tema,kw); const tb=el('tags'); tb.innerHTML=''; tags.forEach(t=>{const s=document.createElement('span');s.className='tag';s.dir='auto';s.textContent=t;tb.appendChild(s);});
     const tlen=tags.join(', ').length; el('tagLen').innerHTML='<span class="'+(tlen>500?'warn':'good')+'">'+tlen+'/500 caracteres</span>';
-    // Hashtags
-    const hb=el('hash'); hb.innerHTML=''; hashArr.forEach(h=>{const s=document.createElement('span');s.className='tag';s.textContent=h;hb.appendChild(s);});
+    const hb=el('hash'); hb.innerHTML=''; hashArr.forEach(h=>{const s=document.createElement('span');s.className='tag';s.dir='auto';s.textContent=h;hb.appendChild(s);});
     el('copyDesc').onclick=()=>copyText(desc,el('copyDesc'));
     el('copyTags').onclick=()=>copyText(tags.join(', '),el('copyTags'));
     el('copyHash').onclick=()=>copyText(hashLine,el('copyHash'));
