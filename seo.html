@@ -74,6 +74,9 @@
           <input type="text" id="kw" placeholder="Ex.: economizar dinheiro"></div>
         <div class="field"><label>Título do vídeo (opcional — dá contexto à descrição)</label>
           <input type="text" id="titulo" placeholder="Cole um título — ou clique em “usar” num gerado abaixo"></div>
+        <div class="field"><label>Roteiro do vídeo (opcional — pra ferramenta ENTENDER o conteúdo)</label>
+          <textarea id="roteiro" rows="4" placeholder="Cole o texto/roteiro do vídeo. A ferramenta lê e puxa os temas e palavras-chave reais — deixa título, descrição e tags bem mais certeiros."></textarea>
+          <div id="detected" class="tags" style="margin-top:2px"></div></div>
         <div class="field"><label>Nicho</label>
           <select id="nicho"></select></div>
         <div class="field"><label>Idioma (20 mais usados)</label>
@@ -88,7 +91,7 @@
           </div></div>
         <button class="btn" id="gen">✨ Gerar SEO</button>
         <button class="btn ghost" id="regen" style="display:none">🔄 Gerar outras opções</button>
-        <div class="tip">100% no navegador, <b>custo zero</b>. A descrição sai <b>moldada pelo nicho</b> e com <b>SEO forte</b> (palavra-chave no topo + termos relacionados + capítulos). Não precisa colar seu roteiro — o assunto, o título e o nicho dão o contexto.</div>
+        <div class="tip">100% no navegador, <b>custo zero</b>. A descrição sai <b>moldada pelo nicho</b> e com <b>SEO forte</b>. Não precisa do roteiro — mas se você <b>colar o roteiro</b>, a ferramenta LÊ o texto e deixa título, descrição e tags ainda mais certeiros.</div>
       </div>
     </div>
 
@@ -327,13 +330,13 @@
   };
 
   function words(s){ return (s||'').toLowerCase().replace(/[^\p{L}\p{N}\s]+/gu,' ').split(/\s+/).filter(w=>w.length>1); }
-  const STOP=new Set(['para','com','uma','que','dos','das','the','and','for','with','como','how','you','your','sobre','about','los','las','des','les','pour','avec','der','die','und','für','mit']);
+  const STOP=new Set(['para','pra','com','uma','uns','umas','que','dos','das','nas','nos','aos','pelo','pela','por','isso','esse','essa','este','esta','num','numa','era','foi','ser','tem','seu','sua','meu','minha','ele','ela','dele','dela','mais','muito','muita','quando','onde','porque','bem','tambem','entao','assim','aqui','ali','cada','todo','toda','todos','todas','the','and','for','with','from','have','has','was','were','will','just','they','them','their','what','when','where','why','are','our','you','your','this','that','como','how','sobre','about','los','las','del','una','uno','pero','sus','eso','ese','muy','cuando','donde','des','les','pour','avec','dans','cette','sont','plus','der','die','und','für','mit']);
   function pick(arr,n){ const a=arr.slice(); const o=[]; while(a.length&&o.length<n)o.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); return o; }
 
   const el=id=>document.getElementById(id);
   const nSel=el('nicho'); NICHES.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;nSel.appendChild(o);});
   const lSel=el('lang'); LANGS.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;lSel.appendChild(o);});
-  let lang='pt', tom='all', lastTema='', lastKw='';
+  let lang='pt', tom='all', lastTema='', lastKw='', scriptKW=[];
   lSel.onchange=()=>{lang=lSel.value; if(el('res').style.display!=='none')refreshDesc();};
   nSel.onchange=()=>{ if(el('res').style.display!=='none')refreshDesc(); };
   el('tom').querySelectorAll('button').forEach(b=>b.onclick=()=>{tom=b.dataset.t;el('tom').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));});
@@ -345,13 +348,28 @@
     let out=[]; toms.forEach(k=>{ const arr=F[k]||[]; const chosen = tom==='all'? pick(arr,Math.min(2,arr.length)) : arr; chosen.forEach(fn=>out.push({tom:k,t:fn(low(tema))})); });
     return out; }
 
+  // ---- Lê o ROTEIRO e entende o conteúdo: expressões (2 palavras) e palavras mais repetidas ----
+  function extractKW(text){ const w=words(text).filter(x=>!STOP.has(x)&&x.length>2);
+    const uf={}; w.forEach(x=>uf[x]=(uf[x]||0)+1);
+    const bf={}; for(let i=0;i<w.length-1;i++){ const bg=w[i]+' '+w[i+1]; bf[bg]=(bf[bg]||0)+1; }
+    const topB=Object.keys(bf).filter(k=>bf[k]>=2).sort((a,b)=>bf[b]-bf[a]).slice(0,5);
+    const topU=Object.keys(uf).sort((a,b)=>uf[b]-uf[a]).slice(0,10);
+    const out=[]; const push=x=>{ if(x&&!out.some(s=>s.toLowerCase()===x.toLowerCase()))out.push(x); };
+    topB.forEach(push); topU.forEach(push); return out.slice(0,10); }
+  function firstSentence(t){ const s=(t||'').replace(/\s+/g,' ').trim(); const m=(s.split(/[.!?。！？\n]/)[0]||s).trim(); return m.length>95? m.slice(0,95).trim()+'…' : m; }
+  function renderDetected(){ const box=el('detected'); if(!box)return; box.innerHTML='';
+    if(!scriptKW.length)return;
+    const lbl=document.createElement('span'); lbl.style.cssText='font-size:11px;color:var(--muted);width:100%;line-height:1.4'; lbl.textContent='🔍 Li o roteiro e achei (clique pra usar como palavra-chave):'; box.appendChild(lbl);
+    scriptKW.slice(0,8).forEach(k=>{ const s=document.createElement('span'); s.className='tag'; s.style.cursor='pointer'; s.dir='auto'; s.textContent=k; s.title='Usar como palavra-chave'; s.onclick=()=>{ el('kw').value=k; lastKw=k; if(el('res').style.display!=='none')refreshDesc(); toast('Palavra-chave: '+k); }; box.appendChild(s); }); }
+
   function relatedFor(tema,kw){ const bank=(NK[lang]&&NK[lang][nSel.value])||L[lang].tags||[];
     const userw=[...words(kw),...words(tema)].filter(w=>!STOP.has(w));
     const out=[]; const push=x=>{ x=(x||'').trim(); if(x&&!out.some(s=>s.toLowerCase()===x.toLowerCase()))out.push(x); };
-    bank.forEach(push); userw.slice(0,2).forEach(push); return out.slice(0,6); }
+    scriptKW.slice(0,3).forEach(push); bank.forEach(push); userw.slice(0,2).forEach(push); return out.slice(0,6); }
 
   function tagsFor(tema,kw){ const lg=L[lang]; const set=[]; const push=x=>{ x=(x||'').trim(); if(x&&!set.some(s=>s.toLowerCase()===x.toLowerCase()))set.push(x); };
     const key=(kw||tema).trim(); if(key)push(key);
+    scriptKW.slice(0,6).forEach(push);
     const kws=[...words(kw),...words(tema)].filter(w=>!STOP.has(w)); kws.slice(0,5).forEach(push);
     ((NK[lang]&&NK[lang][nSel.value])||[]).forEach(push);
     (lg.tags||[]).forEach(push);
@@ -376,8 +394,10 @@
     el('copyHash').onclick=()=>copyText(hashLine,el('copyHash'));
   }
 
-  function generate(){ const tema=el('tema').value.trim(); if(!tema){ toast('Escreva o assunto do vídeo 🙂'); el('tema').focus(); return; }
-    lastTema=tema; lastKw=el('kw').value.trim()||tema;
+  function generate(){ const roteiro=el('roteiro').value.trim(); scriptKW=roteiro?extractKW(roteiro):[]; renderDetected();
+    let tema=el('tema').value.trim(); if(!tema&&roteiro){ tema=firstSentence(roteiro); el('tema').value=tema; }
+    if(!tema){ toast('Escreva o assunto do vídeo — ou cole o roteiro 🙂'); el('tema').focus(); return; }
+    lastTema=tema; lastKw=el('kw').value.trim()||scriptKW[0]||tema;
     el('empty').style.display='none'; el('res').style.display='flex'; el('regen').style.display='block';
     const titles=buildTitles(tema); el('tcount').textContent=titles.length+' opções';
     const box=el('titles'); box.innerHTML='';
@@ -396,6 +416,7 @@
   el('gen').onclick=generate;
   el('regen').onclick=generate;
   el('titulo').addEventListener('input',()=>{ if(el('res').style.display!=='none')refreshDesc(); });
+  el('roteiro').addEventListener('input',()=>{ clearTimeout(el('roteiro')._t); el('roteiro')._t=setTimeout(()=>{ const r=el('roteiro').value.trim(); scriptKW=r?extractKW(r):[]; renderDetected(); if(!el('kw').value.trim())lastKw=scriptKW[0]||lastTema; if(el('res').style.display!=='none')refreshDesc(); },400); });
   el('tema').addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))generate(); });
 })();
 </script>
