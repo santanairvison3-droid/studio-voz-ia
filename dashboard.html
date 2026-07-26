@@ -916,6 +916,9 @@ select option{background:var(--surface2)}
     <div class="nav-item" onclick="goTab('seo',this)">
       <span class="nav-ic">🔤</span>SEO (título/tags)
     </div>
+    <div class="nav-item" onclick="goTab('banco',this)">
+      <span class="nav-ic">📚</span>Organização
+    </div>
     <div class="nav-section">Esportes</div>
     <div class="nav-item" onclick="goTab('esportes',this)">
       <span class="nav-ic">🔥</span>HypeEsportivo
@@ -1562,6 +1565,18 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
         <a href="seo.html" target="_blank" rel="noopener" style="margin-left:auto;font-size:12px;color:var(--accent,#38bdf8);text-decoration:none;white-space:nowrap">Abrir em tela cheia ↗</a>
       </div>
       <iframe id="seo-frame" src="" title="SEO Kit" allow="clipboard-write" style="width:100%;height:80vh;min-height:560px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:#070a11"></iframe>
+    </div>
+
+    <!-- BANCO DE ORGANIZACAO — guarda roteiro/titulo/SEO/miniatura por video (IndexedDB local) -->
+    <div class="tab-pane" id="tab-banco">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+        <div style="font-size:15px;font-weight:700">📚 Organização — seus vídeos</div>
+        <div style="font-size:12px;color:#8b99b3">Guarde por vídeo: roteiro, título, descrição/SEO e a miniatura. Fica tudo no seu navegador.</div>
+        <button onclick="bancoNovo()" style="margin-left:auto;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:8px;padding:8px 14px;white-space:nowrap">➕ Novo projeto</button>
+      </div>
+      <div id="banco-ativo" style="font-size:12px;color:var(--muted);margin-bottom:12px"></div>
+      <div id="banco-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px"></div>
+      <div id="banco-detail" style="display:none"></div>
     </div>
 
     <!-- FERRAMENTAS DE IMAGEM IA -->
@@ -3153,7 +3168,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Radar de Nicho',niches:'Caçador de Canais',flow:'DarkBlue Flow',thumb:'Editor de Miniatura',seo:'SEO (título/descrição/tags)'};
+const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Radar de Nicho',niches:'Caçador de Canais',flow:'DarkBlue Flow',thumb:'Editor de Miniatura',seo:'SEO (título/descrição/tags)',banco:'Organização'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -3170,6 +3185,7 @@ function goTab(name,el){
   if(name==='niches')initNf();
   if(name==='thumb')initThumb();
   if(name==='seo')initSeo();
+  if(name==='banco')bancoRender();
   // close sidebar on mobile
   if(window.innerWidth<=860)document.getElementById('sidebar').classList.remove('open');
 }
@@ -3177,6 +3193,55 @@ let thumbLoaded=false;
 function initThumb(){ if(thumbLoaded)return; thumbLoaded=true; document.getElementById('thumb-frame').src='miniatura.html'; }
 let seoLoaded=false;
 function initSeo(){ if(seoLoaded)return; seoLoaded=true; document.getElementById('seo-frame').src='seo.html'; }
+
+/* ===== Banco de Organização (IndexedDB, compartilhado com SEO e Editor via mesma origem) ===== */
+function bancoDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open('svia_banco',1); r.onupgradeneeded=()=>r.result.createObjectStore('projetos',{keyPath:'id'}); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+function bancoAll(){ return bancoDB().then(db=>new Promise(res=>{ const t=db.transaction('projetos').objectStore('projetos').getAll(); t.onsuccess=()=>res(t.result||[]); t.onerror=()=>res([]); })); }
+function bancoGet(id){ return bancoDB().then(db=>new Promise(res=>{ const t=db.transaction('projetos').objectStore('projetos').get(id); t.onsuccess=()=>res(t.result||null); t.onerror=()=>res(null); })); }
+function bancoPut(p){ p.updated=Date.now(); return bancoDB().then(db=>new Promise((res,rej)=>{ const t=db.transaction('projetos','readwrite').objectStore('projetos').put(p); t.onsuccess=()=>res(p); t.onerror=()=>rej(t.error); })); }
+function bancoDelDB(id){ return bancoDB().then(db=>new Promise(res=>{ const t=db.transaction('projetos','readwrite').objectStore('projetos').delete(id); t.onsuccess=()=>res(); t.onerror=()=>res(); })); }
+
+async function bancoNovo(){ const nome=prompt('Nome do projeto (ex.: Lição 17 — potes de dinheiro):'); if(nome===null)return;
+  const p={id:'p'+Date.now(),nome:(nome||'Sem nome').trim()||'Sem nome',roteiro:'',titulo:'',descricao:'',tags:'',hashtags:'',nicho:'',idioma:'',thumb:''};
+  await bancoPut(p); localStorage.setItem('svia_banco_ativo',p.id); bancoRender(); }
+
+async function bancoRender(){ const wrap=document.getElementById('banco-list'), det=document.getElementById('banco-detail'), ativoEl=document.getElementById('banco-ativo'); if(!wrap)return;
+  det.style.display='none'; wrap.style.display='grid';
+  const arr=(await bancoAll()).sort((a,b)=>(b.updated||0)-(a.updated||0)); const at=localStorage.getItem('svia_banco_ativo')||''; const atP=arr.find(p=>p.id===at);
+  ativoEl.innerHTML = arr.length? ('⭐ Projeto ativo (onde o SEO e o Editor salvam): <b style="color:var(--accent)">'+(atP?escHtml(atP.nome):'nenhum — abra um card e clique “tornar ativo”')+'</b>') : '';
+  if(!arr.length){ wrap.innerHTML='<div style="grid-column:1/-1;color:var(--muted);font-size:13px;padding:26px;text-align:center;line-height:1.6">Nenhum projeto ainda.<br>Clique <b>➕ Novo projeto</b> — depois a aba <b>SEO</b> e o <b>Editor de Miniatura</b> passam a salvar aqui dentro.</div>'; return; }
+  wrap.innerHTML=arr.map(p=>{ const marks=[p.descricao?'📝 SEO':'',p.roteiro?'📄 roteiro':'',p.thumb?'🖼️ thumb':''].filter(Boolean).join(' · ');
+    return `<div onclick="bancoAbrir('${p.id}')" style="cursor:pointer;border:1px solid ${p.id===at?'var(--accent)':'var(--border-a)'};border-radius:12px;overflow:hidden;background:var(--surface)">
+      <div style="aspect-ratio:16/9;background:#0a0f1a;${p.thumb?"background-image:url('"+p.thumb+"');background-size:cover;background-position:center;":''}display:flex;align-items:center;justify-content:center;color:#33415a;font-size:26px">${p.thumb?'':'🖼️'}</div>
+      <div style="padding:9px 11px"><div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.id===at?'⭐ ':''}${escHtml(p.nome)}</div>
+      <div style="font-size:10.5px;color:var(--muted);margin-top:3px;min-height:13px">${marks||'vazio'}</div></div></div>`; }).join('');
+}
+
+async function bancoAbrir(id){ const p=await bancoGet(id); if(!p)return; const wrap=document.getElementById('banco-list'), det=document.getElementById('banco-detail'); wrap.style.display='none'; det.style.display='block'; window._bancoCur=p;
+  const at=localStorage.getItem('svia_banco_ativo')||'';
+  const btn=(txt,fn,bg)=>`<button onclick="${fn}" style="background:${bg||'var(--surface2)'};border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:8px;padding:8px 12px">${txt}</button>`;
+  const fld=(lbl,val,pid)=> val? `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">${lbl}</span><button onclick="bancoCopy('${pid}',this)" style="background:rgba(0,229,212,.12);border:1px solid rgba(0,229,212,.3);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:7px;padding:4px 9px">⧉ copiar</button></div><pre id="${pid}" style="white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:13px;line-height:1.5;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px;margin:0;max-height:260px;overflow:auto">${escHtml(val)}</pre></div>`:'';
+  det.innerHTML=`<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      ${btn('← voltar','bancoRender()')}
+      <input id="banco-nome" value="${escHtml(p.nome)}" style="flex:1;min-width:160px;font-size:14px;font-weight:700;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 11px">
+      ${btn('💾 Salvar nome','bancoSalvarNome()')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${btn(p.id===at?'⭐ Projeto ativo':'☆ Tornar ativo','bancoTornarAtivo()',p.id===at?'var(--accent-dim)':'')}
+      ${btn('🖼️ Editar miniatura','bancoEditarMini()')}
+      ${btn('⬇️ Baixar tudo (.txt)','bancoBaixarTudo()')}
+      ${btn('🗑️ Apagar','bancoApagar()','rgba(255,84,112,.12)')}</div>
+    ${p.thumb?`<div style="margin-bottom:14px"><div style="font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Miniatura</div><img src="${p.thumb}" style="max-width:360px;width:100%;border-radius:10px;border:1px solid var(--border);display:block;margin-bottom:7px"><a href="${p.thumb}" download="${(p.nome||'miniatura').replace(/[^\w\-]+/g,'-')}.jpg" style="font-size:12px;color:var(--accent);text-decoration:none">⬇ baixar miniatura</a></div>`:''}
+    ${fld('Título',p.titulo,'bf-tit')}${fld('Descrição',p.descricao,'bf-desc')}${fld('Tags',p.tags,'bf-tags')}${fld('Roteiro',p.roteiro,'bf-rot')}
+    ${(!p.titulo&&!p.descricao&&!p.roteiro&&!p.thumb)?'<div style="color:var(--muted);font-size:13px;padding:14px 0;line-height:1.6">Projeto vazio. Torne-o <b>ativo</b> e vá na aba <b>SEO</b> (botão “salvar no banco”) e no <b>Editor de Miniatura</b> (botão “salvar no banco”) pra encher.</div>':''}`;
+}
+function bancoCopy(pid,btn){ const e=document.getElementById(pid); if(!e)return; navigator.clipboard.writeText(e.textContent).then(()=>{ const o=btn.textContent; btn.textContent='✓ copiado'; setTimeout(()=>btn.textContent=o,1300); }).catch(()=>{}); }
+async function bancoSalvarNome(){ const p=window._bancoCur; if(!p)return; p.nome=(document.getElementById('banco-nome').value||'Sem nome').trim()||'Sem nome'; await bancoPut(p); bancoRender(); }
+async function bancoTornarAtivo(){ const p=window._bancoCur; if(!p)return; localStorage.setItem('svia_banco_ativo',p.id); bancoAbrir(p.id); }
+async function bancoApagar(){ const p=window._bancoCur; if(!p)return; if(!confirm('Apagar o projeto "'+p.nome+'"? Não dá pra desfazer.'))return; await bancoDelDB(p.id); if((localStorage.getItem('svia_banco_ativo')||'')===p.id)localStorage.removeItem('svia_banco_ativo'); bancoRender(); }
+function bancoEditarMini(){ const p=window._bancoCur; if(!p)return; localStorage.setItem('svia_banco_ativo',p.id); localStorage.setItem('svia_banco_edit',p.id);
+  thumbLoaded=true; document.getElementById('thumb-frame').src='miniatura.html?edit='+p.id+'&t='+Date.now();
+  goTab('thumb',document.querySelector('.nav-item[onclick*=thumb]')); }
+function bancoBaixarTudo(){ const p=window._bancoCur; if(!p)return; const txt=['# '+p.nome,'','## TÍTULO',p.titulo||'-','','## DESCRIÇÃO',p.descricao||'-','','## TAGS',p.tags||'-','','## HASHTAGS',p.hashtags||'-','','## ROTEIRO',p.roteiro||'-'].join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain;charset=utf-8'})); a.download=((p.nome||'projeto').replace(/[^\w\-]+/g,'-'))+'.txt'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
 
 /* ══ VÍDEOS E IMAGENS (banco de mídia: Pexels + Pixabay via /api/youtube?action=stock) ══ */
 let mdType='image', mdOrient='all', mdPage=1, mdHasMore=false, mdLoading=false, mdInit=false;

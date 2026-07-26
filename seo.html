@@ -107,6 +107,7 @@
       <div id="empty" class="card"><div class="empty">👈 Preencha o assunto, escolha o <b>nicho</b> e o <b>idioma</b> e clique em <b>Gerar SEO</b>.<br>Você recebe <b>títulos</b>, uma <b>descrição pronta com SEO</b> e <b>tags</b> — cada um com botão de copiar.</div></div>
 
       <div id="res" style="display:none;flex-direction:column;gap:14px">
+        <button id="saveBanco" style="background:linear-gradient(90deg,var(--accent),var(--accent-2));border:none;color:#04121f;font-family:inherit;font-size:13px;font-weight:800;border-radius:10px;padding:11px;cursor:pointer">💾 Salvar este SEO no Banco de Organização</button>
         <div class="card">
           <div class="head-row"><h3>📊 Nota de SEO</h3><span id="scoreVal" class="scoreval">—</span></div>
           <div class="scorebar"><div id="scoreFill"></div></div>
@@ -347,6 +348,18 @@
   const STOP=new Set(['para','pra','com','uma','uns','umas','que','dos','das','nas','nos','aos','pelo','pela','por','isso','esse','essa','este','esta','num','numa','era','foi','ser','tem','seu','sua','meu','minha','ele','ela','dele','dela','mais','muito','muita','quando','onde','porque','bem','tambem','entao','assim','aqui','ali','cada','todo','toda','todos','todas','the','and','for','with','from','have','has','was','were','will','just','they','them','their','what','when','where','why','are','our','you','your','this','that','como','how','sobre','about','los','las','del','una','uno','pero','sus','eso','ese','muy','cuando','donde','des','les','pour','avec','dans','cette','sont','plus','der','die','und','für','mit']);
   function pick(arr,n){ const a=arr.slice(); const o=[]; while(a.length&&o.length<n)o.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); return o; }
 
+  // ---- Banco de Organização (mesma base IndexedDB do app) ----
+  function bancoDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open('svia_banco',1); r.onupgradeneeded=()=>r.result.createObjectStore('projetos',{keyPath:'id'}); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+  function bancoGet(id){ return bancoDB().then(db=>new Promise(r=>{ const t=db.transaction('projetos').objectStore('projetos').get(id); t.onsuccess=()=>r(t.result||null); t.onerror=()=>r(null); })); }
+  function bancoPut(p){ p.updated=Date.now(); return bancoDB().then(db=>new Promise((res,rej)=>{ const t=db.transaction('projetos','readwrite').objectStore('projetos').put(p); t.onsuccess=()=>res(p); t.onerror=()=>rej(t.error); })); }
+  async function saveBanco(){ if(!lastTema){ toast('Gere o SEO primeiro'); return; }
+    let id=localStorage.getItem('svia_banco_ativo'); let p=id?await bancoGet(id):null;
+    if(!p){ const nome=prompt('Nome do projeto pra guardar:', (el('titulo').value.trim()||lastTema).slice(0,60)); if(nome===null)return; p={id:'p'+Date.now(),nome:(nome||lastTema).trim()||'Sem nome',thumb:''}; localStorage.setItem('svia_banco_ativo',p.id); }
+    p.titulo=el('titulo').value.trim()||firstTitle; p.descricao=el('desc').textContent||'';
+    p.tags=tagsFor(lastTema,lastKw).join(', '); p.hashtags=hashFor(lastTema,lastKw).join(' ');
+    p.roteiro=el('roteiro').value.trim(); p.nicho=NLABEL[nSel.value]; p.idioma=lang;
+    await bancoPut(p); toast('Salvo no Banco: '+p.nome+' ✓'); }
+
   const el=id=>document.getElementById(id);
   const nSel=el('nicho'); NICHES.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;nSel.appendChild(o);});
   const lSel=el('lang'); LANGS.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;lSel.appendChild(o);});
@@ -452,6 +465,7 @@
   }
   el('gen').onclick=generate;
   el('regen').onclick=generate;
+  el('saveBanco').onclick=saveBanco;
   el('titulo').addEventListener('input',()=>{ if(el('res').style.display!=='none')refreshDesc(); });
   el('roteiro').addEventListener('input',()=>{ clearTimeout(el('roteiro')._t); el('roteiro')._t=setTimeout(()=>{ const r=el('roteiro').value.trim(); scriptKW=r?extractKW(r):[]; renderDetected(); if(!el('kw').value.trim())lastKw=scriptKW[0]||lastTema; if(el('res').style.display!=='none')refreshDesc(); },400); });
   el('tema').addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))generate(); });

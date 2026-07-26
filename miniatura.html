@@ -116,6 +116,10 @@
       <button class="btn danger" id="b-del">🗑 Apagar</button>
       <button class="btn pri" id="b-dl">⬇ Baixar JPG</button>
       <button class="btn" id="b-dlpng" title="PNG sem perda (pode ficar maior que 2 MB)">PNG</button>
+      <button class="btn" id="b-dl916" title="Baixar vertical 9:16 (Shorts/Reels)">9:16</button>
+      <button class="btn" id="b-dl11" title="Baixar quadrado 1:1 (post)">1:1</button>
+      <span class="sep"></span>
+      <button class="btn" id="b-banco" title="Salvar no Banco de Organização">💾 Banco</button>
       <input type="file" id="file" accept="image/*" hidden>
     </div>
   </header>
@@ -300,8 +304,29 @@
     const tryQ=q=>cv.toBlob(b=>{ if(b.size>1900000 && q>0.5){ tryQ(+(q-0.08).toFixed(2)); return; } dl(b,'jpg'); toast('JPG baixado: '+((b.size/1024)|0)+' KB · dentro do limite do YouTube (2 MB) ✓'); done(); },'image/jpeg',q);
     tryQ(0.92);
   }); }
+  // ---- Banco de Organização (IndexedDB, mesma base do app) + exportar proporções ----
+  function bancoDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open('svia_banco',1); r.onupgradeneeded=()=>r.result.createObjectStore('projetos',{keyPath:'id'}); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+  function bancoGet(id){ return bancoDB().then(db=>new Promise(r=>{ const t=db.transaction('projetos').objectStore('projetos').get(id); t.onsuccess=()=>r(t.result||null); t.onerror=()=>r(null); })); }
+  function bancoPut(p){ p.updated=Date.now(); return bancoDB().then(db=>new Promise((res,rej)=>{ const t=db.transaction('projetos','readwrite').objectStore('projetos').put(p); t.onsuccess=()=>res(p); t.onerror=()=>rej(t.error); })); }
+  function editorState(){ return {layers,backdrop:Object.assign({},backdrop),img:Object.assign({},img),textZone,bgT:Object.assign({},bgT),bgHasCut,src:srcImg?srcImg.src:null,cut:(cutCv&&bgHasCut)?cutCv.toDataURL('image/png'):null}; }
+  function loadState(st){ if(!st)return; layers=st.layers||[]; Object.assign(backdrop,st.backdrop||{}); Object.assign(img,st.img||{}); textZone=st.textZone||'right'; Object.assign(bgT,st.bgT||{scale:1,x:0,y:0}); bgHasCut=!!st.bgHasCut;
+    const finish=()=>{ sel=-1; setTool('select'); history=[];histIdx=-1;lastSnapCut=null; document.querySelectorAll('#pos button').forEach(x=>x.classList.toggle('on',x.dataset.z===textZone)); render(); showInsp(); commit(); };
+    if(st.src){ const im=new Image(); im.onload=()=>{ srcImg=im; cutCv=document.createElement('canvas'); cutCv.width=im.naturalWidth||im.width; cutCv.height=im.naturalHeight||im.height; cutCtx=cutCv.getContext('2d'); if(st.cut){ const ci=new Image(); ci.onload=()=>{cutCtx.drawImage(ci,0,0);finish();}; ci.onerror=()=>{cutCtx.drawImage(im,0,0);finish();}; ci.src=st.cut; } else { cutCtx.drawImage(im,0,0); finish(); } }; im.src=st.src; }
+    else { srcImg=null; cutCv=null; cutCtx=null; finish(); } }
+  async function salvarBanco(){ const s=sel,t=tool; sel=-1;tool='select';exporting=true;render(); const jpg=cv.toDataURL('image/jpeg',0.9); const st=editorState(); exporting=false;sel=s;tool=t;render();
+    let id=localStorage.getItem('svia_banco_ativo'); let p=id?await bancoGet(id):null;
+    if(!p){ const nome=prompt('Nome do projeto pra guardar a miniatura:'); if(nome===null)return; p={id:'p'+Date.now(),nome:(nome||'Miniatura').trim()||'Miniatura'}; localStorage.setItem('svia_banco_ativo',p.id); }
+    p.thumb=jpg; p.proj=st; await bancoPut(p); toast('Miniatura salva no Banco: '+p.nome+' ✓'); }
+  function exportRatio(w,h){ const s=sel,t=tool; sel=-1;tool='select';exporting=true;render();
+    const oc=document.createElement('canvas'); oc.width=w; oc.height=h; const octx=oc.getContext('2d'); octx.fillStyle='#000'; octx.fillRect(0,0,w,h);
+    const sr=W/H, tr=w/h; let dw,dh; if(tr>sr){ dw=w; dh=w/sr; } else { dh=h; dw=h*sr; } octx.drawImage(cv,(w-dw)/2,(h-dh)/2,dw,dh);
+    exporting=false;sel=s;tool=t;render();
+    const tryQ=q=>oc.toBlob(b=>{ if(b.size>1900000&&q>0.5){ tryQ(+(q-0.08).toFixed(2)); return; } dl(b,'jpg'); toast('Baixado '+w+'×'+h+': '+((b.size/1024)|0)+' KB ✓'); },'image/jpeg',q); tryQ(0.92); }
   document.getElementById('b-dl').onclick=()=>baixar('jpg');
   document.getElementById('b-dlpng').onclick=()=>baixar('png');
+  document.getElementById('b-dl916').onclick=()=>exportRatio(720,1280);
+  document.getElementById('b-dl11').onclick=()=>exportRatio(1080,1080);
+  document.getElementById('b-banco').onclick=salvarBanco;
 
   // ---- Prévia no celular ----
   const phoneModal=document.getElementById('phone-modal');
@@ -340,6 +365,8 @@
     body.appendChild(field('Fundo atrás da foto',seg([['Foto cheia','keep'],['Cor','color'],['Degradê','grad']],backdrop.mode,v=>backdrop.mode=v)));
     if(backdrop.mode==='color')body.appendChild(field('Cor do fundo',swatches(backdrop.color,c=>backdrop.color=c)));
     if(backdrop.mode==='grad'){ body.appendChild(field('Cor de cima',swatches(backdrop.color,c=>backdrop.color=c))); body.appendChild(field('Cor de baixo',swatches(backdrop.color2,c=>backdrop.color2=c))); }
+    const gpre=[['Azul noite','#0b1220','#1e3a8a'],['Roxo','#1a0b2e','#7c3aed'],['Vermelho','#2a0a0a','#dc2626'],['Verde','#04231a','#059669'],['Laranja','#2a1005','#ea580c'],['Grafite','#0b0f17','#374151']];
+    const gch=document.createElement('div'); gch.className='chips'; gpre.forEach(([n,a,b])=>{ const c=document.createElement('button'); c.className='chip'; c.textContent=n; c.onclick=()=>{ backdrop.mode='grad'; backdrop.color=a; backdrop.color2=b; showInsp(); render(); commit(); }; gch.appendChild(c); }); body.appendChild(field('🎨 Fundos prontos (degradê)',gch));
     if(!srcImg){ const p=document.createElement('p'); p.className='empty'; p.innerHTML='Clique em <b>📁 Imagem</b> pra enviar sua foto — ou monte só com <b>cor/degradê</b> de fundo + texto e formas. Depois clique num elemento pra editar tudo.'; body.appendChild(p); return; }
     body.appendChild(document.createElement('hr'));
     // Posição / zoom do fundo
@@ -384,6 +411,7 @@
       const fs=document.createElement('select'); FONTS.forEach(([n,v])=>{const o=document.createElement('option');o.value=v;o.textContent=n;if(v===l.font)o.selected=true;fs.appendChild(o);}); fs.onchange=()=>{l.font=fs.value;render();commit();}; body.appendChild(field('Fonte',fs));
       body.appendChild(field('Tamanho',range(24,360,l.size,1,v=>l.size=v),l.size));
       if(l.size<60&&(l.text||'').length>2){const d=document.createElement('div');d.className='warn';d.textContent='⚠ Texto pequeno perde clique no celular — deixe GRANDE.';body.appendChild(field('',d));}
+      if((l.text||'').length>2 && !(l.outline>0) && !l.shadow && !l.neon && !l.highlight){const d=document.createElement('div');d.className='warn';d.textContent='⚠ Sem contorno/sombra — o texto pode sumir no fundo. Ative Contorno, Sombra ou Realce.';body.appendChild(field('',d));}
       body.appendChild(field('Alinhamento',seg([['⬅','left'],['⬍','center'],['➡','right']],l.align,v=>l.align=v)));
       body.appendChild(field('Espaço entre letras',range(-8,40,l.spacing,1,v=>l.spacing=v),l.spacing));
       body.appendChild(field('Cor',swatches(l.color,c=>l.color=c)));
@@ -427,6 +455,8 @@
 
   document.getElementById('b-undo').onclick=undo; document.getElementById('b-redo').onclick=redo;
   showInsp(); render(); commit(); updUndo();
+  // Reabrir um projeto do Banco pra editar (veio da aba Organização)
+  try{ const eid=new URL(location.href).searchParams.get('edit')||localStorage.getItem('svia_banco_edit'); if(eid){ localStorage.removeItem('svia_banco_edit'); bancoGet(eid).then(p=>{ if(p&&p.proj)loadState(p.proj); }); } }catch(e){}
 })();
 </script>
 
