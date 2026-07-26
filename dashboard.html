@@ -94,7 +94,8 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .sb-nav{flex:1;min-height:0;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:1px;scrollbar-width:thin;scrollbar-color:var(--border-a) transparent}
 .sb-nav::-webkit-scrollbar{width:5px}
 .sb-nav::-webkit-scrollbar-thumb{background:var(--border-a);border-radius:99px}
-.nav-section{font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);padding:12px 10px 5px}
+.nav-section{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:14px 10px 6px;margin-top:6px;border-top:1px solid var(--border)}
+.nav-section:first-child{border-top:none;margin-top:0;padding-top:4px}
 .nav-item{
   display:flex;align-items:center;gap:9px;
   padding:10px 11px;border-radius:9px;
@@ -873,7 +874,7 @@ select option{background:var(--surface2)}
   </div>
 
   <nav class="sb-nav">
-    <div class="nav-section">Produção</div>
+    <div class="nav-section">🎙️ Voz & Áudio</div>
     <div class="nav-item active" onclick="goTab('generate',this)">
       <span class="nav-ic">⚡</span>Gerar Áudio
     </div>
@@ -884,7 +885,33 @@ select option{background:var(--surface2)}
       <span class="nav-ic">📁</span>Arquivos .TXT
       <span class="nav-badge">.txt</span>
     </div>
-    <div class="nav-section">Conta</div>
+    <div class="nav-item" onclick="goTab('history',this)">
+      <span class="nav-ic">📋</span>Histórico
+    </div>
+
+    <div class="nav-section">🎬 Criar Conteúdo</div>
+    <div class="nav-item" onclick="goTab('thumb',this)">
+      <span class="nav-ic">🖼️</span>Editor de Miniatura
+    </div>
+    <div class="nav-item" onclick="goTab('seo',this)">
+      <span class="nav-ic">🔤</span>SEO · Título & Tags
+    </div>
+    <div class="nav-item" onclick="goTab('banco',this)">
+      <span class="nav-ic">📚</span>Organização
+    </div>
+
+    <div class="nav-section">🎨 Imagem & Vídeo</div>
+    <div class="nav-item" onclick="goTab('imagens',this)">
+      <span class="nav-ic">🎨</span>Ferramentas de Imagem
+    </div>
+    <div class="nav-item" onclick="goTab('midias',this)">
+      <span class="nav-ic">🎬</span>Vídeos e Imagens
+    </div>
+    <div class="nav-item" onclick="goTab('esportes',this)">
+      <span class="nav-ic">⚽</span>HypeEsportivo
+    </div>
+
+    <div class="nav-section">🔎 Pesquisa YouTube</div>
     <div class="nav-item" onclick="goTab('trends',this)">
       <span class="nav-ic">🔥</span>Tendências YT
     </div>
@@ -893,44 +920,23 @@ select option{background:var(--surface2)}
     </div>
     <div class="nav-item" onclick="goTab('dobra',this)">
       <span class="nav-ic">📡</span>Radar de Nicho
-         </div>
+    </div>
     <div class="nav-item" onclick="goTab('niches',this)">
       <span class="nav-ic">🧭</span>Caçador de Canais
-         </div>
-    <div class="nav-item" onclick="goTab('stats',this)">
-      <span class="nav-ic">📊</span>Estatísticas
     </div>
-    <div class="nav-item" onclick="goTab('history',this)">
-      <span class="nav-ic">📋</span>Histórico
-    </div>
-    <div class="nav-item" onclick="goTab('voucher',this)">
-      <span class="nav-ic">🎟️</span>Voucher
-    </div>
-    <div class="nav-section">Imagem IA</div>
-    <div class="nav-item" onclick="goTab('imagens',this)">
-      <span class="nav-ic">🎨</span>Ferramentas de Imagem
-         </div>
-    <div class="nav-item" onclick="goTab('thumb',this)">
-      <span class="nav-ic">🖼️</span>Editor de Miniatura
-    </div>
-    <div class="nav-item" onclick="goTab('seo',this)">
-      <span class="nav-ic">🔤</span>SEO (título/tags)
-    </div>
-    <div class="nav-item" onclick="goTab('banco',this)">
-      <span class="nav-ic">📚</span>Organização
-    </div>
-    <div class="nav-section">Esportes</div>
-    <div class="nav-item" onclick="goTab('esportes',this)">
-      <span class="nav-ic">🔥</span>HypeEsportivo
-         </div>
-    <div class="nav-section">Mídia</div>
-    <div class="nav-item" onclick="goTab('midias',this)">
-      <span class="nav-ic">🎬</span>Vídeos e Imagens
-         </div>
-    <div class="nav-section">Automação</div>
+
+    <div class="nav-section">🤖 Automação</div>
     <div class="nav-item" onclick="goTab('flow',this)">
       <span class="nav-ic">🧩</span>DarkBlue Flow
       <span class="nav-badge" style="background:rgba(255,180,0,.15);color:#ffb400">EM BREVE</span>
+    </div>
+
+    <div class="nav-section">👤 Conta</div>
+    <div class="nav-item" onclick="goTab('stats',this)">
+      <span class="nav-ic">📈</span>Estatísticas
+    </div>
+    <div class="nav-item" onclick="goTab('voucher',this)">
+      <span class="nav-ic">🎟️</span>Voucher
     </div>
   </nav>
 
