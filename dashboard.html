@@ -1086,7 +1086,7 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
               <div style="padding:2px 0 13px;display:flex;flex-direction:column;gap:13px">
                 <div>
                   <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px"><span>🏃 Velocidade da fala</span><span id="adv-speed-v" style="color:var(--accent);font-weight:700">1.00×</span></label>
-                  <input type="range" id="adv-speed" min="0.5" max="1.5" step="0.05" value="1" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('adv-speed-v').textContent=(+this.value).toFixed(2)+'×'">
+                  <input type="range" id="adv-speed" min="0.5" max="1.5" step="0.05" value="1" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('adv-speed-v').textContent=(+this.value).toFixed(2)+'×';updateCounter()">
                 </div>
                 <div>
                   <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px"><span>🔊 Volume</span><span id="adv-vol-v" style="color:var(--accent);font-weight:700">1.00×</span></label>
@@ -2499,13 +2499,16 @@ function selectVoice(id,el){
   if(svb)svb.classList.add('show');
 }
 
+function fmtDur(s){ if(s<1)return '0 s'; if(s<60)return s+' s'; const m=Math.floor(s/60),r=s%60; return m+' min'+(r?' '+r+' s':''); }
 function updateCounter(){
   const t=document.getElementById('text-input').value;
   const l=t.length;
   const el=document.getElementById('char-ct');
   el.textContent=`${l} caracteres`;
   el.className='char-ct'+(l>150000?' over':l>130000?' warn':'');
-  document.getElementById('char-est').textContent=l?`~${Math.ceil(l/150)} seg estimados`:'';
+  // Estimativa de duração do áudio: ~14,5 caracteres/seg de narração, ajustada pela velocidade escolhida
+  const spd=parseFloat(document.getElementById('adv-speed')?.value)||1;
+  document.getElementById('char-est').textContent=l?`⏱️ ≈ ${fmtDur(Math.round(l/14.5/spd))} de áudio`:'';
   // update limit label
   const remaining=150000-l;
   document.getElementById('char-limit-lbl').textContent=`${l.toLocaleString('pt-BR')} / 150.000 chars`;
