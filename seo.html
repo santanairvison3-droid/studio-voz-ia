@@ -348,7 +348,7 @@
   function relatedFor(tema,kw){ const bank=(NK[lang]&&NK[lang][nSel.value])||L[lang].tags||[];
     const userw=[...words(kw),...words(tema)].filter(w=>!STOP.has(w));
     const out=[]; const push=x=>{ x=(x||'').trim(); if(x&&!out.some(s=>s.toLowerCase()===x.toLowerCase()))out.push(x); };
-    userw.slice(0,2).forEach(push); bank.forEach(push); return out.slice(0,6); }
+    bank.forEach(push); userw.slice(0,2).forEach(push); return out.slice(0,6); }
 
   function tagsFor(tema,kw){ const lg=L[lang]; const set=[]; const push=x=>{ x=(x||'').trim(); if(x&&!set.some(s=>s.toLowerCase()===x.toLowerCase()))set.push(x); };
     const key=(kw||tema).trim(); if(key)push(key);
