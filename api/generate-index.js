@@ -135,6 +135,32 @@ module.exports = async (req, res) => {
     if (text.length > 150000)
       return res.status(400).json({ error: 'Texto muito longo (máx 150.000 chars).' });
 
+    // ── Parâmetros do áudio (montados aqui em cima porque a ASSINATURA
+    // anti-repetição precisa deles: mudar velocidade/volume/legenda = pedido novo) ──
+    // Legendas sincronizadas (16/07/2026): sempre pedimos os 3 SRTs junto do áudio —
+    // legenda.srt (subtitle_words), srtsyncpalavra.srt e srtsynctempo.srt (VEO3, 4–8s).
+    const dpPayload = {
+      text, voice_id,
+      subtitle_words:   Math.min(15, Math.max(1, parseInt(req.body.subtitle_words, 10) || 8)),
+      subtitle_veo_min: Math.min(60, Math.max(1, parseInt(req.body.subtitle_veo_min, 10) || 4)),
+      subtitle_veo_max: Math.min(60, Math.max(1, parseInt(req.body.subtitle_veo_max, 10) || 8)),
+    };
+    if (dpPayload.subtitle_veo_max < dpPayload.subtitle_veo_min)
+      dpPayload.subtitle_veo_max = dpPayload.subtitle_veo_min;
+    if (req.body.subtitle_case) dpPayload.subtitle_case = String(req.body.subtitle_case);
+    if (req.body.subtitle_veo_words)
+      dpPayload.subtitle_veo_words = Math.min(15, Math.max(1, parseInt(req.body.subtitle_veo_words, 10) || 0)) || undefined;
+    if (req.body.speed)  dpPayload.speed  = req.body.speed;
+    if (req.body.volume) dpPayload.volume = req.body.volume;
+    if (req.body.title)  dpPayload.title  = String(req.body.title);
+
+    // Assinatura do pedido: texto + voz + ajustes que MUDAM o áudio.
+    // (o `title` fica de fora: é só o nome do arquivo, não muda o som)
+    const REPEAT_WINDOW_MIN = 10;
+    const assinatura = 'sig:' + require('crypto').createHash('sha256')
+      .update(JSON.stringify({ ...dpPayload, title: undefined }))
+      .digest('hex');
+
     // ══════════════════════════════════════════════
     // VERIFICAÇÃO DE LIMITE DIÁRIO (via Supabase)
     // Admin ignora o limite completamente
@@ -152,6 +178,48 @@ module.exports = async (req, res) => {
           process.env.NEXT_PUBLIC_SUPABASE_URL,
           process.env.SUPABASE_SERVICE_KEY
         );
+
+        // ══════════════════════════════════════════════
+        // ANTI-REPETIÇÃO (29/07/2026) — devolve o áudio que JÁ existe
+        // ══════════════════════════════════════════════
+        // Por que existe: o botão da tela libera assim que o áudio fica pronto
+        // (~30s), o usuário reclica achando que não pegou, e o sistema gera de
+        // novo — MP3 byte a byte idêntico, cobrando outro áudio do limite do dia.
+        // Medido em 29/07/2026: 2 usuárias, 4 arquivos de MD5 repetido (um deles 3x).
+        // A trava atômica mais abaixo continua cuidando dos cliques SIMULTÂNEOS;
+        // esta cuida do reclique alguns segundos/minutos depois.
+        // O created_at do banco é UTC — comparar em UTC (sem 'Z', igual ao formato gravado).
+        const desde = new Date(Date.now() - REPEAT_WINDOW_MIN * 60000).toISOString().replace('Z', '');
+        const { data: repetido } = await supabase
+          .from('audio_log')
+          .select('job_id, audio_url')
+          .eq('user_id', uid)
+          .eq('text', assinatura)
+          .gte('created_at', desde)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (repetido) {
+          console.log(`[generate] Repetição evitada para uid=${uid} (janela de ${REPEAT_WINDOW_MIN} min)`);
+          if (repetido.audio_url) {
+            return res.status(200).json({
+              success: true, reused: true, status: 'done',
+              job_id: repetido.job_id, audio_url: repetido.audio_url,
+              message: 'Esse mesmo áudio já foi gerado agora há pouco — devolvemos o mesmo arquivo, sem gastar áudio do seu dia.'
+            });
+          }
+          if (repetido.job_id) {
+            return res.status(200).json({
+              success: true, reused: true, status: 'processing',
+              job_id: repetido.job_id,
+              message: 'Esse áudio já está sendo gerado — estamos acompanhando o mesmo pedido, sem gastar áudio do seu dia.'
+            });
+          }
+          return res.status(429).json({
+            error: 'Esse mesmo áudio acabou de ser pedido. Aguarde alguns segundos que ele aparece aqui.'
+          });
+        }
 
         // Data no horário do Brasil (UTC-3) — mesma lógica do auth.js
         const today = getTodayBR();
@@ -256,7 +324,10 @@ module.exports = async (req, res) => {
               voice_name:   req.body.voice_name || null,
               text_preview: text.substring(0, 120),
               characters:   text.length,
-              status:       'pendente'
+              status:       'pendente',
+              // coluna `text` (estava sempre vazia) guarda a assinatura do pedido —
+              // é ela que faz o reclique reconhecer que o áudio já existe
+              text:         assinatura
             });
           } catch (_) {}
         })();
@@ -274,25 +345,7 @@ module.exports = async (req, res) => {
     try {
       console.log('[generate] POST voice_id:', voice_id, 'chars:', text.length, 'user:', uid, 'admin:', isAdmin);
 
-      // ── Legendas sincronizadas (atualização 16/07/2026) ──
-      // Sempre pedimos os 3 SRTs junto do áudio: legenda.srt (subtitle_words),
-      // srtsyncpalavra.srt (palavra a palavra) e srtsynctempo.srt (SRT Tempo VEO3 —
-      // blocos por duração, sincronizado com a fala). O usuário pode ajustar pelos
-      // campos opcionais do body; sem eles valem os padrões da casa (4–8s por bloco).
-      const dpPayload = {
-        text, voice_id,
-        subtitle_words:   Math.min(15, Math.max(1, parseInt(req.body.subtitle_words, 10) || 8)),
-        subtitle_veo_min: Math.min(60, Math.max(1, parseInt(req.body.subtitle_veo_min, 10) || 4)),
-        subtitle_veo_max: Math.min(60, Math.max(1, parseInt(req.body.subtitle_veo_max, 10) || 8)),
-      };
-      if (dpPayload.subtitle_veo_max < dpPayload.subtitle_veo_min)
-        dpPayload.subtitle_veo_max = dpPayload.subtitle_veo_min;
-      if (req.body.subtitle_case) dpPayload.subtitle_case = String(req.body.subtitle_case);
-      if (req.body.subtitle_veo_words)
-        dpPayload.subtitle_veo_words = Math.min(15, Math.max(1, parseInt(req.body.subtitle_veo_words, 10) || 0)) || undefined;
-      if (req.body.speed)  dpPayload.speed  = req.body.speed;
-      if (req.body.volume) dpPayload.volume = req.body.volume;
-      if (req.body.title)  dpPayload.title  = String(req.body.title);
+      // (o dpPayload é montado no topo do POST — a assinatura anti-repetição depende dele)
 
       // Failover: tenta a conta primária do usuário; se a cota estourar, cai pra próxima.
       let r, rawText = '';

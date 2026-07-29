@@ -2571,10 +2571,14 @@ async function generateSingle(){
       showAudio(d.audio_url,d.job_id||'—',d);
       saveHistory({url:d.audio_url,jobId:d.job_id,name:nomeDoAudio(d.job_id),srt:d.srt_url||null,srtp:d.srt_palavra_url||null,srtt:d.srt_tempo_url||null,text:text.substring(0,80),voice:(allVoices.find(v=>(v.voice_id||v.id)===selectedVoice)?.name||selectedVoice),ts:new Date().toISOString()});
       sessionStorage.removeItem('auth_cache');refreshStats(true);
+      // Reclique do MESMO pedido: o servidor devolveu o áudio que já existia,
+      // sem cobrar outro áudio do dia (trava anti-repetição, 29/07/2026).
+      if(d.reused) showStatus(d.message||'♻️ Esse áudio já tinha sido gerado agora há pouco — devolvemos o mesmo, sem gastar áudio do seu dia.','success');
       endGen();
     } else if(d.job_id){
       // NÃO libera o botão aqui — só quando o polling terminar (em pollAudio).
-      lastJobId=d.job_id;showStatus(`Job ${d.job_id} em processamento...`,'info');
+      lastJobId=d.job_id;
+      showStatus(d.reused?(d.message||'♻️ Esse áudio já está sendo gerado — acompanhando o mesmo pedido, sem gastar áudio do seu dia.'):`Job ${d.job_id} em processamento...`,'info');
       pollAudio(d.job_id);
     } else {
       showStatus('Resposta inesperada.','error');endGen();
