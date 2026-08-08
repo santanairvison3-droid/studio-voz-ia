@@ -65,13 +65,21 @@ module.exports = async (req, res) => {
     for (let i = 0; i < usersToReset.length; i += BATCH) {
       const batch = usersToReset.slice(i, i + BATCH);
 
-      // Monta updates individuais respeitando o lim_day do plano de cada um
+      // ⚠️ NÃO sobrescrever o lim_day de quem já tem um (corrigido 08/08/2026).
+      // Antes, esta rotina reaplicava o limite do plano toda meia-noite e DESFAZIA:
+      //   (a) os áudios extras que o admin dava em admin-users.js (give_audios);
+      //   (b) o teto 10/dia de quem comprou pacote de crédito — o plano 'credito'
+      //       não está em PLAN_LIMITS, caía no ?? 5 e o cliente era rebaixado.
+      // Agora o lim_day só é preenchido quando está faltando de verdade.
       const updates = batch.map(u => {
-        const planLim  = PLAN_LIMITS[u.plan] ?? 5;
-        const newLimit = Math.min(planLim, HARD_LIMIT);
+        const mudanca = { daily_used: 0, last_reset: today };
+        if (u.lim_day === null || u.lim_day === undefined || u.lim_day <= 0) {
+          const planLim = PLAN_LIMITS[u.plan] ?? 5;
+          mudanca.lim_day = Math.min(planLim, HARD_LIMIT);
+        }
         return supabase
           .from('users')
-          .update({ daily_used: 0, last_reset: today, lim_day: newLimit })
+          .update(mudanca)
           .eq('id', u.id);
       });
 

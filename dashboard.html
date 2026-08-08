@@ -217,6 +217,29 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 }
 .card-title span{font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted)}
 
+/* ═══ AJUDA NA TELA: caixinha "Como usar" + dica de campo ═══ */
+.howto{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  border-radius:11px;
+  padding:12px 16px;
+  margin:0 0 16px;
+  font-size:12.5px;line-height:1.65;color:var(--text);
+}
+.howto-t{
+  display:block;font-size:10px;font-weight:700;
+  letter-spacing:1.8px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:7px;
+}
+.howto ol{margin:0;padding-left:17px}
+.howto li{margin-bottom:2px}
+.howto li::marker{color:var(--muted);font-weight:700}
+.howto p{margin:8px 0 0;font-size:12px;line-height:1.6;color:var(--muted)}
+.howto p b{color:var(--text)}
+.fhint{font-size:11.5px;line-height:1.55;color:var(--muted);margin:6px 2px 0}
+.fhint b{color:var(--text);font-weight:600}
+
 /* Generate layout */
 .gen-layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
 
@@ -865,7 +888,7 @@ select option{background:var(--surface2)}
     <div><h1>DarkBlue</h1><p>Estúdio de Voz IA</p></div>
   </div>
 
-  <div class="sb-credits">
+  <div class="sb-credits" title="Áudios que você ainda pode gerar hoje (restam / total do dia). A voz tem teto por dia; o número volta ao cheio sozinho na virada do dia.">
     <div class="cr-icon">🎙️</div>
     <div>
       <div class="cr-label">Restam Hoje</div>
@@ -874,8 +897,13 @@ select option{background:var(--surface2)}
   </div>
 
   <nav class="sb-nav">
+    <div class="nav-section">🏠 Início</div>
+    <div class="nav-item active" onclick="goTab('inicio',this)">
+      <span class="nav-ic">📌</span>Informações
+    </div>
+
     <div class="nav-section">🎙️ Voz & Áudio</div>
-    <div class="nav-item active" onclick="goTab('generate',this)">
+    <div class="nav-item" onclick="goTab('generate',this)">
       <span class="nav-ic">⚡</span>Gerar Áudio
     </div>
     <div class="nav-item" onclick="goTab('voices',this)">
@@ -998,14 +1026,14 @@ select option{background:var(--surface2)}
       <div class="hamburger" id="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">
         <span></span><span></span><span></span>
       </div>
-      <span class="tb-title" id="pg-title">Gerar Áudio</span>
+      <span class="tb-title" id="pg-title">Início</span>
     </div>
     <div class="tb-pills">
-      <div class="pill">
+      <div class="pill" title="Áudios que você ainda pode gerar hoje. Zera e volta ao cheio na virada do dia.">
         <div class="pill-dot" style="background:var(--accent)"></div>
         <span id="top-credits">5 restantes hoje</span>
       </div>
-      <div class="pill">
+      <div class="pill" title="Quantos áudios você já gerou hoje, do total liberado para o seu dia.">
         <div class="pill-dot" style="background:var(--success)"></div>
         <span id="top-today">0 de 5 hoje</span>
       </div>
@@ -1023,13 +1051,107 @@ select option{background:var(--surface2)}
     <!-- AVISOS DO ADMIN -->
     <div id="notices-wrap" style="display:none;margin-bottom:10px"></div>
 
+    <!-- 🏠 INÍCIO — informações e planos (tela de entrada, 08/08/2026) -->
+    <div class="tab-pane active" id="tab-inicio">
+      <div style="max-width:960px">
+
+        <div style="padding:22px 24px;border-radius:16px;border:1px solid rgba(79,140,255,.35);
+                    background:linear-gradient(105deg,rgba(79,140,255,.15),rgba(0,229,212,.05) 65%,transparent);margin-bottom:18px">
+          <div style="font-size:19px;font-weight:800;letter-spacing:-.3px;margin-bottom:6px">🌊 Bem-vindo ao DarkBlue</div>
+          <div style="font-size:13.5px;color:var(--text);line-height:1.75;opacity:.92">
+            Aqui você monta o vídeo do começo ao fim: pesquisa o assunto, escreve as cenas,
+            gera os clipes, sincroniza com a narração e ainda faz a miniatura.
+            Use o menu da esquerda para navegar.
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 12px">
+          <span style="font-size:13px;font-weight:800;letter-spacing:.3px;color:var(--muted)">OS PLANOS</span>
+          <span style="font-size:11px;font-weight:800;letter-spacing:1.2px;color:#ffb400;background:rgba(255,180,0,.13);border:1px solid rgba(255,180,0,.35);border-radius:99px;padding:2px 10px">🔜 VENDAS EM BREVE</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:22px">
+
+          <div style="padding:20px;border-radius:14px;border:1px solid var(--border);background:var(--surface2)">
+            <div style="font-size:15px;font-weight:800;margin-bottom:3px">🎨 Essencial</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Monta o filme e faz a miniatura</div>
+            <div style="font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:12px">R$ 19,90<span style="font-size:13px;font-weight:400;color:var(--muted)">/mês</span></div>
+            <div style="font-size:12.5px;line-height:2;color:var(--text);opacity:.9">
+              ✓ Sincronizador: clipes + legenda = filme<br>
+              ✓ Editor de miniatura<br>
+              ✓ Cortes 9:16 e organização<br>
+              <span style="opacity:.6">— você mesmo gera os clipes</span>
+            </div>
+          </div>
+
+          <div style="padding:20px;border-radius:14px;border:1px solid rgba(79,140,255,.5);background:linear-gradient(160deg,rgba(79,140,255,.12),var(--surface2));position:relative">
+            <div style="position:absolute;top:-9px;right:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709;font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px">MAIS COMPLETO</div>
+            <div style="font-size:15px;font-weight:800;margin-bottom:3px">🖥️ Studio</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Tudo do Essencial + o robô da produção</div>
+            <div style="font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:12px">R$ 39,90<span style="font-size:13px;font-weight:400;color:var(--muted)">/mês</span></div>
+            <div style="font-size:12.5px;line-height:2;color:var(--text);opacity:.9">
+              ✓ <b>Tudo do Essencial</b><br>
+              ✓ O robô gera e baixa os clipes sozinho<br>
+              ✓ Personagem igual em todas as cenas<br>
+              ✓ Retoma sozinho quando uma cena falha<br>
+              🎁 Editor de vídeo <span style="opacity:.6">(beta — pode mudar)</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin:-6px 0 22px">
+          <a href="/flow" target="_blank" rel="noopener"
+             style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;
+                    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709;
+                    font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:800;text-decoration:none">
+            Ver os planos e ser avisado quando abrir →
+          </a>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px">
+            Quem já usa a plataforma vai receber um aviso por e-mail antes de qualquer cobrança.
+          </div>
+        </div>
+
+        <div style="padding:16px 18px;border-radius:12px;border:1px solid rgba(255,171,0,.3);background:rgba(255,171,0,.06);margin-bottom:18px">
+          <div style="font-size:13px;font-weight:700;color:var(--warning);margin-bottom:7px">🎙️ Sobre a geração de voz</div>
+          <div style="font-size:12.5px;line-height:1.75;color:var(--text);opacity:.92">
+            A voz tem <b>limite por dia</b> e por isso não entra nos planos: ela é liberada
+            <b>conta por conta</b>. Se você já usa, continua usando normalmente —
+            o seu limite aparece no alto da barra lateral, em "Restam Hoje".
+          </div>
+        </div>
+
+        <div style="font-size:13px;font-weight:800;letter-spacing:.3px;color:var(--muted);margin:0 0 10px">POR ONDE COMEÇAR</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+          <div onclick="goTab('trends',document.querySelector('.nav-item[onclick*=trends]'))" style="cursor:pointer;padding:14px 16px;border-radius:11px;border:1px solid var(--border);background:var(--surface2);font-size:12.5px">
+            <b>1. Pesquisar</b><br><span style="color:var(--muted)">ache o assunto que está rendendo</span>
+          </div>
+          <div onclick="goTab('generate',document.querySelector('.nav-item[onclick*=generate]'))" style="cursor:pointer;padding:14px 16px;border-radius:11px;border:1px solid var(--border);background:var(--surface2);font-size:12.5px">
+            <b>2. Narrar</b><br><span style="color:var(--muted)">texto vira áudio com legenda pronta</span>
+          </div>
+          <div onclick="goTab('thumb',document.querySelector('.nav-item[onclick*=thumb]'))" style="cursor:pointer;padding:14px 16px;border-radius:11px;border:1px solid var(--border);background:var(--surface2);font-size:12.5px">
+            <b>3. Miniatura</b><br><span style="color:var(--muted)">a capa que faz a pessoa clicar</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- GERAR -->
-    <div class="tab-pane active" id="tab-generate">
+    <div class="tab-pane" id="tab-generate">
       <!-- 🧩 CARD AUTO-FLOW (20/07): chama atenção pra vitrine EM BREVE (escondida no menu) -->
       <style>
         @keyframes afGlow{0%,100%{box-shadow:0 0 0 0 rgba(79,140,255,.35)}50%{box-shadow:0 0 26px 2px rgba(79,140,255,.45)}}
         #autoflow-card:hover{transform:translateY(-2px);filter:brightness(1.06)}
       </style>
+      <div class="howto">
+        <b class="howto-t">Como usar</b>
+        <ol>
+          <li>Cole o texto da narração na caixa <b>✍️ Texto</b> (à esquerda).</li>
+          <li>Escolha a voz na lista da direita — a escolhida fica marcada com ✓.</li>
+          <li>Clique <b>🎙️ Gerar Áudio</b> e deixe a página aberta: costuma levar de 30 segundos a 2 minutos.</li>
+          <li>No fim aparece o player: baixe o <b>MP3</b> e, se for usar em vídeo, as <b>legendas .SRT</b>.</li>
+        </ol>
+        <p><b>Restam Hoje</b> = quantos áudios ainda dá pra gerar até a virada do dia. Esse teto existe porque a voz tem limite diário; cada áudio gerado desconta 1 e o número volta ao cheio sozinho no dia seguinte.</p>
+      </div>
       <div id="autoflow-card" onclick="goTab('flow',document.querySelector('.nav-item[onclick*=flow]'))"
            style="cursor:pointer;display:flex;align-items:center;gap:14px;margin:0 0 16px;padding:15px 18px;border-radius:14px;
                   border:1px solid rgba(79,140,255,.45);background:linear-gradient(100deg,rgba(79,140,255,.18),rgba(0,229,212,.07) 60%,transparent);
@@ -1060,10 +1182,10 @@ select option{background:var(--surface2)}
           <div class="sc-value t" id="s-td">0</div>
           <div class="sc-sub" id="s-lim">de 5 áudios</div>
         </div>
-        <div class="sc">
+        <div class="sc" title="Áudios que ainda dá pra gerar hoje. Volta ao cheio na virada do dia.">
           <div class="sc-label">Restam Hoje</div>
           <div class="sc-value g" id="s-rem">5</div>
-          <div class="sc-sub">áudios disponíveis</div>
+          <div class="sc-sub">ainda dá pra gerar hoje</div>
         </div>
         <div class="sc">
           <div class="sc-label">Total Gerado</div>
@@ -1089,9 +1211,11 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
               <div class="char-ct" id="char-ct">0 caracteres</div>
               <div style="font-size:11px;color:var(--muted)" id="char-est"></div>
             </div>
+            <div class="fhint">Cabe até <b>150.000 caracteres</b> (um roteiro inteiro). Passou disso, o pedido é recusado: quebre o texto em partes e gere uma de cada vez. O número da direita mostra quanto tempo de áudio vai dar.</div>
             <input id="audio-name-inp" type="text" maxlength="80" placeholder="📝 Nome do arquivo (opcional) — ex.: licao-17-v1" style="width:100%;margin:8px 0 4px;padding:10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:inherit;font-size:12px;box-sizing:border-box">
+            <div class="fhint">É com esse nome que o MP3 e as legendas vão ser baixados — e é por ele que você acha o áudio depois no <b>Histórico</b>. Se deixar vazio, sai como "audio-3f2a1b".</div>
             <details id="adv-panel" style="margin:8px 0 4px;border:1px solid var(--border);border-radius:9px;background:var(--surface2);padding:0 12px">
-              <summary style="cursor:pointer;padding:11px 0;font-size:12px;font-weight:700;color:var(--accent)">⚙️ Ajustes avançados <span style="color:var(--muted);font-weight:500">— velocidade, volume, legenda</span></summary>
+              <summary style="cursor:pointer;padding:11px 0;font-size:12px;font-weight:700;color:var(--accent)">⚙️ Ajustes avançados <span style="color:var(--muted);font-weight:500">— só abra se quiser mudar velocidade, volume ou o corte da legenda</span></summary>
               <div style="padding:2px 0 13px;display:flex;flex-direction:column;gap:13px">
                 <div>
                   <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px"><span>🏃 Velocidade da fala</span><span id="adv-speed-v" style="color:var(--accent);font-weight:700">1.00×</span></label>
@@ -1106,8 +1230,8 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
                   <input type="range" id="adv-words" min="1" max="15" step="1" value="8" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('adv-words-v').textContent=this.value">
                 </div>
                 <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:2px">
-                  <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:2px">🎬 Blocos do SRT VEO3 (cenas)</div>
-                  <div style="font-size:10.5px;color:var(--muted);margin-bottom:10px;line-height:1.4">Escolha por <b>TEMPO</b> (segundos por bloco) <b>ou</b> por <b>PALAVRAS</b>.</div>
+                  <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:2px">🎬 Legenda cortada por cena</div>
+                  <div style="font-size:10.5px;color:var(--muted);margin-bottom:10px;line-height:1.45">Este arquivo de legenda sai picado no tamanho de uma cena de vídeo, pra você saber o que é falado em cada trecho. Defina o corte por <b>TEMPO</b> (segundos de cada bloco) <b>ou</b> por <b>PALAVRAS</b> — um ou outro.</div>
                   <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px"><span>⏱️ Tempo mínimo do bloco</span><span id="adv-veomin-v" style="color:var(--accent);font-weight:700">4 s</span></label>
                   <input type="range" id="adv-veomin" min="1" max="8" step="1" value="4" style="width:100%;accent-color:var(--accent)" oninput="veoTimeSync('min')">
                   <label style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:10px 0 5px"><span>⏱️ Tempo máximo do bloco <span style="opacity:.6">(até 8 s)</span></span><span id="adv-veomax-v" style="color:var(--accent);font-weight:700">8 s</span></label>
@@ -1135,11 +1259,12 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
               <h4>✅ Áudio Gerado com Sucesso!</h4>
               <audio id="audio-player" controls></audio>
               <div class="audio-actions">
-                <a id="btn-dl" class="btn-sm teal" download="audio.mp3">⬇ Download</a>
-                <button class="btn-sm outline" onclick="copyJobId()">📋 Copiar ID</button>
+                <a id="btn-dl" class="btn-sm teal" download="audio.mp3" title="Salva o MP3 no seu computador">⬇ Baixar MP3</a>
+                <button class="btn-sm outline" onclick="copyJobId()" title="Copia o código deste pedido — é o que o suporte pede pra achar o seu áudio">📋 Copiar código</button>
               </div>
               <div class="audio-actions" id="srt-dl-row" style="display:none;flex-wrap:wrap;margin-top:8px"></div>
-              <div style="margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">Job: <span id="job-id-disp">—</span></div>
+              <div style="margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)" title="Código deste pedido. Guarde se precisar falar com o suporte.">Código do áudio: <span id="job-id-disp">—</span></div>
+              <div class="fhint" style="margin-top:6px">Este áudio também fica salvo na aba <b>📋 Histórico</b> — dá pra baixar de novo depois.</div>
             </div>
           </div>
         </div>
@@ -1147,7 +1272,7 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
         <div>
           <div class="card">
             <div class="card-title">🎤 Vozes <span id="v-count-lbl"></span>
-              <button onclick="goTab('voices',document.querySelectorAll('.nav-item')[1]);setTimeout(function(){setGenderFilter('fav',document.querySelector('.vf-btn[data-gender=fav]'))},150)" style="background:rgba(255,180,0,.12);border:1px solid rgba(255,180,0,.3);color:#ffb400;border-radius:7px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">⭐ Favoritas<span id="gen-fav-count"></span></button>
+              <button onclick="goTab('voices',document.querySelector('.nav-item[onclick*=voices]'));setTimeout(function(){setGenderFilter('fav',document.querySelector('.vf-btn[data-gender=fav]'))},150)" style="background:rgba(255,180,0,.12);border:1px solid rgba(255,180,0,.3);color:#ffb400;border-radius:7px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">⭐ Favoritas<span id="gen-fav-count"></span></button>
             </div>
             <div class="voice-search-wrap">
               <span class="voice-search-icon">🔍</span>
@@ -1176,6 +1301,15 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
           A próxima ferramenta da família DarkBlue: <b>automação completa do Google Flow (Veo)</b> —
           extensão que gera suas cenas em fila sozinha + app desktop que comanda a produção inteira.
         </p>
+        <div class="howto" style="text-align:left;max-width:600px;margin:0 auto 24px">
+          <b class="howto-t">Entenda antes de esperar</b>
+          <ol>
+            <li><b>Ainda não está liberado.</b> Esta tela é só uma prévia — não tem botão pra usar hoje.</li>
+            <li>Quando sair, são duas peças: um <b>programa pro seu computador (Windows)</b> e uma <b>extensão do navegador</b>, que trabalham juntas.</li>
+            <li>Elas não geram o vídeo sozinhas: quem gera é o <b>Google Flow (Veo)</b>, na sua conta do Google. O DarkBlue Flow é o robô que fica clicando por você e baixa tudo organizado.</li>
+          </ol>
+          <p>O botão abaixo abre a página com os detalhes. O aviso de lançamento aparece aqui mesmo no Studio — não precisa ficar procurando.</p>
+        </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;text-align:left">
           <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
             <div style="font-size:22px">🚀</div><b style="font-size:13px">Fila de prompts automática</b>
@@ -1202,6 +1336,17 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
     </div>
 
     <div class="tab-pane" id="tab-massa">
+      <div class="howto">
+        <b class="howto-t">Como usar</b>
+        <ol>
+          <li>Arraste até <b>5 arquivos .txt</b> — cada arquivo vira <b>um áudio separado</b>.</li>
+          <li>Escolha <b>uma voz</b> à direita: ela vale para todos os arquivos da vez.</li>
+          <li>Se quiser, troque o nome de cada áudio na lista (é o nome do MP3).</li>
+          <li>Clique <b>🎙️ Gerar Todos os Áudios</b>: eles saem um de cada vez — deixe a página aberta.</li>
+        </ol>
+        <p><b>Como o arquivo .txt tem que estar escrito:</b> só o texto que a voz vai ler, do começo ao fim. Tudo que estiver escrito lá dentro é falado — então nada de <i>[cena 1]</i>, títulos, número de linha ou observação sua. Acentos e pontuação normais. Salve pelo Bloco de Notas em <b>Salvar como → Codificação: UTF-8</b>, senão os acentos saem trocados. Cada arquivo até 150.000 caracteres.</p>
+        <p>Cada arquivo desconta 1 do seu limite do dia (5 arquivos = 5 áudios). Precisa da <b>legenda (.srt)</b>? Depois de gerar, vá na aba <b>📋 Histórico</b> e clique <b>📜 Buscar legenda</b> no áudio.</p>
+      </div>
       <div class="txt-layout">
 
         <!-- LEFT: upload + file list -->
@@ -1212,15 +1357,15 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
             <div class="drop-multi" id="drop-multi">
               <input type="file" id="txt-file-input" accept=".txt" multiple onchange="addTxtFiles(this.files)">
               <div class="dm-icon">📂</div>
-              <div class="dm-title">Arraste ou clique para selecionar</div>
-              <div class="dm-sub">Cada arquivo .txt = uma geração de áudio</div>
+              <div class="dm-title">Arraste seus arquivos aqui ou clique para procurar</div>
+              <div class="dm-sub">Só arquivos <b>.txt</b> — cada um vira um áudio</div>
               <span class="dm-limit">até 5 arquivos</span>
             </div>
 
             <div class="txt-files-list" id="txt-files-list">
               <div class="txt-empty">
                 <div class="te-icon">📄</div>
-                Nenhum arquivo selecionado ainda.<br>Selecione até 5 arquivos .txt acima.
+                Nenhum arquivo escolhido ainda.<br>Solte até 5 arquivos .txt na área acima — eles aparecem nesta lista.
               </div>
             </div>
           </div>
@@ -1255,7 +1400,7 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
             </div>
 
             <div style="margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--muted);line-height:1.6">
-              💡 Cada arquivo .txt será convertido em um áudio separado. Nomeie cada arquivo na lista ao lado.
+              💡 A voz escolhida aqui narra <b>todos</b> os arquivos desta rodada. Para vozes diferentes, gere em rodadas separadas.
             </div>
           </div>
 
@@ -1271,10 +1416,20 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
 
     <!-- HISTÓRICO -->
     <div class="tab-pane" id="tab-history">
+      <div class="howto">
+        <b class="howto-t">Como achar um áudio que você já gerou</b>
+        <ol>
+          <li>Os mais novos ficam em cima. Procure pelo <b>📁 nome</b> que você deu, ou pelo começo do texto narrado.</li>
+          <li>Embaixo de cada linha aparecem a <b>data e hora</b> e a <b>voz</b> usada — dá pra se achar por aí.</li>
+          <li><b>⬇ Baixar</b> salva o MP3 com o nome certo. <b>▶ Ouvir</b> abre o áudio numa aba nova.</li>
+          <li><b>📜 Legenda</b> baixa o arquivo .srt. Se no lugar dele aparecer <b>📜 Buscar legenda</b>, clique: ele vai atrás da legenda desse áudio (sem gastar áudio do seu dia).</li>
+        </ol>
+        <p>A lista guarda os <b>100 últimos</b> e fica salva <b>neste navegador</b> — em outro computador ela aparece vazia. <b>🗑 Limpar</b> apaga só a lista; os arquivos que você já baixou continuam no seu PC.</p>
+      </div>
       <div class="card" style="margin-bottom:14px;padding:14px 18px">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
           <div style="display:flex;align-items:center;gap:12px">
-            <div class="card-title" style="margin:0">📋 Histórico Local</div>
+            <div class="card-title" style="margin:0">📋 Seus áudios</div>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--muted);user-select:none">
               <input type="checkbox" id="hist-sel-all" onchange="toggleSelectAll(this.checked)" style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer">
               Selecionar tudo
@@ -1282,10 +1437,10 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
             <span id="hist-sel-count" style="display:none;font-size:11px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace"></span>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button id="btn-dl-selected" class="btn-sm teal" onclick="downloadSelected()" style="display:none;padding:7px 14px">⬇ Baixar Selecionados</button>
-            <button class="btn-sm outline" onclick="downloadAllZip()" style="padding:7px 14px">📦 ZIP Tudo</button>
-            <button class="btn-sm outline" onclick="exportHistory()" style="padding:7px 14px">⬇ CSV</button>
-            <button class="btn-sm danger" onclick="clearHistory()" style="padding:7px 14px">🗑 Limpar</button>
+            <button id="btn-dl-selected" class="btn-sm teal" onclick="downloadSelected()" style="display:none;padding:7px 14px" title="Baixa os MP3 que você marcou nas caixinhas">⬇ Baixar Selecionados</button>
+            <button class="btn-sm outline" onclick="downloadAllZip()" style="padding:7px 14px" title="Baixa os MP3 da lista inteira, um atrás do outro. O navegador pode pedir permissão para vários downloads.">⬇ Baixar tudo</button>
+            <button class="btn-sm outline" onclick="exportHistory()" style="padding:7px 14px" title="Baixa uma planilha (CSV) com data, voz, texto e link de cada áudio — abre no Excel">⬇ Planilha</button>
+            <button class="btn-sm danger" onclick="clearHistory()" style="padding:7px 14px" title="Apaga esta lista do navegador. Não apaga os arquivos que você já baixou.">🗑 Limpar</button>
           </div>
         </div>
       </div>
@@ -1298,14 +1453,23 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
       <div style="max-width:520px">
         <div class="card">
           <div class="card-title">🎟️ Resgatar Voucher</div>
-          <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.7">Insira um código de voucher para adicionar créditos à sua conta.</p>
+          <div class="howto">
+            <b class="howto-t">O que é um voucher</b>
+            <ol>
+              <li>É um <b>código</b> que libera algo na sua conta: mais áudios por dia, créditos ou um período de acesso.</li>
+              <li><b>Onde se consegue:</b> com quem te liberou o DarkBlue — compra, promoção ou suporte. Não dá pra criar um código aqui dentro.</li>
+              <li>Digite o código e clique <b>Resgatar</b>: a mensagem que aparece logo abaixo diz exatamente o que entrou na sua conta.</li>
+            </ol>
+            <p>Cada código vale <b>uma vez por conta</b>. Se aparecer "inválido ou já utilizado", ou ele já foi usado, ou foi digitado errado.</p>
+          </div>
           <div class="vchr-form">
             <input class="vchr-in" id="vchr-in" type="text" placeholder="Ex: BETA2025" onkeydown="if(event.key==='Enter')redeemVoucher()" oninput="this.value=this.value.toUpperCase()">
             <button class="btn-redeem" id="btn-redeem" onclick="redeemVoucher()">Resgatar</button>
           </div>
+          <div class="fhint" style="margin-bottom:12px">Só letras e números, sem espaço — as letras viram maiúsculas sozinhas. Se o código mexer no seu limite, o "Restam Hoje" muda na hora.</div>
           <div class="vchr-msg" id="vchr-msg"></div>
           <div style="border-top:1px solid var(--border);padding-top:18px;margin-top:4px">
-            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">💡 Conversão de Créditos</div>
+            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">💡 Tabela de créditos</div>
             <div class="conv-grid">
               <div class="conv-item"><div class="conv-label">1 áudio</div><div class="conv-value t">~30</div><div style="font-size:10px;color:var(--muted)">créditos</div></div>
               <div class="conv-item"><div class="conv-label">BETA2025</div><div class="conv-value g">300</div><div style="font-size:10px;color:var(--muted)">créditos</div></div>
@@ -1321,6 +1485,18 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
     <!-- ESTATÍSTICAS -->
     <!-- TENDÊNCIAS YOUTUBE -->
     <div class="tab-pane" id="tab-trends">
+      <div class="howto">
+        <b class="howto-t">Como usar</b>
+        <ol>
+          <li>Escreva o assunto do vídeo (ex.: <b>história de vida real</b>) e clique <b>🔍 Buscar</b>.</li>
+          <li>Os cartões chegam do mais promissor pro menos: quanto maior o <b>score</b>, mais aquele vídeo rendeu acima do normal.</li>
+          <li><b>🎯 Caçar Nicho</b> procura também as variações que as pessoas digitam de verdade — são só <b>2 por dia</b>. <b>🔥 Em Alta</b> mostra o que está bombando na região agora.</li>
+          <li>Gostou de um vídeo? <b>🔖 Salvar referência</b> guarda ele na lista lá embaixo pra você estudar depois.</li>
+        </ol>
+        <p><b>Score de viralidade (0 a 100)</b>: o quanto o vídeo passou do esperado pro tamanho do canal — junta views x inscritos, velocidade e curtidas. De 60 pra cima já é vídeo fora da curva.</p>
+        <p><b>VPH</b>: visualizações por hora desde que o vídeo foi publicado. É a velocidade dele — 200/h já é rápido, 1.000/h é foguete.</p>
+        <p><b>🚀 Canal-Referência</b>: canal pequeno, com poucos vídeos, fazendo muita visualização. É o canal que mais vale copiar o jeito de fazer quando você está começando — ele provou que dá pra crescer sem audiência grande.</p>
+      </div>
       <!-- Linha 1: busca + botão -->
       <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
         <div style="flex:1;min-width:200px">
@@ -1347,6 +1523,7 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
           </button>
         </div>
       </div>
+      <div class="fhint" style="margin:0 2px 12px">Escreva como uma pessoa buscaria no YouTube, com <b>3 a 5 palavras</b>: <i>receita de pão caseiro</i>, <i>história de superação de mãe</i>. Uma palavra só ("dinheiro") traz coisa demais e nada que sirva.</div>
       <!-- Sugestões de palavras-chave (autocomplete real do YouTube) -->
       <div id="yt-suggest-box" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:14px;align-items:center">
         <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">💡 As pessoas buscam:</span>
@@ -1443,20 +1620,28 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
         <div style="min-width:110px;flex:1">
           <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Idiomas</div>
           <select id="yt-lang" style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:8px 10px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:12px;outline:none;width:100%">
-            <option value="multi">🌐 PT+EN+ES+FR</option>
-            <option value="pt">🇧🇷 Português</option>
+            <!-- 08/08: o PADRÃO virou Português. O "multi" faz 4 buscas num clique e
+                 o YouTube só libera 100 buscas por DIA para o app inteiro — deixá-lo
+                 como padrão queimava a cota de todos sem ninguém perceber. -->
+            <option value="pt" selected>🇧🇷 Português</option>
             <option value="en">🇺🇸 Inglês</option>
             <option value="es">🇪🇸 Espanhol</option>
             <option value="fr">🇫🇷 Francês</option>
+            <option value="multi">🌐 PT+EN+ES+FR (gasta 4x)</option>
           </select>
         </div>
+      </div>
+      <div class="fhint" style="margin:-8px 2px 16px">
+        Não precisa mexer em nada disso pra começar — os filtros só apertam o resultado. Dois que mudam bastante: <b>Inscritos — máx</b> em 10K só mostra canal pequeno (o que dá pra imitar), e <b>Idiomas 🌐 PT+EN+ES+FR</b> busca nos quatro de uma vez (traz muito mais, mas gasta 4x da busca do dia e desliga o "Carregar mais").<br>
+        <b>Por que a busca tem limite:</b> o YouTube libera uma quantidade de buscas por dia para o app, e ela é dividida entre todos os usuários. Se aparecer erro falando em <i>cota/quota</i>, acabou por hoje — volta sozinho amanhã. Enquanto isso as sugestões de palavra ("💡 As pessoas buscam") continuam funcionando, porque essas não gastam nada.
       </div>
       <!-- Perfil de busca do usuário (personalização tipo YouTube) -->
       <div id="yt-profile" style="display:none;background:var(--surface);border:1px solid var(--border-a);border-radius:12px;padding:14px;margin-bottom:18px"></div>
       <div id="yt-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
         <div style="grid-column:1/-1;text-align:center;padding:56px 20px;color:var(--muted)">
           <div style="font-size:36px;margin-bottom:12px;opacity:.25">🎬</div>
-          <p style="font-size:14px">Digite um nicho ou palavra-chave e clique em Buscar</p>
+          <p style="font-size:14px">Escreva o assunto do vídeo lá em cima e clique em <b>🔍 Buscar</b></p>
+          <p style="font-size:12.5px;margin-top:6px">Ex.: <i>história de superação de mãe</i> · <i>receita de pão caseiro</i></p>
         </div>
       </div>
       <div id="yt-load-more" style="display:none;text-align:center;margin-top:16px">
@@ -1474,6 +1659,7 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
           </div>
           <button onclick="ytClearRefs()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif">🗑 Limpar</button>
         </div>
+        <div class="fhint" style="margin:0 2px 10px">Seus vídeos marcados com 🔖 ficam aqui (até 50), salvos <b>neste navegador</b>. Em outro computador a lista aparece vazia.</div>
         <div id="refs-empty" style="text-align:center;padding:32px 20px;color:var(--muted);border:2px dashed var(--border);border-radius:12px;font-size:13px">
           <div style="font-size:28px;margin-bottom:8px;opacity:.25">🔖</div>
           Nenhuma referência salva ainda.<br>Clique em "Salvar referência" nos cards acima.
@@ -1495,6 +1681,19 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
         </button>
       </div>
 
+      <div class="howto">
+        <b class="howto-t">Como usar</b>
+        <ol>
+          <li>Primeiro peça a <b>liberação do seu e-mail</b> (é o botão da caixa amarela logo abaixo). Sem isso o Google barra a conexão.</li>
+          <li>Depois clique <b>🔗 Conectar com Google</b> e entre com a conta <b>dona do canal</b> — marque todas as caixinhas de permissão que o Google mostrar, senão a conexão volta com erro.</li>
+          <li>O canal aparece como um cartão aqui. Clique <b>📈 Analisar</b> e espere: sai um raio-x dos <b>últimos 30 dias</b>.</li>
+          <li>No fim do relatório tem o <b>🤖 Prompt pronto pra IA</b>: clique <b>📋 Copiar Prompt</b> e cole no Claude, ChatGPT ou Gemini pra receber as melhorias.</li>
+        </ol>
+        <p><b>O que o app vê:</b> só os números do canal — visualizações, quanto tempo as pessoas assistem, inscritos ganhados, curtidas e os títulos dos seus vídeos. Nada disso é público, fica só na sua tela.</p>
+        <p><b>O que o app NÃO faz:</b> não publica, não edita, não apaga vídeo, não responde comentário e não vê a sua senha. A permissão que o Google pede é <b>só de leitura</b>. Dá pra desconectar quando quiser no <b>✕</b> do cartão.</p>
+        <p>Cabem até <b>5 canais</b> por conta. Se você não é o dono do canal, não dá pra analisar por aqui — precisa entrar com a conta que administra ele.</p>
+      </div>
+
       <!-- AVISO DE LIBERAÇÃO (OAuth em modo teste do Google) -->
       <div style="margin-bottom:16px;background:rgba(255,171,0,.07);border:1px solid rgba(255,171,0,.3);border-radius:12px;padding:16px 18px">
         <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
@@ -1514,9 +1713,9 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
           <div style="margin-top:10px;font-size:12px;color:var(--muted)">
             👉 Sem essa liberação prévia, o Google bloqueia o acesso e a conexão não funciona.
           </div>
-          <a href="https://wa.me/5581995738085?text=Ol%C3%A1!%20Quero%20liberar%20meu%20e-mail%20para%20conectar%20meu%20canal%20do%20YouTube%20no%20Studio%20de%20Voz%20IA." target="_blank" rel="noopener"
-            style="display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:10px 18px;background:linear-gradient(135deg,#25D366,#128C7E);border-radius:9px;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-decoration:none;box-shadow:0 4px 16px rgba(37,211,102,.25)">
-            💬 Falar com o suporte no WhatsApp · (81) 9 9573-8085
+          <a href="mailto:contato@darkblue.app.br?subject=Liberar%20meu%20e-mail%20para%20conectar%20o%20canal&body=Ol%C3%A1!%20Quero%20liberar%20meu%20e-mail%20para%20conectar%20meu%20canal%20do%20YouTube.%0A%0AMeu%20e-mail%20do%20Google%3A%20"
+            style="display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:10px 18px;background:linear-gradient(135deg,var(--accent),#1f6feb);border-radius:9px;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;text-decoration:none;box-shadow:0 4px 16px rgba(31,111,235,.25)">
+            ✉️ Pedir liberação por e-mail
           </a>
         </div>
       </div>
@@ -1530,11 +1729,20 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
     </div>
 
     <div class="tab-pane" id="tab-stats">
+      <div class="howto">
+        <b class="howto-t">O que esta tela mostra</b>
+        <ol>
+          <li>É o seu <b>consumo de voz</b>: quantos áudios você já gerou aqui dentro. Não tem nada do seu canal do YouTube.</li>
+          <li>O gráfico dos <b>últimos 7 dias</b> serve pra ver se você está usando pouco ou já batendo no limite do dia.</li>
+          <li><b>Vozes mais usadas</b> mostra as suas preferidas na prática — bom pra manter a mesma voz em todos os vídeos.</li>
+        </ol>
+        <p>Não tem nada pra clicar aqui: a tela só mostra números e se atualiza sozinha a cada vez que você entra. Quem quer o áudio em si vai na aba <b>📋 Histórico</b>.</p>
+      </div>
       <div class="stats-row" id="stats-cards" style="margin-bottom:22px">
-        <div class="sc"><div class="sc-label">Total de Áudios</div><div class="sc-value t" id="stat-total">—</div><div class="sc-sub">desde o início</div></div>
-        <div class="sc"><div class="sc-label">Este Mês</div><div class="sc-value g" id="stat-month">—</div><div class="sc-sub">áudios gerados</div></div>
-        <div class="sc"><div class="sc-label">Caracteres</div><div class="sc-value" id="stat-chars">—</div><div class="sc-sub">total processado</div></div>
-        <div class="sc"><div class="sc-label">Hoje</div><div class="sc-value w" id="stat-today">—</div><div class="sc-sub">áudios gerados</div></div>
+        <div class="sc" title="Todos os áudios que você já gerou nesta conta"><div class="sc-label">Total de Áudios</div><div class="sc-value t" id="stat-total">—</div><div class="sc-sub">desde o início</div></div>
+        <div class="sc" title="Áudios gerados nos últimos 30 dias (não é do dia 1 ao 30 do mês)"><div class="sc-label">Últimos 30 dias</div><div class="sc-value g" id="stat-month">—</div><div class="sc-sub">áudios gerados</div></div>
+        <div class="sc" title="Soma das letras e espaços de todos os textos que você já narrou"><div class="sc-label">Caracteres</div><div class="sc-value" id="stat-chars">—</div><div class="sc-sub">letras somadas de todos os textos</div></div>
+        <div class="sc" title="Áudios gerados hoje. Zera na virada do dia."><div class="sc-label">Hoje</div><div class="sc-value w" id="stat-today">—</div><div class="sc-sub">áudios gerados</div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="card">
@@ -1579,6 +1787,15 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
         <div style="font-size:15px;font-weight:700">📚 Organização — seus vídeos</div>
         <div style="font-size:12px;color:#8b99b3">Guarde por vídeo: roteiro, título, descrição/SEO e a miniatura. Fica tudo no seu navegador.</div>
         <button onclick="bancoNovo()" style="margin-left:auto;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:8px;padding:8px 14px;white-space:nowrap">➕ Novo projeto</button>
+      </div>
+      <div class="howto">
+        <b class="howto-t">Como usar</b>
+        <ol>
+          <li>Clique <b>➕ Novo projeto</b> e dê o nome do vídeo (ex.: "Lição 17 — potes de dinheiro"). Um projeto = um vídeo.</li>
+          <li>Deixe esse projeto como <b>⭐ ativo</b>: é dentro dele que as abas <b>🔤 SEO</b> e <b>🖼️ Editor de Miniatura</b> salvam o que você fizer.</li>
+          <li>Volte aqui e abra o card pra ver tudo junto e <b>copiar</b> título, descrição, tags ou roteiro na hora de publicar.</li>
+        </ol>
+        <p>Fica guardado <b>só neste navegador, neste computador</b>. Pra ter uma cópia fora, abra o projeto e use <b>⬇️ Baixar tudo (.txt)</b>.</p>
       </div>
       <div id="banco-ativo" style="font-size:12px;color:var(--muted);margin-bottom:12px"></div>
       <div id="banco-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px"></div>
@@ -1778,7 +1995,7 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
     </div>
     <div class="md-toast" id="md-toast"></div>
 
-    <!-- ═══ DOBRA DE NICHO (proxy DarkPlanner) ═══ -->
+    <!-- ═══ DOBRA DE NICHO ═══ -->
     <style>
     .db-hero{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;flex-wrap:wrap}
     .db-hero input{flex:1;min-width:240px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
@@ -1848,13 +2065,26 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
     <div class="tab-pane" id="tab-dobra">
       <div class="tools-page-header">
         <div class="tools-page-title">📡 Radar de Nicho</div>
-        <div class="tools-page-sub">Cole um canal de referência. A ferramenta lê o que fez os vídeos vencerem e desenha um mapa de oportunidades: subnichos pra aprofundar, dobras pra outros nichos e adaptação de mercado.</div>
+        <div class="tools-page-sub">Cole o endereço de um canal que já vai bem no seu assunto. A ferramenta lê os vídeos dele, descobre o que faz aqueles vídeos ganharem e devolve uma lista de ideias que você pode fazer.</div>
+      </div>
+
+      <div class="howto">
+        <b class="howto-t">Como usar</b>
+        <ol>
+          <li>Cole o endereço de <b>um canal que já dá certo</b> no assunto que você quer fazer (não precisa ser o seu).</li>
+          <li>Clique <b>🔍 Analisar</b> e espere até <b>1 minuto</b> sem fechar a página.</li>
+          <li>Leia o <b>🧬 DNA do canal</b> (para quem ele fala e o que se repete nos vídeos que ganharam) e depois as ideias, que vêm em três listas.</li>
+          <li>Guarde com <b>⬇ Baixar TXT</b>, ou clique <b>⧉ Copiar pedido + dados pra IA</b> e cole no Claude, ChatGPT ou Gemini pra virar título e roteiro.</li>
+        </ol>
+        <p>As três listas de ideias: <b>🌊 Mar de Ideias</b> = outros vídeos pro <b>mesmo público</b>. <b>🔀 Dobra</b> = a mesma receita que funciona, aplicada a um <b>assunto totalmente diferente</b>. <b>🌍 Adaptação de Mercado</b> = a mesma ideia em <b>outro país ou idioma</b>.</p>
+        <p><b>São 2 análises por dia</b> por conta (o número fica logo abaixo do campo). É pouco porque cada análise usa IA e sai caro; quando acabar, volta sozinho amanhã.</p>
       </div>
 
       <div class="db-hero">
         <input id="db-url" type="text" placeholder="https://www.youtube.com/@CanalDeReferencia" onkeydown="if(event.key==='Enter')analisarDobra()">
         <button class="db-go" id="db-go" onclick="analisarDobra()">🔍 Analisar →</button>
       </div>
+      <div class="fhint" style="margin:0 2px 10px">Tem que ser o endereço do <b>canal</b>, aquele com <b>@</b> — ex.: <i>https://www.youtube.com/@NomeDoCanal</i>. Link de vídeo não serve. Pra pegar: abra o canal no YouTube e copie o endereço da barra do navegador.</div>
       <div class="db-hint"><span id="db-counter" class="db-counter">Análises hoje: —</span> · a análise pode levar até ~1 min (a IA precisa de tempo pra entregar tudo).</div>
 
       <div id="db-result"></div>
@@ -1900,7 +2130,17 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
     <div class="tab-pane" id="tab-niches">
       <div class="tools-page-header">
         <div class="tools-page-title">🧭 Caçador de Canais</div>
-        <div class="tools-page-sub">Ache canais por nicho e ordene por sinais de crescimento. O selo 🚀 marca canais com poucos inscritos e muitas views (canal-referência). Dados da API do YouTube — sem faceless%/monetizado (isso é do NexLev pago).</div>
+        <div class="tools-page-sub">Aqui você não procura vídeo, procura <b>canal</b>: quem está crescendo no assunto que você quer fazer. Os números vêm direto do YouTube (inscritos, visualizações e ritmo de postagem).</div>
+      </div>
+      <div class="howto">
+        <b class="howto-t">Como usar</b>
+        <ol>
+          <li>Digite o assunto e clique <b>🔍 Buscar</b>. Assunto simples funciona melhor aqui: <i>receitas de bolo</i>, <i>finanças pessoais</i>, <i>histórias de mistério</i>.</li>
+          <li>Ponha o <b>idioma</b> do canal que você quer achar, senão vem tudo misturado.</li>
+          <li>Use as <b>bolinhas coloridas</b> pra trocar o critério da lista. A mais útil pra quem está começando é <b>💎 Poucos Inscritos, Muitas Views</b> — é onde estão os canais pequenos que estão dando certo.</li>
+          <li><b>Abrir canal ↗</b> abre no YouTube pra você ver os vídeos, os títulos e as capas de perto.</li>
+        </ol>
+        <p>O número grande no canto do cartão é o <b>score de 0 a 100</b>: quanto mais alto, mais o canal está rendendo acima do tamanho dele. O selo <b>🚀 Ref</b> (canal-referência) marca o canal pequeno que faz muita visualização — é o molde mais realista pra copiar, porque ele conseguiu sem ter audiência grande.</p>
       </div>
       <div class="nf-bar">
         <input id="nf-q" type="text" placeholder="Nicho: receitas, finanças, true crime, mitologia…" onkeydown="if(event.key==='Enter')nfSearch(true)">
@@ -1921,6 +2161,7 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
         </select>
         <button class="nf-go" onclick="nfSearch(true)">🔍 Buscar</button>
       </div>
+      <div class="fhint" style="margin:-4px 2px 12px"><b>Inscritos</b>: marcar <b>até 10K</b> é o atalho pra achar canal novo, do tamanho do seu. Veio pouca coisa? Tire um filtro ou troque a palavra por um termo mais comum.</div>
       <div class="nf-tabs" id="nf-tabs"></div>
       <div class="nf-grid" id="nf-grid">
         <div class="nf-state"><div class="nf-ic">🧭</div>Digite um nicho e clique em Buscar pra garimpar canais.</div>
@@ -1929,12 +2170,22 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
     </div>
 
     <div class="tab-pane" id="tab-voices">
+      <div class="howto">
+        <b class="howto-t">Como usar</b>
+        <ol>
+          <li>Filtre pelo idioma (🇧🇷 PT, 🇺🇸 EN…) ou digite nome/sotaque na busca.</li>
+          <li><b>▶</b> toca uma prévia pronta da voz — é de graça e <b>não desconta</b> nada do seu dia.</li>
+          <li><b>⚡ Usar</b> deixa essa voz escolhida; volte em <b>Gerar Áudio</b> e gere com o seu texto.</li>
+          <li><b>⭐</b> guarda a voz nas favoritas, pra achar rápido nas próximas vezes.</li>
+        </ol>
+        <p><b>Cuidado com os 2 botões que gastam:</b> <b>🎵 Gerar</b> e <b>⬇ Gerar nas favoritas</b> criam áudio de verdade com o texto que estiver na aba Gerar Áudio. Cada áudio desconta 1 do seu limite do dia — e nas favoritas é 1 para <b>cada</b> voz marcada.</p>
+      </div>
       <div class="selected-voice-banner" id="svb">
         <span>🎤</span>
         <span class="svb-label">Voz Selecionada:</span>
         <span id="svb-name" style="font-weight:700;color:var(--accent)">—</span>
         <span id="svb-lang" style="font-size:11px;color:var(--muted);margin-left:4px"></span>
-        <button onclick="goTab('generate',document.querySelector('.nav-item'))" style="margin-left:auto;padding:5px 12px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-size:11px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">⚡ Gerar Agora</button>
+        <button onclick="goTab('generate',document.querySelector('.nav-item[onclick*=generate]'))" style="margin-left:auto;padding:5px 12px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-size:11px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif">⚡ Gerar Agora</button>
       </div>
       <div class="vlib-toolbar">
         <div class="vlib-search-wrap">
@@ -1958,7 +2209,7 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
           <button class="vf-btn" data-gender="fav" onclick="setGenderFilter('fav',this)">⭐ Favoritas</button>
           <button class="vf-btn" id="vf-multi" onclick="toggleMultiFilter(this)" title="Só vozes que falam vários idiomas">🌍 Multi-idioma</button>
           <span class="vlib-count" id="vlib-count">— vozes</span>
-          <button class="btn-dl-zip" id="btn-dl-zip" onclick="downloadFavoritesZip()">⬇ ZIP Favoritas</button>
+          <button class="btn-dl-zip" id="btn-dl-zip" onclick="downloadFavoritesZip()" title="Gera o texto da aba Gerar Áudio em TODAS as vozes favoritas e baixa um MP3 de cada. Gasta 1 áudio do seu dia por voz.">⬇ Gerar nas favoritas</button>
         </div>
       </div>
       <div class="vlib-grid" id="vlib-grid">
@@ -2238,7 +2489,7 @@ async function searchYT(loadMore){
     else ytNextPage='';
     if(!loadMore)results.innerHTML='';
     if(!allItems.length){
-      if(!loadMore)results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px">Nenhum resultado encontrado.</div>';
+      if(!loadMore)results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px">Nenhum resultado. Tente palavras mais comuns, ou volte os filtros de inscritos, período e duração para o padrão.</div>';
       if(loadMoreBtn)loadMoreBtn.style.display='none';
       return;
     }
@@ -2249,7 +2500,7 @@ async function searchYT(loadMore){
   }catch(e){
     results.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--error);font-size:13px">❌ ${escHtml(e.message)}</div>`;
   }finally{
-    if(btn){btn.disabled=false;btn.textContent='🔍 Buscar Vídeos';}
+    if(btn){btn.disabled=false;btn.textContent='🔍 Buscar';}
   }
 }
 
@@ -2614,7 +2865,7 @@ function nomeDoAudio(jobId){
   return sanitizeName(document.getElementById('audio-name-inp')?.value)
     ||('audio-'+String(jobId||'').substring(0,8));
 }
-/* ── Ajustes avançados (parâmetros que a API do DarkPlanner aceita: velocidade,
+/* ── Ajustes avançados (parâmetros que o motor de voz aceita: velocidade,
    volume, legenda). Só manda o que foi MUDADO do padrão — assim o comportamento
    normal fica intacto e nada quebra pra quem não mexer. ── */
 function genOpts(){
@@ -2663,9 +2914,14 @@ function showAudio(url,jobId,extra){
   // ── Legendas sincronizadas: legenda + palavra a palavra + SRT Tempo VEO3 ──
   const row=document.getElementById('srt-dl-row');
   if(row){
-    const items=[['srt_url','📜 Legenda (SRT)',nome+'.srt'],['srt_palavra_url','🔤 SRT palavra',nome+'-palavra.srt'],['srt_tempo_url','🎬 SRT Tempo VEO3',nome+'-tempo-veo3.srt']];
-    const links=items.filter(([k])=>extra&&extra[k]).map(([k,lbl,fn])=>`<a class="btn-sm outline" href="${escHtml(proxyDl(extra[k],fn))}" download="${escHtml(fn)}">${lbl}</a>`);
-    row.innerHTML=links.join('');
+    const items=[
+      ['srt_url','📜 Legenda normal',nome+'.srt','Legenda comum, em frases — a que você joga no editor de vídeo'],
+      ['srt_palavra_url','🔤 Legenda palavra por palavra',nome+'-palavra.srt','Cada palavra com a hora exata — pra legenda que acende palavra a palavra'],
+      ['srt_tempo_url','🎬 Legenda por cena',nome+'-tempo-veo3.srt','Texto picado no tamanho de uma cena (4 a 8 s) — pra saber o que é falado em cada cena']
+    ];
+    const links=items.filter(([k])=>extra&&extra[k]).map(([k,lbl,fn,tip])=>`<a class="btn-sm outline" title="${escHtml(tip)}" href="${escHtml(proxyDl(extra[k],fn))}" download="${escHtml(fn)}">${lbl}</a>`);
+    const caption='<div style="flex-basis:100%;width:100%;font-size:11.5px;line-height:1.55;color:var(--muted);margin-bottom:2px">📜 <b style="color:var(--text)">SRT é o arquivo de legenda</b>: o texto já vem com a hora certa de cada fala. Baixe junto com o MP3 e arraste no editor de vídeo — a legenda entra sincronizada, sem digitar nada.</div>';
+    row.innerHTML=(links.length?caption:'')+links.join('');
     row.style.display=links.length?'flex':'none';
   }
   document.getElementById('audio-result').classList.add('show');
@@ -2810,7 +3066,7 @@ function removeTxtFile(idx){
 function renderTxtFiles(){
   const list=document.getElementById('txt-files-list');
   if(!txtFiles.length){
-    list.innerHTML=`<div class="txt-empty"><div class="te-icon">📄</div>Nenhum arquivo selecionado ainda.<br>Selecione até 5 arquivos .txt acima.</div>`;
+    list.innerHTML=`<div class="txt-empty"><div class="te-icon">📄</div>Solte até 5 arquivos .txt na área acima<br>— eles aparecem nesta lista.</div>`;
     return;
   }
   list.innerHTML=txtFiles.map((f,i)=>{
@@ -3035,7 +3291,7 @@ async function loadCloudHistory(){
 }
 
 function clearHistory(){
-  if(!confirm('Limpar histórico local?'))return;
+  if(!confirm('Apagar esta lista de áudios?\n\nOs arquivos que você já baixou continuam no seu computador — some só a lista daqui.'))return;
   localStorage.removeItem('svia_history');renderHistory();
 }
 function exportHistory(){
@@ -3047,7 +3303,7 @@ function exportHistory(){
 function renderHistory(){
   const list=document.getElementById('hist-list'),h=getHistory();
   if(!h.length){
-    list.innerHTML=`<div class="empty-state"><div class="empty-icon">🎵</div><p>Nenhum áudio gerado ainda.</p></div>`;
+    list.innerHTML=`<div class="empty-state"><div class="empty-icon">🎵</div><p>Nenhum áudio ainda.<br><span style="font-size:12.5px">Gere o primeiro na aba <b>⚡ Gerar Áudio</b> — ele aparece aqui sozinho.</span></p></div>`;
     updateHistSelUI();return;
   }
   list.innerHTML=h.map((item,i)=>{
@@ -3056,9 +3312,9 @@ function renderHistory(){
     // SRTs: se o item já tem os links, botões diretos; senão, botão que SOLICITA pelo job
     const srtBtns=item.url?(
       (item.srt||item.srtt)
-        ?`${item.srt?`<a href="${escHtml(proxyDl(item.srt,safeName+'.srt'))}" download="${escHtml(safeName)}.srt" style="margin-left:6px;font-size:11px">📜 SRT</a>`:''}
-           ${item.srtt?`<a href="${escHtml(proxyDl(item.srtt,safeName+'-tempo-veo3.srt'))}" download="${escHtml(safeName)}-tempo-veo3.srt" style="margin-left:6px;font-size:11px">🎬 SRT Tempo</a>`:''}`
-        :(item.jobId?`<a href="javascript:void(0)" onclick="fetchHistSrt(${i})" style="margin-left:6px;font-size:11px;color:var(--muted)" title="Buscar as legendas deste áudio">📜 Buscar SRT</a>`:'')
+        ?`${item.srt?`<a href="${escHtml(proxyDl(item.srt,safeName+'.srt'))}" download="${escHtml(safeName)}.srt" style="margin-left:6px;font-size:11px" title="Legenda pronta deste áudio (.srt) — arraste no editor de vídeo e ela entra sincronizada">📜 Legenda</a>`:''}
+           ${item.srtt?`<a href="${escHtml(proxyDl(item.srtt,safeName+'-tempo-veo3.srt'))}" download="${escHtml(safeName)}-tempo-veo3.srt" style="margin-left:6px;font-size:11px" title="Legenda picada no tamanho de uma cena (4 a 8 segundos)">🎬 Legenda por cena</a>`:''}`
+        :(item.jobId?`<a href="javascript:void(0)" onclick="fetchHistSrt(${i})" style="margin-left:6px;font-size:11px;color:var(--muted)" title="Procura a legenda .srt deste áudio. Não gasta áudio do seu dia.">📜 Buscar legenda</a>`:'')
     ):'';
     return `<div class="hi" id="hi-${i}">
       <label style="display:flex;align-items:center;padding:0 4px 0 2px;cursor:pointer;flex-shrink:0">
@@ -3085,7 +3341,7 @@ function renderHistory(){
    antigo pelo job_id e grava no histórico — o usuário SOLICITA quando quiser ── */
 async function fetchHistSrt(i){
   const h=getHistory();const item=h[i];
-  if(!item||!item.jobId){alert('Este item não tem Job ID — gere o áudio de novo para ter SRT.');return;}
+  if(!item||!item.jobId){alert('Este áudio é antigo e não tem código de pedido — gere de novo para sair com a legenda.');return;}
   try{
     const r=await fetch(`${API}/api/generate-index?job_id=${encodeURIComponent(item.jobId)}`,{headers:{Authorization:`Bearer ${token}`}});
     const d=await r.json();
@@ -3094,9 +3350,9 @@ async function fetchHistSrt(i){
       localStorage.setItem('svia_history',JSON.stringify(h));
       renderHistory();
     } else {
-      alert('SRT não disponível para este áudio (gerado antes da atualização). Gere de novo para ter as legendas.');
+      alert('Este áudio não tem legenda guardada (foi gerado antes da legenda existir). Gere o texto de novo para sair com a legenda junto.');
     }
-  }catch(e){alert('Erro ao buscar SRT. Tente de novo.');}
+  }catch(e){alert('Não consegui buscar a legenda agora. Tente de novo em instantes.');}
 }
 
 function onHistCheck(){
@@ -3178,7 +3434,7 @@ async function redeemVoucher(){
 }
 
 /* ── TABS ── */
-const TAB_TITLES={generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Radar de Nicho',niches:'Caçador de Canais',flow:'DarkBlue Flow',thumb:'Editor de Miniatura',seo:'SEO (título/descrição/tags)',banco:'Organização'};
+const TAB_TITLES={inicio:'Início',generate:'Gerar Áudio',voices:'Biblioteca de Vozes',massa:'Arquivos .TXT',history:'Histórico',voucher:'Voucher',stats:'Estatísticas',trends:'Tendências YouTube',canais:'Meus Canais',imagens:'Ferramentas de Imagem',esportes:'HypeEsportivo',midias:'Vídeos e Imagens',dobra:'Radar de Nicho',niches:'Caçador de Canais',flow:'DarkBlue Flow',thumb:'Editor de Miniatura',seo:'SEO (título/descrição/tags)',banco:'Organização'};
 function goTab(name,el){
   document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active'));
@@ -3376,8 +3632,8 @@ function mdToast(msg){
   clearTimeout(mdToastT); mdToastT=setTimeout(()=>t.style.display='none',3200);
 }
 
-/* ══ DOBRA DE NICHO (proxy DarkPlanner via /api/youtube?action=dobra) ══ */
-/* Renderer tolerante: não sabemos o schema exato do DarkPlanner, então cada campo é
+/* ══ DOBRA DE NICHO (via /api/youtube?action=dobra) ══ */
+/* Renderer tolerante: o schema da origem varia, então cada campo é
    buscado por vários nomes prováveis (PT/EN) e sempre há um "Ver dados brutos (JSON)". */
 let dobraBusy=false, dobraLast=null, dobraInit=false;
 function initDobra(){ if(!dobraInit){ dobraInit=true; setTimeout(()=>document.getElementById('db-url').focus(),60); } dobraLoadCount(); }
@@ -3462,7 +3718,7 @@ async function dobraPoll(jobId){
     const r=await fetch(`${API}/api/youtube?action=dobra&job_id=${encodeURIComponent(jobId)}`,{headers:{Authorization:`Bearer ${token}`}});
     const d=await r.json().catch(()=>({}));
     const st=String(dbGet(d,['status','state'])||'').toLowerCase();
-    if(['failed','error','cancelled'].includes(st)) throw new Error('A análise falhou no DarkPlanner.');
+    if(['failed','error','cancelled'].includes(st)) throw new Error('A análise falhou.');
     if(['completed','done','success','finished'].includes(st) || dbGet(d,['dna','nicho_principal','nicho','mar_de_ideias'])) return d;
   }
   throw new Error('Tempo esgotado esperando a análise.');
@@ -3679,9 +3935,9 @@ function nfCard(c){
   const thumbs=(c.thumbs&&c.thumbs.length)?c.thumbs.map(t=>`<div class="nf-th" style="background-image:url('${t}')"></div>`).join(''):'<div class="nf-th nf-th-empty"></div>';
   el.innerHTML=`<div class="nf-head">${av}
     <div class="nf-id"><div class="nf-name">${dbEsc(c.title)} ${flag}</div><div class="nf-sub">${nfNum(c.subscribers)} inscritos · ${nfNum(c.videoCount)} vídeos</div></div>
-    ${c.isHype?'<span class="nf-badge">🚀 Ref</span>':''}<span class="nf-score" title="Score viral (0-100)">${c.score}</span></div>
+    ${c.isHype?'<span class="nf-badge" title="Canal-referência: tem poucos inscritos e mesmo assim faz muita visualização. É o tipo de canal que vale copiar o jeito de fazer.">🚀 Ref</span>':''}<span class="nf-score" title="Nota de 0 a 100: o quanto este canal rende acima do tamanho dele. Quanto maior, mais fora da curva.">${c.score}</span></div>
     <div class="nf-thumbs">${thumbs}</div>
-    <div class="nf-stats"><div><b>${nfNum(c.totalViews)}</b><span>views</span></div><div><b>${nfNum(c.viewsPerMonth)}</b><span>views/mês</span></div><div><b>${nfNum(c.avgViews)}</b><span>méd/vídeo</span></div><div><b>${c.uploadsPerWeek}</b><span>vid/sem</span></div></div>
+    <div class="nf-stats"><div title="Visualizações somadas de todos os vídeos do canal, desde que ele existe"><b>${nfNum(c.totalViews)}</b><span>views</span></div><div title="Quantas visualizações o canal faz por mês, na média"><b>${nfNum(c.viewsPerMonth)}</b><span>views/mês</span></div><div title="Visualizações que cada vídeo faz, na média"><b>${nfNum(c.avgViews)}</b><span>méd/vídeo</span></div><div title="Quantos vídeos o canal publica por semana, na média"><b>${c.uploadsPerWeek}</b><span>vídeos/sem</span></div></div>
     <a class="nf-open" href="${c.url}" target="_blank" rel="noopener">Abrir canal ↗</a>`;
   return el;
 }
@@ -3970,9 +4226,9 @@ async function generateFromLib(vid, vname, btnEl, e){
 // Baixar todas as favoritas em ZIP
 async function downloadFavoritesZip(){
   if(genInFlight){alert('⏳ Já existe uma geração em andamento. Aguarde terminar.');return;}
-  if(!favorites.length){alert('⭐ Marque algumas vozes como favoritas primeiro!');return;}
+  if(!favorites.length){alert('⭐ Você ainda não marcou nenhuma voz como favorita.\nClique na estrelinha das vozes que você gosta e tente de novo.');return;}
   const text=document.getElementById('text-input')?.value?.trim();
-  if(!text){alert('⚠️ Digite um texto na aba "Gerar Áudio" antes de baixar em ZIP!');return;}
+  if(!text){alert('⚠️ Não tem texto para narrar.\nVá na aba "Gerar Áudio", cole o texto e volte aqui.');return;}
   const btn=document.getElementById('btn-dl-zip');
   genInFlight=true;
   btn.disabled=true;btn.textContent='⏳ Gerando...';
@@ -4011,7 +4267,7 @@ async function downloadFavoritesZip(){
   sessionStorage.removeItem('auth_cache');refreshStats(true);
   }finally{
     genInFlight=false;
-    btn.disabled=false;btn.textContent='⬇ ZIP Favoritas';
+    btn.disabled=false;btn.textContent='⬇ Gerar nas favoritas';
   }
 }
 
@@ -4165,7 +4421,7 @@ async function huntNiche(){
       banner.innerHTML='<span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">🎯 Nicho varrido:</span>'+d.expanded.map(t=>`<span style="background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:3px 10px;font-size:11px;color:var(--accent)">${escHtml(t)}</span>`).join('');
       results.appendChild(banner);
     }
-    if(!d.items?.length){results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px">Nenhum resultado encontrado para o nicho.</div>';return;}
+    if(!d.items?.length){results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px">Nenhum resultado para esse nicho. Tente um termo mais comum ou tire os filtros de inscritos e período.</div>';return;}
     rankForUser(d.items).forEach(v=>results.appendChild(ytCard(v)));
     logSearch(query,'hunt');
   }catch(e){
@@ -4280,7 +4536,7 @@ async function disconnectChannel(channelId,title){
 async function analyzeChannel(channelId){
   const panel=document.getElementById('ch-report');
   panel.style.display='block';
-  panel.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">📈 Analisando canal... buscando retenção, CTR e padrões de título.</div>';
+  panel.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">📈 Analisando o canal... vendo quanto tempo as pessoas assistem e o padrão dos seus títulos. Leva alguns segundos.</div>';
   panel.scrollIntoView({behavior:'smooth',block:'start'});
   try{
     const r=await fetch(`${API}/api/youtube-oauth?action=report&channel_id=${encodeURIComponent(channelId)}`,{headers:{Authorization:`Bearer ${token}`}});
@@ -4311,7 +4567,7 @@ async function analyzeChannel(channelId){
         <span style="font-size:11px;color:var(--muted);margin-left:auto">últimos 30 dias</span>
       </div>
       <div class="stats-row" style="margin-bottom:18px">
-        ${card('Retenção Média',Math.round(o.avgViewPercentage||0)+'%','quanto assistem')}
+        ${card('Retenção Média',Math.round(o.avgViewPercentage||0)+'%','quanto do vídeo assistem')}
         ${card('Tempo Médio',mm+'m '+ss+'s','por vídeo')}
         ${card('Views (30d)',fmtN(o.views),'visualizações')}
         ${card('Inscritos +',fmtN(o.subscribersGained),'no período')}
@@ -4336,7 +4592,7 @@ async function analyzeChannel(channelId){
         <div style="font-size:11px;color:var(--muted);margin-bottom:6px">🔎 O que as pessoas pesquisam <span style="opacity:.7">(sugestões reais do YouTube · custo zero)</span>:</div>
         <div id="kw-suggest" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"><span style="font-size:11px;color:var(--muted)">carregando…</span></div>
         <button id="btn-find-comp" data-kw="${escHtml(kwMain)}" style="padding:9px 16px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;cursor:pointer">🔎 Ver concorrentes usando "${escHtml(kwMain)}"</button>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px">💡 Cada busca consome cota da API — use quando precisar comparar com a concorrência.</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">💡 Isto faz uma busca de verdade no YouTube e gasta das buscas do dia — clique quando for mesmo comparar com quem fala do mesmo assunto.</div>
         <div id="kw-competitors"></div>
       </div>
       <div class="card" style="border-color:var(--border-a)">

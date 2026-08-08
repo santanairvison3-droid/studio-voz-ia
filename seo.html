@@ -64,31 +64,55 @@
   .si.no{color:var(--muted)} .si.no .ic{color:var(--warn)}
   #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#0e1524;border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.25s;z-index:50}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .hint{font-size:11px;color:var(--muted);line-height:1.45}
+  .hint b{color:var(--ink)}
+  /* Caixinha "Como usar" do topo */
+  .howto{display:flex;flex-wrap:wrap;align-items:center;gap:5px 14px;background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:9px 12px;margin-top:10px;font-size:12.5px;color:var(--muted);line-height:1.5}
+  .howto .ht{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--accent);white-space:nowrap}
+  .howto .s{color:var(--ink)}
+  .howto b{color:var(--ink);font-weight:700}
+  .howto .full{flex-basis:100%;font-size:11.5px}
   @media(max-width:820px){.side{position:static;flex-basis:100%;width:100%}}
 </style>
 
 <div class="app">
-  <header><div class="top">
-    <div class="logo"><b>SEO</b><i>Kit</i></div>
-    <span class="badge">Título · Descrição · Tags · 20 idiomas · grátis</span>
-  </div></header>
+  <header>
+    <div class="top">
+      <div class="logo"><b>SEO</b><i>Kit</i></div>
+      <span class="badge">O texto do vídeo: título · descrição · tags · 20 idiomas</span>
+    </div>
+    <div class="howto">
+      <span class="ht">Como usar</span>
+      <span class="s"><b>1.</b> Escreva <b>do que é o vídeo</b> em uma frase (se tiver o roteiro, cole — sai bem melhor).</span>
+      <span class="s"><b>2.</b> Escolha o <b>nicho</b> e o <b>idioma do seu canal</b>.</span>
+      <span class="s"><b>3.</b> Clique em <b>✨ Gerar SEO</b>.</span>
+      <span class="s"><b>4.</b> Copie cada bloco e cole no YouTube.</span>
+      <span class="full">Onde vai cada coisa no YouTube: <b>título</b> = a linha que aparece na lista · <b>descrição</b> = a caixa grande embaixo do vídeo · <b>tags</b> = campo escondido em "Mostrar mais", só o YouTube lê.</span>
+    </div>
+  </header>
   <main>
     <div class="col side">
       <div class="card">
         <h3>📝 Sobre o vídeo</h3>
-        <div class="field"><label>Do que é o vídeo? (assunto / tema)</label>
-          <textarea id="tema" rows="2" placeholder="Ex.: economizar dinheiro guardando em 3 potes"></textarea></div>
+        <div class="field"><label>Do que é o vídeo? (o único campo obrigatório)</label>
+          <textarea id="tema" rows="2" placeholder="Ex.: economizar dinheiro guardando em 3 potes"></textarea>
+          <div class="hint">Uma frase simples, do jeito que você contaria pra um amigo. É daqui que saem os títulos.</div></div>
         <div class="field"><label>Palavra-chave principal (opcional)</label>
-          <input type="text" id="kw" placeholder="Ex.: economizar dinheiro"></div>
-        <div class="field"><label>Título do vídeo (opcional — dá contexto à descrição)</label>
-          <input type="text" id="titulo" placeholder="Cole um título — ou clique em “usar” num gerado abaixo"></div>
-        <div class="field"><label>Roteiro do vídeo (opcional — pra ferramenta ENTENDER o conteúdo)</label>
+          <input type="text" id="kw" placeholder="Ex.: economizar dinheiro">
+          <div class="hint">O termo que a pessoa digitaria na busca. Ele entra no título e nas primeiras linhas da descrição.</div></div>
+        <div class="field"><label>Título do vídeo (opcional)</label>
+          <input type="text" id="titulo" placeholder="Cole um título — ou clique em “usar” num gerado abaixo">
+          <div class="hint">Já tem título? Cole aqui. Se não, gere abaixo e clique em <b>↧ usar</b> — a descrição e a nota se ajustam sozinhas.</div></div>
+        <div class="field"><label>Roteiro do vídeo (opcional)</label>
           <textarea id="roteiro" rows="4" placeholder="Cole o texto/roteiro do vídeo. A ferramenta lê e puxa os temas e palavras-chave reais — deixa título, descrição e tags bem mais certeiros."></textarea>
+          <div class="hint">Pode colar o texto inteiro. A leitura é feita aqui no seu navegador — nada é enviado pra fora.</div>
           <div id="detected" class="tags" style="margin-top:2px"></div></div>
         <div class="field"><label>Nicho</label>
-          <select id="nicho"></select></div>
+          <select id="nicho"></select>
+          <div class="hint">Assunto geral do canal. Ele escolhe os termos que esse público costuma buscar.</div></div>
         <div class="field"><label>Idioma (20 mais usados)</label>
-          <select id="lang"></select></div>
+          <select id="lang"></select>
+          <div class="hint">Idioma em que o título, a descrição e as tags vão sair. Use o idioma do seu canal.</div></div>
         <div class="field"><label>Tom dos títulos</label>
           <div class="seg" id="tom">
             <button data-t="all" class="on">Todos</button>
@@ -96,10 +120,11 @@
             <button data-t="urgente">Urgente</button>
             <button data-t="lista">Lista</button>
             <button data-t="emocional">Emocional</button>
-          </div></div>
+          </div>
+          <div class="hint">Estilo da chamada. <b>Todos</b> mistura os quatro e te dá mais opções pra escolher.</div></div>
         <button class="btn" id="gen">✨ Gerar SEO</button>
         <button class="btn ghost" id="regen" style="display:none">🔄 Gerar outras opções</button>
-        <div class="tip">100% no navegador, <b>custo zero</b>. A descrição sai <b>moldada pelo nicho</b> e com <b>SEO forte</b>. Não precisa do roteiro — mas se você <b>colar o roteiro</b>, a ferramenta LÊ o texto e deixa título, descrição e tags ainda mais certeiros.</div>
+        <div class="tip">Você recebe <b>opções de título</b>, uma <b>descrição pronta</b> e as <b>tags</b> — cada uma com botão de copiar. Roda 100% no seu navegador, <b>custo zero</b>. Não gostou das opções? Clique em <b>Gerar outras opções</b> quantas vezes quiser.</div>
       </div>
     </div>
 
@@ -112,30 +137,33 @@
           <div class="head-row"><h3>📊 Nota de SEO</h3><span id="scoreVal" class="scoreval">—</span></div>
           <div class="scorebar"><div id="scoreFill"></div></div>
           <div id="scoreItems" class="scoreitems" style="margin-top:4px"></div>
-          <div class="tip">Pontuação do <b>título</b> (o que você digitou/escolheu) + <b>descrição</b>. Corrija os itens ✗ pra subir a nota.</div>
+          <div class="tip">Conferência do <b>título</b> (o que você digitou/escolheu) + da <b>descrição</b>. Cada ✗ é um ajuste que dá pra fazer. É uma checagem aqui do navegador — o YouTube não dá nota nenhuma.</div>
         </div>
         <div class="card">
           <div class="head-row"><h3>🎯 Opções de título <span class="n" id="tcount"></span></h3></div>
-          <div class="tip">Clique no título pra copiar, ou em <b>↧ usar</b> pra jogá-lo na descrição (dá mais contexto ao SEO).</div>
+          <div class="tip">Clique no título pra copiar, ou em <b>↧ usar</b> pra escolher ele (a descrição e a nota se ajustam na hora). No YouTube ele vai na caixa <b>Título</b> — cabe 100 caracteres, mas o celular corta perto dos 60, por isso o contador fica laranja acima disso.</div>
           <div id="titles" class="col" style="gap:8px"></div>
         </div>
 
         <div class="card">
           <div class="head-row"><h3>🧾 Descrição <span class="n" id="descNiche"></span></h3><button class="copy" id="copyDesc">⧉ Copiar descrição</button></div>
-          <div class="meta"><span>As 2 primeiras linhas aparecem antes do "...mostrar mais" — a palavra-chave já vem no topo.</span><span id="descLen"></span></div>
+          <div class="meta"><span>Cole na caixa <b>Descrição</b>, embaixo do vídeo. As 2 primeiras linhas são as únicas que aparecem antes do "...mostrar mais".</span><span id="descLen"></span></div>
           <pre class="box" id="desc" dir="auto"></pre>
+          <div class="hint">⚠️ Antes de publicar: troque <b>[link]</b> e <b>[e-mail]</b> pelos seus, e ajuste os <b>00:00</b> dos capítulos com os minutos reais do vídeo (o primeiro tem que ser 00:00).</div>
         </div>
 
         <div class="card">
           <div class="head-row"><h3>🏷️ Tags</h3><button class="copy" id="copyTags">⧉ Copiar tags</button></div>
-          <div class="meta"><span>Vão na caixa "tags" do YouTube (separadas por vírgula).</span><span id="tagLen"></span></div>
+          <div class="meta"><span>No YouTube: <b>Detalhes → Mostrar mais → Tags</b>. Cole tudo de uma vez, separado por vírgula.</span><span id="tagLen"></span></div>
           <div class="tags" id="tags"></div>
+          <div class="hint">⚠️ Não repita a mesma palavra em várias tags. Repetição não ajuda, o YouTube ignora e ainda pode ler como spam — melhor 10 a 15 tags <b>diferentes</b>, dentro dos 500 caracteres.</div>
         </div>
 
         <div class="card">
           <div class="head-row"><h3># Hashtags</h3><button class="copy" id="copyHash">⧉ Copiar hashtags</button></div>
-          <div class="meta"><span>Até 3 aparecem acima do título. Já entram no fim da descrição também.</span></div>
+          <div class="meta"><span>Vão no fim da descrição — as 3 primeiras aparecem acima do título do vídeo.</span></div>
           <div class="tags" id="hash"></div>
+          <div class="hint">Já vieram prontas no fim da descrição acima. Só copie de novo se quiser usar em outro lugar.</div>
         </div>
       </div>
     </div>

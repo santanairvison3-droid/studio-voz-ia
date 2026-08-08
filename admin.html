@@ -494,7 +494,7 @@ function renderUsers(users){
   const c1=users.filter(u=>u.dp_account===1).length;
   const c2=users.filter(u=>u.dp_account===2).length;
   const accSummary=(c1+c2)>0?`<div style="display:flex;gap:14px;align-items:center;margin-bottom:10px;font-size:12px">
-      <span style="color:var(--muted)">Contas DarkPlanner:</span>
+      <span style="color:var(--muted)">Contas do motor de voz:</span>
       <span style="font-weight:700;color:#5b8cff">Conta 1: ${c1}</span>
       <span style="font-weight:700;color:#2ecc71">Conta 2: ${c2}</span>
     </div>`:'';

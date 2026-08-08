@@ -74,6 +74,59 @@ function parseDuration(isoStr) {
   return { durationStr, totalSec, videoType };
 }
 
+/* ══ ECONOMIA DE COTA (08/08/2026) ═════════════════════════════════════════
+   A regra do YouTube MUDOU: hoje são 100 chamadas de `search.list` por DIA
+   (balde próprio e pequeno) + 10.000 unidades para todo o resto. O balde de
+   10.000 vive vazio; o de 100 é o que estoura e derruba a busca de todo mundo.
+
+   `channels.list` e `playlistItems.list` custam 1 UNIDADE e NÃO tocam no balde
+   de 100. As duas funções abaixo fazem o mesmo trabalho que a busca fazia —
+   resolver o @ do canal e listar os vídeos dele — por cerca de 1% do custo.
+   Elas devolvem os itens no MESMO formato do search.list, então quem chama
+   não precisa mudar nada.                                                    */
+
+// Resolve @handle → { channelId, uploads }. Custa 1 unidade (era 1 busca).
+async function canalPorHandle(handle, apiKey) {
+  try {
+    const r = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=id,contentDetails&forHandle=@${encodeURIComponent(handle)}&key=${apiKey}`);
+    const d = await r.json();
+    const it = d.items?.[0];
+    return {
+      channelId: it?.id || '',
+      uploads: it?.contentDetails?.relatedPlaylists?.uploads || '',
+    };
+  } catch { return { channelId: '', uploads: '' }; }
+}
+
+// Últimos vídeos do canal, do mais novo pro mais antigo, no formato do search.
+// Custa 1 unidade por página de 50 (era 1 busca). `uploads` evita uma chamada.
+async function videosRecentesDoCanal(channelId, apiKey, max = 50, uploads = '') {
+  try {
+    let lista = uploads;
+    if (!lista) {
+      const r = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${apiKey}`);
+      const d = await r.json();
+      lista = d.items?.[0]?.contentDetails?.relatedPlaylists?.uploads || '';
+    }
+    if (!lista) return [];
+    const r = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${lista}&maxResults=${Math.min(Number(max) || 50, 50)}&key=${apiKey}`);
+    const d = await r.json();
+    return (d.items || [])
+      .filter(i => i.snippet?.resourceId?.videoId)
+      .map(i => ({
+        id: { videoId: i.snippet.resourceId.videoId },
+        snippet: {
+          title: i.snippet.title || '',
+          description: i.snippet.description || '',
+          channelId: i.snippet.videoOwnerChannelId || i.snippet.channelId || channelId,
+          channelTitle: i.snippet.videoOwnerChannelTitle || i.snippet.channelTitle || '',
+          publishedAt: i.snippet.publishedAt || '',
+          thumbnails: i.snippet.thumbnails || {},
+        },
+      }));
+  } catch { return []; }
+}
+
 // Busca sugestões reais de palavras-chave do YouTube (autocomplete). Zero cota.
 async function fetchSuggestions(query, hl, gl) {
   try {
@@ -470,24 +523,24 @@ module.exports = async (req, res) => {
       const handleMatch = channel_url.match(/@([\w.-]+)/);
       const idMatch = channel_url.match(/channel\/(UC[\w-]+)/);
       let channelId = '';
+      let uploads = '';
       if (idMatch) channelId = idMatch[1];
       else if (handleMatch) {
-        const r = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent('@' + handleMatch[1])}&type=channel&maxResults=1&key=${apiKey}`);
-        const d = await r.json();
-        channelId = d.items?.[0]?.snippet?.channelId || d.items?.[0]?.id?.channelId || '';
+        // era 1 chamada de BUSCA (de 100/dia); agora custa 1 unidade (de 10.000)
+        const achado = await canalPorHandle(handleMatch[1], apiKey);
+        channelId = achado.channelId;
+        uploads = achado.uploads;
       }
       if (!channelId) return res.status(404).json({ error: 'Canal não encontrado. Verifique a URL.' });
 
-      // 2) Stats do canal + últimos vídeos
-      const [chRes, searchRes] = await Promise.all([
+      // 2) Stats do canal + últimos vídeos (sem gastar busca)
+      const [chRes, sItems] = await Promise.all([
         fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${apiKey}`),
-        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=30&key=${apiKey}`)
+        videosRecentesDoCanal(channelId, apiKey, 30, uploads)
       ]);
       const chData = await chRes.json();
-      const searchData = await searchRes.json();
       const chInfo = chData.items?.[0] || {};
       const chStats = chInfo.statistics || {};
-      const sItems = searchData.items || [];
       if (!sItems.length) return res.status(404).json({ error: 'Canal sem vídeos analisáveis.' });
 
       const videoIds = sItems.map(i => i.id?.videoId).filter(Boolean).join(',');
@@ -603,29 +656,32 @@ Gere 1 "Adaptação de Mercado" (a fórmula re-ancorada em OUTRO mercado/idioma;
       const handleMatch = channel_url.match(/@([\w.-]+)/);
       const idMatch = channel_url.match(/channel\/(UC[\w-]+)/);
       let channelId = '';
+      let uploads = '';
 
       if (handleMatch) {
-        const r = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent('@' + handleMatch[1])}&type=channel&maxResults=1&key=${apiKey}`
-        );
-        const d = await r.json();
-        channelId = d.items?.[0]?.snippet?.channelId || d.items?.[0]?.id?.channelId || '';
+        // era 1 chamada de BUSCA (de 100/dia); agora custa 1 unidade (de 10.000)
+        const achado = await canalPorHandle(handleMatch[1], apiKey);
+        channelId = achado.channelId;
+        uploads = achado.uploads;
       } else if (idMatch) {
         channelId = idMatch[1];
       }
 
       if (!channelId) return res.status(404).json({ error: 'Canal não encontrado. Verifique a URL.' });
 
-      const [chRes, searchRes] = await Promise.all([
+      // Lista os vídeos SEM gastar busca. A ordenação por views/nota é feita
+      // depois, aqui no servidor, sobre os últimos 50 — que é o que interessa
+      // pra quem está estudando o canal (o antigo order=viewCount trazia
+      // campeão de 2019 e escondia o que o canal está fazendo agora).
+      const [chRes, items] = await Promise.all([
         fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${apiKey}`),
-        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=${ord}&maxResults=50&key=${apiKey}`)
+        videosRecentesDoCanal(channelId, apiKey, 50, uploads)
       ]);
-      const [chData, searchData] = await Promise.all([chRes.json(), searchRes.json()]);
+      const chData = await chRes.json();
 
       const chInfo = chData.items?.[0] || {};
       const chStats = chInfo.statistics || {};
       const chSnippet = chInfo.snippet || {};
-      const items = searchData.items || [];
       if (!items.length) return res.status(200).json({ items: [], channel: {}, nextPage: '' });
 
       const videoIds = items.map(i => i.id?.videoId).filter(Boolean).join(',');
@@ -677,7 +733,10 @@ Gere 1 "Adaptação de Mercado" (a fórmula re-ancorada em OUTRO mercado/idioma;
           totalViews: parseInt(chStats.viewCount) || 0,
           videoCount: parseInt(chStats.videoCount) || 0,
         },
-        nextPage: searchData.nextPageToken || ''
+        // sem paginação aqui de propósito: os 50 vídeos mais recentes já
+        // respondem "o que este canal está fazendo agora", e cada página a mais
+        // custava 1 das 100 buscas do dia — de todos os usuários.
+        nextPage: ''
       });
     } catch (e) {
       console.error('[youtube/channel]', e.message);
@@ -805,6 +864,24 @@ Gere 1 "Adaptação de Mercado" (a fórmula re-ancorada em OUTRO mercado/idioma;
       if (!/^https?:\/\/([\w-]+\.)*(pexels\.com|pixabay\.com)\//i.test(fileUrl))
         return res.status(400).json({ error: 'URL não permitida' });
       try {
+        // ── MESMA LIÇÃO DO audio-proxy (25/07): arquivo grande NÃO pode passar byte a
+        // byte por esta função — foi assim que o "Fast Origin Transfer" da Vercel
+        // estourou (27GB/10GB) e PAUSOU o projeto. Vídeo do Pexels tem centenas de MB.
+        // Regra: mede o tamanho antes; passando de 8 MB, REDIRECIONA (302) o navegador
+        // direto pro CDN (origem ~zero). Imagem pequena continua pelo proxy, que é o
+        // que preserva o nome do arquivo no download.
+        const LIMITE_PROXY = 8 * 1024 * 1024;
+        let tamanho = 0;
+        try {
+          const head = await fetch(fileUrl, { method: 'HEAD' });
+          tamanho = Number(head.headers.get('content-length') || 0);
+        } catch { tamanho = 0; }
+        // tamanho desconhecido (0) também vai de redirect: não arriscar
+        if (!tamanho || tamanho > LIMITE_PROXY) {
+          res.setHeader('Location', fileUrl);
+          return res.status(302).end();
+        }
+
         const up = await fetch(fileUrl);
         if (!up.ok) return res.status(502).json({ error: 'Falha ao baixar do provedor' });
         const buf = Buffer.from(await up.arrayBuffer());

@@ -80,7 +80,6 @@
   <div class="wrap">
     <div class="brand">🌊 DarkBlue <small>Flow &amp; Studio</small></div>
     <nav style="display:flex;align-items:center;gap:18px">
-      <a href="/" style="color:var(--ink2);text-decoration:none;font-size:13.5px;font-weight:600">🎙️ Estúdio de Voz</a>
       <a class="cta" href="#planos">Ver planos</a>
     </nav>
   </div>
@@ -142,36 +141,35 @@
 <section id="planos">
   <div class="wrap">
     <h2>Planos</h2>
-    <p class="sub">Licença mensal, individual, vinculada ao seu computador. Sem fidelidade — renove só se estiver valendo a pena.<br/><b style="color:var(--ouro)">🔜 As vendas abrem em breve</b> — clique num plano para ser avisado quando liberar.</p>
+    <p class="sub">Licença mensal, individual, vinculada ao seu computador. Sem fidelidade — cancele quando quiser.<br/><b style="color:var(--ouro)">🔜 As vendas abrem em breve</b> — clique para ser avisado quando liberar.</p>
     <div class="planos">
       <div class="plano">
-        <h3>🖥️ DarkBlue Studio</h3>
-        <div class="desc">Extensão + app desktop — sua produção de vídeo no automático</div>
-        <div class="preco">R$ 39,90<small>/mês</small></div>
+        <h3>🎨 DarkBlue Essencial</h3>
+        <div class="desc">Monta o filme e faz a miniatura — sem o robô de geração</div>
+        <div class="preco">R$ 19,90<small>/mês</small></div>
         <ul>
-          <li>Extensão DarkBlue Flow (fila de prompts no Google Flow)</li>
-          <li>App desktop com o <b>navegador da produção</b> + <b>2 contas Flow</b></li>
-          <li>Personagens fixos + recuperação de falhas</li>
-          <li><b>Sincronizador SRT</b>: clipes + legenda = filme pronto</li>
+          <li><b>Sincronizador SRT</b>: seus clipes + a legenda = filme pronto</li>
+          <li><b>Editor de miniatura</b> (ThumbBlue): a capa do vídeo em minutos</li>
           <li>Cortes 9:16 e download numerado/organizado</li>
-          <li>Áudio? Opcional, por <b>pacote de crédito</b> (R$ 20 = 20 áudios)</li>
+          <li>Legenda queimada, sincronizada com a narração</li>
+          <li style="opacity:.7">Você mesmo gera os clipes — o robô é do plano de cima</li>
         </ul>
-        <a class="btn borda" data-plano="studio" href="#avise">🔜 Em breve — avise-me</a>
+        <a class="btn borda" data-plano="essencial" href="#avise">🔜 Em breve — avise-me</a>
       </div>
       <div class="plano destaque">
-        <span class="fita">⭐ MAIS COMPLETO</span>
-        <h3>🎙️ DarkBlue Studio + Voz</h3>
-        <div class="desc">Tudo do Studio + o Estúdio de Voz online já incluído</div>
-        <div class="preco">R$ 49,90<small>/mês</small></div>
+        <span class="fita">⭐ O COMPLETO</span>
+        <h3>🖥️ DarkBlue Studio</h3>
+        <div class="desc">Tudo do Essencial + o robô que produz os vídeos sozinho</div>
+        <div class="preco">R$ 39,90<small>/mês</small></div>
         <ul>
-          <li><b>Tudo do DarkBlue Studio</b></li>
-          <li><b>Estúdio de Voz incluído</b>: 5 áudios por dia</li>
-          <li>700+ vozes · texto → áudio · com <b>SRT pronto pro Veo</b></li>
-          <li><b>Prioridade</b> na geração de áudio</li>
-          <li>Legenda e corte que já entram no Sincronizador</li>
-          <li>Sem precisar de pacote de crédito no dia a dia</li>
+          <li><b>Tudo do Essencial</b></li>
+          <li><b>O robô da produção</b>: enfileira as cenas no Google Flow, gera e baixa sozinho</li>
+          <li>Navegador da produção + <b>2 contas Flow</b></li>
+          <li>Personagem que continua o mesmo em todas as cenas</li>
+          <li>Retoma de onde parou quando uma cena falha</li>
+          <li>🎁 <b>Bônus: Editor de vídeo</b> <span style="opacity:.7">(em fase beta — pode mudar ou sair)</span></li>
         </ul>
-        <a class="btn azul" data-plano="combo" href="#avise">🔜 Em breve — avise-me</a>
+        <a class="btn azul" data-plano="studio" href="#avise">🔜 Em breve — avise-me</a>
       </div>
     </div>
   </div>
@@ -184,13 +182,15 @@
     <details><summary>Preciso ter conta no Google Flow?</summary>
       <p>Sim. A DarkBlue automatiza a SUA conta do Google Flow (labs.google) — você faz login uma única vez no navegador da produção e a ferramenta trabalha por você. Os créditos/limites de geração são os do seu plano no Flow.</p></details>
     <details><summary>Em quantos computadores posso usar?</summary>
-      <p>A licença é individual e vale para 1 computador. O sistema detecta uso simultâneo em máquinas diferentes e bloqueia compartilhamento. Trocou de PC? É só falar com o suporte que a gente libera.</p></details>
+      <p>A licença é individual e vale para <b>até 2 computadores</b> (por exemplo: o de casa e o do trabalho). Só não dá para usar nos dois ao mesmo tempo — o sistema detecta e bloqueia, para evitar compartilhamento de chave. Precisa trocar de máquina? É só falar com o suporte que a gente libera.</p></details>
     <details><summary>Preciso instalar Python, Chrome ou editar algo?</summary>
-      <p>Não. O pacote vem completo: app, extensão, navegador de produção e até o motor de vídeo (ffmpeg). Baixou, extraiu, abriu, colou a chave — está produzindo.</p></details>
+      <p>Não. É um <b>instalador comum do Windows</b>: você baixa, clica duas vezes e pronto — ele cria o atalho na área de trabalho. Vem tudo dentro: app, navegador de produção e o motor de vídeo (ffmpeg). Depois é só colar a chave e produzir.</p></details>
     <details><summary>Funciona no Mac?</summary>
       <p>Por enquanto o DarkBlue Studio é para Windows 10/11. A extensão sozinha roda em qualquer Chrome de computador.</p></details>
     <details><summary>E se eu não renovar?</summary>
       <p>A ferramenta para de funcionar quando a licença vence — sem multa, sem fidelidade. Seus vídeos baixados continuam seus, nas suas pastas.</p></details>
+    <details><summary>E se eu não gostar? Tem garantia?</summary>
+      <p>Tem: <b>7 dias de garantia, sem perguntas</b>. Comprou, testou e não era o que esperava? É só pedir dentro de 7 dias e devolvemos o valor inteiro — sem precisar justificar. Depois disso, você pode cancelar quando quiser e deixa de ser cobrado no mês seguinte. Detalhes em <a href="/flow/termos.html#reembolso">Reembolso</a>.</p></details>
     <details><summary>Isso é um produto do Google?</summary>
       <p>Não. A DarkBlue é uma ferramenta independente, sem vínculo com o Google. "Google Flow" e "Veo" são marcas dos seus respectivos donos.</p></details>
   </div>
@@ -199,7 +199,11 @@
 <footer>
   <div class="wrap">
     🌊 <b>DarkBlue</b> — ferramentas de produção de vídeo com IA · © 2026<br/>
-    Produto independente, sem vínculo com o Google. Suporte: pelo e-mail da sua compra.
+    Produto independente, sem vínculo com o Google.<br/>
+    <a href="/flow/termos.html" style="color:var(--ink2)">Termos de Uso</a> ·
+    <a href="/flow/termos.html#privacidade" style="color:var(--ink2)">Privacidade</a> ·
+    <a href="/flow/termos.html#reembolso" style="color:var(--ink2)">Reembolso — 7 dias de garantia</a> ·
+    <a href="mailto:contato@darkblue.app.br" style="color:var(--ink2)">contato@darkblue.app.br</a>
   </div>
 </footer>
 
@@ -208,8 +212,12 @@
    vazio, o botão é "avise-me" (captura interesse por e-mail, sem vender).
    Pra ABRIR a venda: cole o link de checkout da Kiwify no plano certo. */
 const CHECKOUT = {
-  studio: "",  // R$39,90 — ex.: https://pay.kiwify.com.br/XXXXXXX
-  combo: "",   // R$49,90 (com Voz) — ex.: https://pay.kiwify.com.br/YYYYYYY
+  essencial: "", // R$19,90/mês — ex.: https://pay.kiwify.com.br/XXXXXXX
+  studio: "",    // R$39,90/mês — ex.: https://pay.kiwify.com.br/YYYYYYY
+};
+const NOMES = {
+  essencial: "DarkBlue Essencial (R$ 19,90/mês)",
+  studio: "DarkBlue Studio (R$ 39,90/mês)",
 };
 const EMAIL = "santanairvison35@gmail.com";
 document.querySelectorAll("[data-plano]").forEach((b) => {
@@ -217,7 +225,7 @@ document.querySelectorAll("[data-plano]").forEach((b) => {
     const plano = b.dataset.plano;
     if (CHECKOUT[plano]) { b.href = CHECKOUT[plano]; return; } // venda aberta
     e.preventDefault();
-    const nome = plano === "combo" ? "DarkBlue Studio + Voz (R$ 49,90/mês)" : "DarkBlue Studio (R$ 39,90/mês)";
+    const nome = NOMES[plano] || plano;
     location.href = "mailto:" + EMAIL +
       "?subject=" + encodeURIComponent("Quero ser avisado: " + nome) +
       "&body=" + encodeURIComponent("Olá! Quero ser avisado quando abrir a venda do plano " + nome + ".\nMeu nome: ");
