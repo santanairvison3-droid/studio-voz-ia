@@ -62,7 +62,7 @@ module.exports = async (req, res) => {
     if (!supabase || !amount) return 0;
     try {
       const userData = await getUserData();
-      const currentLim = userData?.lim_day || 5;
+      const currentLim = userData?.lim_day ?? 5;  // `??`: lim_day = 0 é limite ZERO, não "vazio"
       const currentExtra = userData?.extra_audios || 0;
       const newLim = Math.min(currentLim + amount, HARD_LIMIT);
       const actualAdded = newLim - currentLim;

@@ -82,7 +82,7 @@ module.exports = async (req, res) => {
           .single();
         if (ue || !userData) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
-        const currentLim = userData.lim_day || 5;
+        const currentLim = userData.lim_day ?? 5;   // `??`: lim_day = 0 é limite ZERO, não "vazio"
         const currentExtra = userData.extra_audios || 0;
         // Nunca ultrapassa o HARD_LIMIT
         const newLim = Math.min(currentLim + qty, HARD_LIMIT);

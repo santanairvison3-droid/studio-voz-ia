@@ -261,7 +261,10 @@ module.exports = async (req, res) => {
         }
 
         // limDay lido DEPOIS do possível reset
-        const limDay = dbUser.lim_day || 5;
+        // ⚠️ `??` e NUNCA `||`: em JS `0 || 5` dá 5, e a conta grátis (lim_day = 0)
+        // ganhava 5 áudios/dia da cota do dono. Furo achado em 09/08/2026, com uma
+        // conta grátis que gerou áudio de verdade.
+        const limDay = dbUser.lim_day ?? 5;
         const usedToday = dbUser.daily_used || 0;
 
         // ── Verifica limite ──
