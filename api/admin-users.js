@@ -17,6 +17,7 @@ function dpAccountOf(uid) {
 
 // Limites padrão por plano
 const PLAN_LIMITS = {
+  gratis:  0,   // 09/08/2026 — conta criada pelo site: ferramentas COM limite, ZERO voz
   free:    3,
   basico:  5,
   premium: 10,

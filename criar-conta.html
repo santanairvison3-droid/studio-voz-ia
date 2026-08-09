@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Criar conta — DarkBlue</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--azul:#00a8e8;--fundo:#0a1420;--card:#111e2e;--linha:#1e3448;--texto:#e8f1f8;--suave:#8fa8bd;--ok:#22c55e}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--fundo);color:var(--texto);
+       min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;line-height:1.5}
+  .caixa{width:100%;max-width:440px;background:var(--card);border:1px solid var(--linha);
+         border-radius:16px;padding:32px 28px}
+  .marca{text-align:center;margin-bottom:6px;font-size:26px;font-weight:800;letter-spacing:-.5px}
+  .marca span{color:var(--azul)}
+  .sub{text-align:center;color:var(--suave);font-size:14px;margin-bottom:22px}
+  .oferta{background:rgba(0,168,232,.09);border:1px solid rgba(0,168,232,.28);border-radius:11px;
+          padding:13px 15px;margin-bottom:22px;font-size:13.5px}
+  .oferta b{color:var(--azul)}
+  label{display:block;font-size:12.5px;color:var(--suave);margin:14px 0 5px;font-weight:600}
+  input{width:100%;padding:12px 14px;background:#0c1826;border:1px solid var(--linha);
+        border-radius:9px;color:var(--texto);font-size:15px;font-family:inherit}
+  input:focus{outline:none;border-color:var(--azul)}
+  .btn{width:100%;padding:14px;margin-top:22px;background:var(--azul);color:#04121d;border:none;
+       border-radius:10px;font-size:15.5px;font-weight:700;cursor:pointer;font-family:inherit}
+  .btn:hover{filter:brightness(1.08)}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .msg{margin-top:15px;padding:11px 13px;border-radius:9px;font-size:13.5px;display:none}
+  .msg.erro{display:block;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);color:#fca5a5}
+  .msg.ok{display:block;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac}
+  .pe{text-align:center;margin-top:20px;font-size:13.5px;color:var(--suave)}
+  .pe a{color:var(--azul);text-decoration:none;font-weight:600}
+  /* tela de sucesso */
+  #pronto{display:none}
+  .chave{background:#04121d;border:2px dashed var(--azul);border-radius:11px;padding:17px;
+         text-align:center;margin:16px 0}
+  .chave code{font-size:20px;font-weight:800;letter-spacing:1.5px;color:var(--azul);
+              font-family:'Consolas',monospace;word-break:break-all}
+  .copiar{margin-top:11px;padding:8px 15px;background:transparent;border:1px solid var(--azul);
+          color:var(--azul);border-radius:8px;font-size:12.5px;cursor:pointer;font-family:inherit;font-weight:600}
+  .passos{counter-reset:p;margin:18px 0}
+  .passo{position:relative;padding-left:36px;margin-bottom:13px;font-size:14px}
+  .passo::before{counter-increment:p;content:counter(p);position:absolute;left:0;top:-1px;width:24px;height:24px;
+                 background:var(--azul);color:#04121d;border-radius:50%;display:flex;align-items:center;
+                 justify-content:center;font-size:13px;font-weight:800}
+  .baixar{display:block;text-align:center;padding:14px;background:var(--ok);color:#04121d;
+          border-radius:10px;font-weight:700;text-decoration:none;font-size:15px;margin-top:6px}
+  .assinar{display:block;text-align:center;padding:12px;margin-top:11px;background:transparent;
+           border:1px solid var(--linha);color:var(--suave);border-radius:10px;text-decoration:none;font-size:13.5px}
+  .assinar:hover{border-color:var(--azul);color:var(--azul)}
+  .aviso{font-size:12.5px;color:var(--suave);margin-top:15px;padding-top:15px;border-top:1px solid var(--linha)}
+</style>
+</head>
+<body>
+<div class="caixa">
+
+  <!-- ── FORMULÁRIO ── -->
+  <div id="form">
+    <div class="marca">Dark<span>Blue</span></div>
+    <div class="sub">Crie sua conta em 30 segundos</div>
+
+    <div class="oferta">
+      🎁 <b>Agosto liberado:</b> criando a conta agora você leva o <b>robô, a extensão
+      e o estúdio</b> para usar até <b>30 de agosto</b>, sem pagar nada.
+    </div>
+
+    <label for="nome">Seu nome</label>
+    <input id="nome" type="text" placeholder="Como você quer ser chamado" autocomplete="name">
+
+    <label for="email">E-mail</label>
+    <input id="email" type="email" placeholder="seu@email.com" autocomplete="email">
+
+    <label for="usuario">Nome de usuário</label>
+    <input id="usuario" type="text" placeholder="para entrar depois" autocomplete="username">
+
+    <label for="senha">Senha</label>
+    <input id="senha" type="password" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+
+    <button class="btn" id="btn">Criar minha conta</button>
+    <div class="msg" id="msg"></div>
+    <div class="pe">Já tem conta? <a href="index.html">Entrar</a></div>
+  </div>
+
+  <!-- ── SUCESSO ── -->
+  <div id="pronto">
+    <div class="marca">Pronto! 🎉</div>
+    <div class="sub" id="ola"></div>
+
+    <div style="font-size:13.5px;color:var(--suave);margin-bottom:4px">Sua chave do robô:</div>
+    <div class="chave">
+      <code id="chave">—</code><br>
+      <button class="copiar" id="btn-copiar">📋 Copiar chave</button>
+    </div>
+    <div style="font-size:12.5px;color:var(--suave);text-align:center;margin-top:-8px" id="validade"></div>
+
+    <div class="passos">
+      <div class="passo">Baixe e instale o programa no seu computador.</div>
+      <div class="passo">Abra o DarkBlue Studio e cole a chave acima.</div>
+      <div class="passo">Pronto — o robô, a extensão e o estúdio ficam liberados.</div>
+    </div>
+
+    <a class="baixar" id="link-baixar" href="#" target="_blank" rel="noopener">⬇️ Baixar o DarkBlue Studio</a>
+    <a class="assinar" id="link-assinar" href="flow/index.html">Quero assinar agora e continuar depois de agosto →</a>
+
+    <div class="aviso">
+      <b>Anote a chave.</b> Ela também fica na sua conta, em <b>Minha Conta</b>.<br>
+      A parte de ferramentas do site continua sua depois de agosto, com limite mensal.
+    </div>
+    <div class="pe" style="margin-top:16px"><a href="dashboard.html">Ir para o painel →</a></div>
+  </div>
+
+</div>
+
+<script>
+const API = location.origin;
+// instalador: sempre o "latest" do GitHub — não precisa mexer aqui a cada versão
+const LINK_INSTALADOR = 'https://github.com/santanairvison3-droid/studio-voz-ia/releases/latest';
+
+async function sha256(msg) {
+  const buf = new TextEncoder().encode(msg);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+const $ = id => document.getElementById(id);
+function aviso(texto, tipo = 'erro') { const m = $('msg'); m.textContent = texto; m.className = 'msg ' + tipo; }
+
+// já está logado? vai direto pro painel
+if (localStorage.getItem('svia_token')) location.href = 'dashboard.html';
+
+['nome', 'email', 'usuario', 'senha'].forEach((id, i, todos) => {
+  $(id).addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    if (i < todos.length - 1) $(todos[i + 1]).focus(); else criar();
+  });
+});
+$('btn').onclick = criar;
+
+async function criar() {
+  const nome = $('nome').value.trim();
+  const email = $('email').value.trim().toLowerCase();
+  const usuario = $('usuario').value.trim().toLowerCase();
+  const senha = $('senha').value;
+
+  if (!nome) return aviso('Escreva o seu nome.');
+  if (!email.includes('@') || !email.includes('.')) return aviso('Esse e-mail não parece certo.');
+  if (usuario.length < 3) return aviso('O nome de usuário precisa de pelo menos 3 letras.');
+  if (senha.length < 6) return aviso('A senha precisa de pelo menos 6 caracteres.');
+
+  $('btn').disabled = true;
+  $('btn').textContent = 'Criando…';
+  try {
+    const res = await fetch(`${API}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'signup', name: nome, email, username: usuario, pw: await sha256(senha) })
+    });
+    const d = await res.json();
+    if (!res.ok) { aviso(d.error || 'Não consegui criar a conta.'); return; }
+
+    localStorage.setItem('svia_token', d.token);
+    $('form').style.display = 'none';
+    $('pronto').style.display = 'block';
+    $('ola').textContent = 'Bem-vindo, ' + nome + '!';
+    $('link-baixar').href = LINK_INSTALADOR;
+
+    if (d.cortesia && d.cortesia.chave) {
+      $('chave').textContent = d.cortesia.chave;
+      const ate = new Date(d.cortesia.expira_em);
+      $('validade').textContent = 'Válida até ' + ate.toLocaleDateString('pt-BR');
+    } else {
+      // a conta foi criada; só a chave não veio. Não deixa a pessoa no escuro.
+      $('chave').textContent = 'chave a caminho';
+      $('validade').textContent = 'Se ela não aparecer em Minha Conta, fale com o suporte.';
+    }
+  } catch (e) {
+    aviso('Sem conexão. Tente de novo.');
+  } finally {
+    $('btn').disabled = false;
+    $('btn').textContent = 'Criar minha conta';
+  }
+}
+
+$('btn-copiar').onclick = async () => {
+  const txt = $('chave').textContent.trim();
+  try { await navigator.clipboard.writeText(txt); }
+  catch { const a = document.createElement('textarea'); a.value = txt; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); }
+  $('btn-copiar').textContent = '✅ Copiada!';
+  setTimeout(() => { $('btn-copiar').textContent = '📋 Copiar chave'; }, 2000);
+};
+</script>
+</body>
+</html>

@@ -7,6 +7,40 @@ const supabase = createClient(
 );
 
 const HUNT_LIMIT = 2; // caçadas de nicho por conta por dia (protege a cota da API)
+
+// 🔒 TETO MENSAL DE BUSCAS PESADAS (09/08/2026)
+// Por que existe: `search.list` custa 100 unidades E entra num balde separado de
+// apenas 100 buscas POR DIA — compartilhado por TODOS os usuários e pela fábrica
+// do dono. Sem teto, meia dúzia de contas grátis derruba a ferramenta pra todo mundo.
+// Conta hunt + niches juntos, no mês, na MESMA tabela hunt_log (sem migração).
+const BUSCAS_MES = { gratis: 12, free: 12, basico: 60, premium: 120, trial30: 30 };
+const BUSCAS_MES_PADRAO = 60;
+
+async function buscasNoMes(supabase, userId) {
+  const agora = new Date();
+  const ini = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
+  try {
+    const { count } = await supabase
+      .from('hunt_log')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('created_at', ini);
+    return count || 0;
+  } catch { return 0; }   // banco fora do ar nunca bloqueia o usuário
+}
+
+// devolve null se pode seguir, ou a resposta de erro se estourou
+function estourouMes(usadas, plano) {
+  const teto = BUSCAS_MES[plano] ?? BUSCAS_MES_PADRAO;
+  if (usadas < teto) return null;
+  return {
+    erro: `Você usou as ${teto} buscas do seu mês. ` +
+          (teto <= 12
+            ? 'Assine o DarkBlue para ter 60 por mês e liberar o robô e o estúdio.'
+            : 'O contador zera no dia 1º.'),
+    teto, usadas,
+  };
+}
 const DOBRA_LIMIT = 2; // análises "Dobra de Nicho" por conta por dia (proxy DarkPlanner = caro)
 
 // VPH = views por hora desde a publicação. Sinal mais sensível de "hype" que views/dia.
@@ -409,6 +443,11 @@ module.exports = async (req, res) => {
     if (huntsToday >= huntLimit)
       return res.status(429).json({ error: `Limite diário de caçadas atingido (${huntLimit}/dia). Use a busca normal ou volte amanhã.` });
 
+    // teto do MÊS (além do teto do dia)
+    const usadasMesH = await buscasNoMes(supabase, user.sub || user.id);
+    const estourouH = estourouMes(usadasMesH, user.plan);
+    if (estourouH) return res.status(429).json({ error: estourouH.erro, ...estourouH });
+
     try {
       const hl = lang || { BR: 'pt', US: 'en', PT: 'pt', ES: 'es', MX: 'es', FR: 'fr' }[region] || 'pt';
       const gl = region || 'BR';
@@ -750,6 +789,14 @@ Gere 1 "Adaptação de Mercado" (a fórmula re-ancorada em OUTRO mercado/idioma;
   // base-própria (isso é do NexLev pago). Usa o YOUTUBE_API_KEY que já existe.
   if (action === 'niches') {
     if (!query) return res.status(400).json({ error: 'query obrigatório' });
+
+    // 🔒 09/08/2026: esta ação gasta 1 das 100 buscas do DIA e não tinha trava
+    // nenhuma — uma pessoa clicando repetido derrubava a ferramenta pra todos,
+    // inclusive pra fábrica de vídeos do dono.
+    const usadasMesN = await buscasNoMes(supabase, user.sub || user.id);
+    const estourouN = estourouMes(usadasMesN, user.plan);
+    if (estourouN) return res.status(429).json({ error: estourouN.erro, ...estourouN });
+
     try {
       const tab = req.query.tab || 'explodindo';
       // recência p/ abas "Tração Recente" / "Canais Novos" / filtro de data
@@ -768,6 +815,9 @@ Gere 1 "Adaptação de Mercado" (a fórmula re-ancorada em OUTRO mercado/idioma;
       const sr = await fetch(`https://www.googleapis.com/youtube/v3/search?${sp}`);
       const sd = await sr.json();
       if (!sr.ok) return res.status(500).json({ error: sd.error?.message || 'Erro na busca do YouTube' });
+      // ✅ a busca saiu: registra o consumo (é isto que faz o teto mensal contar).
+      // Só DEPOIS do sucesso — busca que falhou não desconta do usuário.
+      supabase.from('hunt_log').insert({ user_id: user.sub || user.id }).then(() => {}, () => {});
       const sItems = sd.items || [];
       if (!sItems.length) return res.status(200).json({ channels: [], nextPage: '', tab });
 

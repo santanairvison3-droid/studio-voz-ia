@@ -140,38 +140,42 @@
 
 <section id="planos">
   <div class="wrap">
-    <h2>Planos</h2>
-    <p class="sub">Licença mensal, individual, vinculada ao seu computador. Sem fidelidade — cancele quando quiser.<br/><b style="color:var(--ouro)">🔜 As vendas abrem em breve</b> — clique para ser avisado quando liberar.</p>
+    <h2>Comece de graça</h2>
+    <p class="sub">Crie sua conta e use as ferramentas sem pagar nada.<br/>
+      <b style="color:var(--ouro)">🎁 Em agosto o robô vem junto</b> — quem se cadastrar agora usa tudo até 30/08.</p>
     <div class="planos">
       <div class="plano">
-        <h3>🎨 DarkBlue Essencial</h3>
-        <div class="desc">Monta o filme e faz a miniatura — sem o robô de geração</div>
-        <div class="preco">R$ 19,90<small>/mês</small></div>
+        <h3>🌊 Grátis</h3>
+        <div class="desc">Para sempre — as ferramentas do site, com limite mensal</div>
+        <div class="preco">R$ 0<small>/mês</small></div>
         <ul>
-          <li><b>Sincronizador SRT</b>: seus clipes + a legenda = filme pronto</li>
-          <li><b>Editor de miniatura</b> (ThumbBlue): a capa do vídeo em minutos</li>
-          <li>Cortes 9:16 e download numerado/organizado</li>
-          <li>Legenda queimada, sincronizada com a narração</li>
-          <li style="opacity:.7">Você mesmo gera os clipes — o robô é do plano de cima</li>
+          <li><b>Caçador de nicho</b> e <b>Descobrir nichos</b> <span style="opacity:.7">(6 buscas por mês cada)</span></li>
+          <li><b>Tendências</b> e análise de canal — à vontade</li>
+          <li><b>Editor de miniatura</b> (ThumbBlue)</li>
+          <li><b>Imagens em lote</b> e gerador de prompts</li>
+          <li style="opacity:.7">Sem o robô, sem o estúdio e sem voz</li>
         </ul>
-        <a class="btn borda" data-plano="essencial" href="#avise">🔜 Em breve — avise-me</a>
+        <a class="btn borda" href="../criar-conta.html">Criar minha conta grátis</a>
       </div>
       <div class="plano destaque">
         <span class="fita">⭐ O COMPLETO</span>
-        <h3>🖥️ DarkBlue Studio</h3>
-        <div class="desc">Tudo do Essencial + o robô que produz os vídeos sozinho</div>
+        <h3>🖥️ DarkBlue</h3>
+        <div class="desc">O robô, a extensão e o estúdio — tudo junto</div>
         <div class="preco">R$ 39,90<small>/mês</small></div>
         <ul>
-          <li><b>Tudo do Essencial</b></li>
+          <li><b>Tudo do grátis, sem os limites apertados</b></li>
           <li><b>O robô da produção</b>: enfileira as cenas no Google Flow, gera e baixa sozinho</li>
+          <li><b>O estúdio</b>: narração, legenda queimada, música, efeitos e o filme montado</li>
           <li>Navegador da produção + <b>2 contas Flow</b></li>
-          <li>Personagem que continua o mesmo em todas as cenas</li>
+          <li>Personagem, objeto e cenário que continuam os mesmos em todas as cenas</li>
           <li>Retoma de onde parou quando uma cena falha</li>
-          <li>🎁 <b>Bônus: Editor de vídeo</b> <span style="opacity:.7">(em fase beta — pode mudar ou sair)</span></li>
+          <li>Vale para <b>2 computadores</b> · sem fidelidade</li>
         </ul>
         <a class="btn azul" data-plano="studio" href="#avise">🔜 Em breve — avise-me</a>
       </div>
     </div>
+    <p class="sub" style="margin-top:22px;font-size:12.5px;opacity:.75">
+      A voz não entra em nenhum dos dois — ela é liberada à parte, por cadastro.</p>
   </div>
 </section>
 
@@ -208,16 +212,15 @@
 </footer>
 
 <script>
-/* 🛒 VENDA AINDA NÃO LIBERADA (decisão do dono). Enquanto CHECKOUT estiver
-   vazio, o botão é "avise-me" (captura interesse por e-mail, sem vender).
-   Pra ABRIR a venda: cole o link de checkout da Kiwify no plano certo. */
+/* 🛒 PARA ABRIR A VENDA: cole aqui o link de checkout da Kiwify e pronto —
+   o botão deixa de ser "avise-me" e passa a vender. É a ÚNICA linha a mexer.
+   Enquanto estiver vazio, o clique vira um e-mail de interesse (nada se perde).
+   09/08/2026: plano único de R$ 39,90 (robô + extensão + estúdio). */
 const CHECKOUT = {
-  essencial: "", // R$19,90/mês — ex.: https://pay.kiwify.com.br/XXXXXXX
   studio: "",    // R$39,90/mês — ex.: https://pay.kiwify.com.br/YYYYYYY
 };
 const NOMES = {
-  essencial: "DarkBlue Essencial (R$ 19,90/mês)",
-  studio: "DarkBlue Studio (R$ 39,90/mês)",
+  studio: "DarkBlue (R$ 39,90/mês)",
 };
 const EMAIL = "santanairvison35@gmail.com";
 document.querySelectorAll("[data-plano]").forEach((b) => {

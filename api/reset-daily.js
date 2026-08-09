@@ -11,7 +11,9 @@
 const { createClient } = require('@supabase/supabase-js');
 
 // Limite padrão por plano
-const PLAN_LIMITS = { free: 3, basico: 5, premium: 10 };
+// ⚠️ 'gratis' TEM que estar aqui: sem ele o `?? 5` lá embaixo daria 5 áudios/dia
+// da cota do dono pra toda conta criada pelo site, no primeiro reset da madrugada.
+const PLAN_LIMITS = { gratis: 0, free: 3, basico: 5, premium: 10 };
 const HARD_LIMIT  = 50;
 
 function getTodayBR() {
