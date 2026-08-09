@@ -1068,6 +1068,19 @@ select option{background:var(--surface2)}
           <div style="font-size:12.5px;color:var(--muted);margin-bottom:15px">
             É nele que o robô produz e o estúdio monta o filme. Instale, cole a sua chave e pronto.
           </div>
+
+          <!-- 🔑 a chave de quem JÁ TEM conta também aparece aqui. Antes só quem se
+               cadastrava agora recebia — quem já era usuário ficava sem, sem saber. -->
+          <div id="cx-chave" style="display:none;background:rgba(0,0,0,.28);border:2px dashed var(--accent);
+                      border-radius:12px;padding:15px;margin-bottom:15px;text-align:center">
+            <div style="font-size:11.5px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">Sua chave</div>
+            <code id="txt-chave" style="font-size:19px;font-weight:800;letter-spacing:1.5px;color:var(--accent);font-family:'JetBrains Mono',monospace">—</code>
+            <div style="margin-top:10px">
+              <button id="btn-copia-chave" style="padding:7px 15px;background:transparent;border:1px solid var(--accent);
+                      color:var(--accent);border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:700">📋 Copiar</button>
+            </div>
+            <div id="val-chave" style="font-size:11.5px;color:var(--muted);margin-top:9px"></div>
+          </div>
           <a href="https://github.com/santanairvison3-droid/studio-voz-ia/releases/latest/download/DarkBlue-Studio-Setup.exe"
              style="display:inline-flex;align-items:center;gap:9px;padding:13px 26px;border-radius:11px;
                     background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709;
@@ -2269,6 +2282,39 @@ function closeTutorial(){
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeTutorial(); });
 const token=getToken();if(!token){window.location.href='index.html';}
 let me=parseJWT(token)||{};
+
+/* 🔑 PEGA (ou cria) a chave do robô do usuário logado — 09/08/2026.
+   Vale pra QUEM JÁ TINHA CONTA também: a campanha de agosto é de todo mundo, não
+   só de quem se cadastrou hoje. A porta `cortesia` é pública e idempotente (uma
+   chave por e-mail), então chamar toda vez que o painel abre é seguro: quem já
+   tem recebe a MESMA chave de volta.
+   Depois de 30/08 ela responde "campanha_encerrada" e a caixa simplesmente não
+   aparece — sem erro na tela. */
+const LICENCA_URL='https://emvgejbbusrbawohyfeu.supabase.co/functions/v1/licenca';
+const LICENCA_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtdmdlamJidXNyYmF3b2h5ZmV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNTg3NzIsImV4cCI6MjA5MjYzNDc3Mn0.m9z64aEdOP4LF3GhTlel4vzRp-NFkL1xDOOREC8oFVg';
+async function mostrarChaveDoRobo(){
+  const email=(me.email||'').trim();
+  if(!email) return;
+  try{
+    const r=await fetch(LICENCA_URL,{method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+LICENCA_ANON},
+      body:JSON.stringify({acao:'cortesia',email,nome:me.name||me.username||''})});
+    const d=await r.json();
+    if(!d.ok||!d.chave) return;                 // campanha encerrada: some, calado
+    document.getElementById('txt-chave').textContent=d.chave;
+    const ate=new Date(d.expira_em);
+    document.getElementById('val-chave').textContent='Vale até '+ate.toLocaleDateString('pt-BR')+' — depois disso, só assinando.';
+    document.getElementById('cx-chave').style.display='block';
+  }catch(e){}
+}
+document.getElementById('btn-copia-chave')?.addEventListener('click',async()=>{
+  const t=document.getElementById('txt-chave').textContent.trim();
+  try{await navigator.clipboard.writeText(t);}catch(e){
+    const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();}
+  const b=document.getElementById('btn-copia-chave');
+  b.textContent='✅ Copiada!';setTimeout(()=>{b.textContent='📋 Copiar';},2000);
+});
+mostrarChaveDoRobo();
 let allVoices=[],selectedVoice=null;
 let voicesLoading=false; // guard: evita chamadas simultâneas ao voices-index
 
