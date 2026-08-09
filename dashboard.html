@@ -1059,52 +1059,71 @@ select option{background:var(--surface2)}
           </div>
         </div>
 
+        <!-- 📦 09/08/2026: o app e os planos ficam AQUI, na primeira tela — era a
+             pergunta do dono ("onde ele vai conseguir o link?"). O botão baixa o
+             instalador direto e o "latest" garante que é sempre a versão nova. -->
+        <div style="padding:22px;border-radius:14px;border:1px solid rgba(79,140,255,.45);
+                    background:linear-gradient(160deg,rgba(79,140,255,.14),var(--surface2));margin-bottom:22px">
+          <div style="font-size:16px;font-weight:800;margin-bottom:4px">🖥️ O programa do computador</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-bottom:15px">
+            É nele que o robô produz e o estúdio monta o filme. Instale, cole a sua chave e pronto.
+          </div>
+          <a href="https://github.com/santanairvison3-droid/studio-voz-ia/releases/latest/download/DarkBlue-Studio-Setup.exe"
+             style="display:inline-flex;align-items:center;gap:9px;padding:13px 26px;border-radius:11px;
+                    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709;
+                    font-family:'Space Grotesk',sans-serif;font-size:14.5px;font-weight:800;text-decoration:none">
+            ⬇️ Baixar o DarkBlue Studio
+          </a>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:11px;line-height:1.7">
+            Windows · 225 MB · <b>sempre a versão mais nova</b><br>
+            Depois de instalado, ele se atualiza sozinho — você não precisa baixar de novo.<br>
+            <span style="opacity:.8">O Windows pode avisar "protegeu o computador": clique em
+            <b>Mais informações</b> → <b>Executar assim mesmo</b>.</span>
+          </div>
+        </div>
+
         <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 12px">
-          <span style="font-size:13px;font-weight:800;letter-spacing:.3px;color:var(--muted)">OS PLANOS</span>
-          <span style="font-size:11px;font-weight:800;letter-spacing:1.2px;color:#ffb400;background:rgba(255,180,0,.13);border:1px solid rgba(255,180,0,.35);border-radius:99px;padding:2px 10px">🔜 VENDAS EM BREVE</span>
+          <span style="font-size:13px;font-weight:800;letter-spacing:.3px;color:var(--muted)">O SEU PLANO</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:22px">
 
           <div style="padding:20px;border-radius:14px;border:1px solid var(--border);background:var(--surface2)">
-            <div style="font-size:15px;font-weight:800;margin-bottom:3px">🎨 Essencial</div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Monta o filme e faz a miniatura</div>
-            <div style="font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:12px">R$ 19,90<span style="font-size:13px;font-weight:400;color:var(--muted)">/mês</span></div>
+            <div style="font-size:15px;font-weight:800;margin-bottom:3px">🌊 Grátis</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">As ferramentas do site, com limite mensal</div>
+            <div style="font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:12px">R$ 0<span style="font-size:13px;font-weight:400;color:var(--muted)">/mês</span></div>
             <div style="font-size:12.5px;line-height:2;color:var(--text);opacity:.9">
-              ✓ Sincronizador: clipes + legenda = filme<br>
-              ✓ Editor de miniatura<br>
-              ✓ Cortes 9:16 e organização<br>
-              <span style="opacity:.6">— você mesmo gera os clipes</span>
+              ✓ Caçar nicho e descobrir nichos <span style="opacity:.65">(6 por mês cada)</span><br>
+              ✓ Tendências e análise de canal<br>
+              ✓ Editor de miniatura e SEO<br>
+              ✓ Imagens em lote e prompts<br>
+              <span style="opacity:.6">— sem o robô e sem o estúdio</span>
             </div>
           </div>
 
           <div style="padding:20px;border-radius:14px;border:1px solid rgba(79,140,255,.5);background:linear-gradient(160deg,rgba(79,140,255,.12),var(--surface2));position:relative">
-            <div style="position:absolute;top:-9px;right:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709;font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px">MAIS COMPLETO</div>
-            <div style="font-size:15px;font-weight:800;margin-bottom:3px">🖥️ Studio</div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Tudo do Essencial + o robô da produção</div>
+            <div style="position:absolute;top:-9px;right:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709;font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px">O COMPLETO</div>
+            <div style="font-size:15px;font-weight:800;margin-bottom:3px">🖥️ DarkBlue</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">O robô, a extensão e o estúdio — tudo junto</div>
             <div style="font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:12px">R$ 39,90<span style="font-size:13px;font-weight:400;color:var(--muted)">/mês</span></div>
-            <div style="font-size:12.5px;line-height:2;color:var(--text);opacity:.9">
-              ✓ <b>Tudo do Essencial</b><br>
+            <div style="font-size:12.5px;line-height:2;color:var(--text);opacity:.9;margin-bottom:16px">
+              ✓ <b>Tudo do grátis, sem os limites apertados</b><br>
               ✓ O robô gera e baixa os clipes sozinho<br>
-              ✓ Personagem igual em todas as cenas<br>
+              ✓ O estúdio monta o filme com narração e legenda<br>
+              ✓ Personagem, objeto e cenário iguais em todas as cenas<br>
               ✓ Retoma sozinho quando uma cena falha<br>
-              🎁 Editor de vídeo <span style="opacity:.6">(beta — pode mudar)</span>
+              ✓ Vale para 2 computadores · sem fidelidade
             </div>
+            <a href="https://pay.kiwify.com.br/IPhaqmo" target="_blank" rel="noopener"
+               style="display:block;text-align:center;padding:13px;border-radius:11px;
+                      background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709;
+                      font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:800;text-decoration:none">
+              Assinar por R$ 39,90/mês →
+            </a>
           </div>
         </div>
 
-        <div style="margin:-6px 0 22px">
-          <a href="/flow" target="_blank" rel="noopener"
-             style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;
-                    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#040709;
-                    font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:800;text-decoration:none">
-            Ver os planos e ser avisado quando abrir →
-          </a>
-          <div style="font-size:12px;color:var(--muted);margin-top:8px">
-            Quem já usa a plataforma vai receber um aviso por e-mail antes de qualquer cobrança.
-          </div>
-        </div>
-
-        <div style="padding:16px 18px;border-radius:12px;border:1px solid rgba(255,171,0,.3);background:rgba(255,171,0,.06);margin-bottom:18px">
+        <!-- só quem é VIP vê este aviso (a classe so-voz some pra conta comercial) -->
+        <div class="so-voz" style="padding:16px 18px;border-radius:12px;border:1px solid rgba(255,171,0,.3);background:rgba(255,171,0,.06);margin-bottom:18px">
           <div style="font-size:13px;font-weight:700;color:var(--warning);margin-bottom:7px">🎙️ Sobre a geração de voz</div>
           <div style="font-size:12.5px;line-height:1.75;color:var(--text);opacity:.92">
             A voz tem <b>limite por dia</b> e por isso não entra nos planos: ela é liberada
@@ -2671,14 +2690,21 @@ function _applyStats(u){
   const cr=u.credits??0,td=u.daily?.audios??u.daily_used??0,lim=u.lim_day??5,tot=u.total_audios??0;
   esconderVozSeNaoTem(u);
   const rem=Math.max(0,lim-td);
-  document.getElementById('s-cr')&&(document.getElementById('s-cr').textContent=cr);
-  document.getElementById('top-credits').textContent=`${rem} restantes hoje`;
-  document.getElementById('sb-credits').textContent=`${rem}/${lim}`;
-  document.getElementById('s-td').textContent=td;
-  document.getElementById('s-lim').textContent=`de ${lim} áudios`;
-  document.getElementById('s-rem').textContent=rem;
-  document.getElementById('s-tot').textContent=tot;
-  document.getElementById('top-today').textContent=`${td} de ${lim} hoje`;
+  // ⚠️ 09/08/2026 — TEM que ser assim, elemento por elemento, checando antes.
+  // Os contadores de áudio foram saindo da tela (o 'sb-credits' já não existe) e a
+  // linha antiga escrevia direto: `getElementById('sb-credits').textContent = ...`.
+  // Com o elemento ausente isso dá TypeError e MATA a função no meio — o que vem
+  // depois (inclusive `me`) nunca rodava, e o painel ficava com dado velho, sem
+  // nenhum erro visível pro usuário.
+  const põe = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+  põe('s-cr', cr);
+  põe('top-credits', `${rem} restantes hoje`);
+  põe('sb-credits', `${rem}/${lim}`);
+  põe('s-td', td);
+  põe('s-lim', `de ${lim} áudios`);
+  põe('s-rem', rem);
+  põe('s-tot', tot);
+  põe('top-today', `${td} de ${lim} hoje`);
   me={...me,...u};
 }
 
