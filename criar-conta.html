@@ -7,7 +7,10 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  :root{--azul:#00a8e8;--fundo:#0a1420;--card:#111e2e;--linha:#1e3448;--texto:#e8f1f8;--suave:#8fa8bd;--ok:#22c55e}
+  /* 13/08 — curadoria: esta tela vivia fora do sistema. O botão de criar conta
+     era AZUL (#00a8e8) enquanto o de entrar é o verde-água da marca — duas caras
+     pro mesmo fluxo. Agora usa a cor do produto. */
+  :root{--azul:#00e5d4;--azul2:#0abfb0;--fundo:#0a1420;--card:#111e2e;--linha:#1e3448;--texto:#e8f1f8;--suave:#8fa8bd;--ok:#22c55e}
   body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--fundo);color:var(--texto);
        min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;line-height:1.5}
   .caixa{width:100%;max-width:440px;background:var(--card);border:1px solid var(--linha);
@@ -15,15 +18,20 @@
   .marca{text-align:center;margin-bottom:6px;font-size:26px;font-weight:800;letter-spacing:-.5px}
   .marca span{color:var(--azul)}
   .sub{text-align:center;color:var(--suave);font-size:14px;margin-bottom:22px}
-  .oferta{background:rgba(0,168,232,.09);border:1px solid rgba(0,168,232,.28);border-radius:11px;
+  .oferta{background:rgba(0,229,212,.09);border:1px solid rgba(0,229,212,.28);border-radius:11px;
           padding:13px 15px;margin-bottom:22px;font-size:13.5px}
   .oferta b{color:var(--azul)}
   label{display:block;font-size:12.5px;color:var(--suave);margin:14px 0 5px;font-weight:600}
-  input{width:100%;padding:12px 14px;background:#0c1826;border:1px solid var(--linha);
-        border-radius:9px;color:var(--texto);font-size:15px;font-family:inherit}
-  input:focus{outline:none;border-color:var(--azul)}
-  .btn{width:100%;padding:14px;margin-top:22px;background:var(--azul);color:#04121d;border:none;
-       border-radius:10px;font-size:15.5px;font-weight:700;cursor:pointer;font-family:inherit}
+  input{width:100%;padding:14px;background:#0c1826;border:1px solid var(--linha);
+        border-radius:12px;color:var(--texto);font-size:15px;font-family:inherit}
+  /* o cinza de fábrica dava 3,88:1 — some pra quem enxerga menos. Agora 6,9:1. */
+  input::placeholder{color:var(--suave);opacity:1}
+  /* nada de outline:none pelado — quem usa teclado precisa ver o campo ativo */
+  input:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+  input:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(0,229,212,.16)}
+  .btn{width:100%;padding:15px;margin-top:22px;background:linear-gradient(135deg,var(--azul),var(--azul2));
+       color:#04121d;border:none;
+       border-radius:12px;font-size:15.5px;font-weight:700;cursor:pointer;font-family:inherit}
   .btn:hover{filter:brightness(1.08)}
   .btn:disabled{opacity:.55;cursor:not-allowed}
   .msg{margin-top:15px;padding:11px 13px;border-radius:9px;font-size:13.5px;display:none}
@@ -54,7 +62,7 @@
   /* 13/08 — curadoria: quem navega pelo TECLADO precisa ver onde está.
      Sem isto o foco some no escuro e a tela fica inutilizável sem mouse. */
   :where(a,button,input,select,textarea,[tabindex]):focus-visible{
-    outline:2px solid var(--accent,#38bdf8);outline-offset:2px;border-radius:6px}
+    outline:2px solid var(--accent,var(--azul,#00e5d4));outline-offset:2px;border-radius:6px}
   /* quem pediu menos movimento no Windows/celular recebe menos movimento */
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
