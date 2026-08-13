@@ -40,6 +40,15 @@
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
   .toolflag{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:6;display:none;align-items:center;gap:9px;background:rgba(8,12,20,.92);border:1px solid var(--accent);border-radius:99px;padding:6px 8px 6px 14px;font-size:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.5)}
   .toolflag.show{display:flex}
+  /* Área de colocar a foto (clicar · arrastar · colar) */
+  .dropzone{position:absolute;inset:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;text-align:center;padding:18px;cursor:pointer;background:rgba(7,10,17,.95);border:2px dashed rgba(120,170,255,.35);border-radius:12px;transition:.15s}
+  .dropzone:hover,.dropzone.over{border-color:var(--accent);background:rgba(11,20,34,.96)}
+  .dropzone.hide{display:none}
+  .dropzone .dz-ic{font-size:40px;line-height:1}
+  .dropzone .dz-t{font-size:16px;font-weight:800;color:var(--ink)}
+  .dropzone .dz-btn{pointer-events:none;font-family:inherit;font-size:14px;font-weight:700;color:#04121f;background:linear-gradient(90deg,var(--accent),var(--accent-2));border:none;border-radius:10px;padding:11px 18px}
+  .dropzone .dz-s{font-size:12.5px;color:var(--muted);line-height:1.6;max-width:440px}
+  .dropzone .dz-s b{color:var(--ink)}
   .toolflag button{font-family:inherit;font-size:12px;font-weight:700;background:var(--accent);color:#04121f;border:none;border-radius:99px;padding:5px 12px;cursor:pointer}
   .hint{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:center;max-width:900px;line-height:1.5}
   aside{flex:0 0 316px;width:316px;max-width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:13px;align-self:stretch;max-height:calc(100vh - 118px);overflow:auto}
@@ -103,7 +112,7 @@
     </div>
     <div class="howto">
       <span class="ht">Como usar</span>
-      <span class="s"><b>1.</b> <b>📁 Imagem</b>: envie sua foto ou um print do vídeo — depois arraste ela no quadro pra posicionar (roda do mouse dá zoom).</span>
+      <span class="s"><b>1.</b> <b>Coloque a foto</b>: clique no quadro, <b>arraste</b> a imagem pra dentro dele ou aperte <b>Ctrl+V</b> — depois arraste a foto pra posicionar (roda do mouse dá zoom).</span>
       <span class="s"><b>2.</b> <b>⚡ Título rápido</b>: troque pelas SUAS 3 a 5 palavras.</span>
       <span class="s"><b>3.</b> <b>📱 Ver no celular</b>: se não der pra ler pequeno, aumente a letra.</span>
       <span class="s"><b>4.</b> <b>⬇ Baixar JPG</b>: é esse arquivo que você sobe no YouTube.</span>
@@ -117,6 +126,7 @@
       <div class="posctl" title="De que lado da capa o texto fica. Deixe o outro lado livre pro rosto.">Texto fica:<div class="grp" id="pos"><button data-z="left">Esquerda</button><button data-z="center">Meio</button><button data-z="right" class="on">Direita</button></div></div>
       <span class="sep"></span>
       <button class="btn pri" id="b-img" title="Envie uma foto sua, um print ou um frame do vídeo (JPG ou PNG). Ela vira o fundo da capa.">📁 Imagem</button>
+      <button class="btn" id="b-paste" title="Usa a imagem que você copiou (Ctrl+C ou Print Screen). Também funciona apertando Ctrl+V aqui dentro.">📋 Colar imagem</button>
       <button class="btn" id="b-text" title="Coloca uma frase por cima da foto.">＋ Texto</button>
       <button class="btn" id="b-emoji" title="Carinha ou símbolo grande (🔥 😱 💰) pra chamar atenção.">😀 Emoji</button>
       <button class="btn" id="b-brush" title="Traço colorido pra sublinhar ou riscar uma palavra.">🟥 Traço</button>
@@ -141,6 +151,12 @@
     <div class="stagewrap">
       <div class="canvas-box">
         <canvas id="cv" width="1280" height="720"></canvas>
+        <div class="dropzone" id="drop" title="Clique pra escolher a foto, arraste ela aqui ou aperte Ctrl+V">
+          <div class="dz-ic">🖼️</div>
+          <div class="dz-t">Coloque aqui a foto da sua capa</div>
+          <button class="dz-btn" type="button">📁 Escolher imagem no computador</button>
+          <div class="dz-s">ou <b>arraste a foto</b> pra dentro deste quadro · ou <b>copie uma imagem e aperte Ctrl+V</b> (serve o print da tela)<br>Vale JPG, PNG ou WEBP.</div>
+        </div>
         <div class="toolflag" id="toolflag"><span id="toolflag-txt"></span><button id="toolflag-done">✓ Concluir</button></div>
       </div>
       <div class="hint">Clique num elemento pra editar (as opções aparecem à direita) · arraste pra mover · <b>arraste a foto pra reposicionar</b> · roda do mouse dá zoom na foto · setas do teclado ajustam fino · Delete apaga.<br>As linhas de apoio e a moldura azul da seleção <b>não saem</b> na imagem baixada.</div>
@@ -249,7 +265,7 @@
   function drawSel(){ if(sel<0)return; const l=layers[sel]; ctx.save(); ctx.strokeStyle='#38bdf8'; ctx.lineWidth=2; ctx.setLineDash([8,6]);
     if(centered(l)){ ctx.translate(l.x,l.y); ctx.rotate((l.angle||0)*Math.PI/180); const b=localBox(l); ctx.strokeRect(b.x-6,b.y-6,b.w+12,b.h+12); }
     else{ const b=bboxAA(l); ctx.strokeRect(b.x,b.y,b.w,b.h); } ctx.restore(); }
-  function render(){ ctx.clearRect(0,0,W,H); drawBg(); if(scrim)drawScrim(); layers.forEach(drawOne); if(!exporting&&guides)drawGuides(); if(!exporting)drawSel(); buildLayers(); }
+  function render(){ ctx.clearRect(0,0,W,H); drawBg(); if(scrim)drawScrim(); layers.forEach(drawOne); if(!exporting&&guides)drawGuides(); if(!exporting)drawSel(); buildLayers(); syncDrop(); }
 
   // ---- Histórico: ↶ Voltar / ↷ Refazer (guarda TUDO: camadas, foto, recorte, filtros) ----
   function cloneCv(src){ const c=document.createElement('canvas'); c.width=src.width; c.height=src.height; c.getContext('2d').drawImage(src,0,0); return c; }
@@ -307,8 +323,37 @@
   document.querySelectorAll('#pos button').forEach(b=>b.onclick=()=>{ textZone=b.dataset.z; document.querySelectorAll('#pos button').forEach(x=>x.classList.toggle('on',x===b)); render(); commit(); });
   const tg=(id,fn,rec)=>{ const b=document.getElementById(id); b.onclick=()=>{ fn(); b.classList.toggle('on'); render(); if(rec)commit(); }; };
   tg('b-scrim',()=>scrim=!scrim,true); tg('b-guides',()=>guides=!guides,false);
-  const file=document.getElementById('file'); document.getElementById('b-img').onclick=()=>file.click();
-  file.onchange=()=>{ const f=file.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{ const im=new Image(); im.onload=()=>{ loadBg(im); setTool('select'); sel=-1; history=[]; histIdx=-1; lastSnapCut=null; render(); showInsp(); commit(); }; im.src=rd.result; }; rd.readAsDataURL(f); file.value=''; };
+  // ---- COLOCAR A FOTO: 4 caminhos (botão · clicar no quadro · arrastar · colar) ----
+  const file=document.getElementById('file'), dz=document.getElementById('drop');
+  function syncDrop(){ const d=document.getElementById('drop'); if(d)d.classList.toggle('hide',!!srcImg); }
+  function usarImagem(src,nome){ const im=new Image();
+    im.onload=()=>{ loadBg(im); setTool('select'); sel=-1; history=[]; histIdx=-1; lastSnapCut=null; render(); showInsp(); commit(); toast('Foto carregada ✓ arraste pra posicionar · roda do mouse dá zoom'); };
+    im.onerror=()=>toast('⚠ Não consegui abrir '+(nome||'essa imagem')+'. Se veio do iPhone (HEIC), salve como JPG e tente de novo.');
+    im.src=src; }
+  function usarArquivo(f){ if(!f)return;
+    if(!/^image\//i.test(f.type||'')){ toast('⚠ '+(f.name||'Esse arquivo')+' não é imagem. Use JPG, PNG ou WEBP.'); return; }
+    const rd=new FileReader(); rd.onload=()=>usarImagem(rd.result,f.name); rd.onerror=()=>toast('⚠ Não consegui ler o arquivo. Tente outra foto.'); rd.readAsDataURL(f); }
+  document.getElementById('b-img').onclick=()=>file.click();
+  if(dz)dz.onclick=()=>file.click();
+  file.onchange=()=>{ usarArquivo(file.files[0]); file.value=''; };
+
+  // arrastar e soltar em qualquer canto da página
+  ['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{ if(!e.dataTransfer)return; e.preventDefault(); e.dataTransfer.dropEffect='copy'; if(dz)dz.classList.add('over'); }));
+  ['dragleave','dragend'].forEach(ev=>document.addEventListener(ev,e=>{ if(e.relatedTarget)return; if(dz)dz.classList.remove('over'); }));
+  document.addEventListener('drop',e=>{ e.preventDefault(); if(dz)dz.classList.remove('over');
+    const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
+    if(f)usarArquivo(f); else toast('⚠ Arraste um arquivo de imagem do computador (JPG/PNG). Imagem de site: salve antes, ou copie e aperte Ctrl+V.'); });
+
+  // colar: Ctrl+V (inclusive print da tela) e botão 📋
+  document.addEventListener('paste',e=>{ const its=(e.clipboardData&&e.clipboardData.items)||[];
+    for(const it of its){ if(it.type&&it.type.indexOf('image/')===0){ e.preventDefault(); usarArquivo(it.getAsFile()); return; } }
+    if(its.length)toast('⚠ Não tem imagem copiada. Copie uma imagem (ou aperte Print Screen) e cole de novo.'); });
+  document.getElementById('b-paste').onclick=async()=>{
+    try{ const its=await navigator.clipboard.read();
+      for(const it of its){ const t=(it.types||[]).find(t=>t.indexOf('image/')===0);
+        if(t){ const b=await it.getType(t); usarArquivo(new File([b],'imagem-colada.png',{type:t})); return; } }
+      toast('⚠ Não achei imagem copiada. Copie uma imagem (ou aperte Print Screen) e clique de novo.');
+    }catch(err){ toast('Clique aqui dentro do editor e aperte Ctrl+V — assim a imagem copiada entra.'); } };
 
   function toast(msg){ let t=document.getElementById('dt-toast'); if(!t){ t=document.createElement('div'); t.id='dt-toast'; document.body.appendChild(t); } t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),3400); }
   function dl(blob,ext){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='miniatura-darkblue.'+ext; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000); }

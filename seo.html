@@ -84,7 +84,7 @@
     <div class="howto">
       <span class="ht">Como usar</span>
       <span class="s"><b>1.</b> Escreva <b>do que é o vídeo</b> em uma frase (se tiver o roteiro, cole — sai bem melhor).</span>
-      <span class="s"><b>2.</b> Escolha o <b>nicho</b> e o <b>idioma do seu canal</b>.</span>
+      <span class="s"><b>2.</b> Escolha o <b>nicho</b>, o <b>idioma do seu canal</b> e, se quiser, escreva até <b>5 sub-nichos</b> (os assuntos exatos do seu canal).</span>
       <span class="s"><b>3.</b> Clique em <b>✨ Gerar SEO</b>.</span>
       <span class="s"><b>4.</b> Copie cada bloco e cole no YouTube.</span>
       <span class="full">Onde vai cada coisa no YouTube: <b>título</b> = a linha que aparece na lista · <b>descrição</b> = a caixa grande embaixo do vídeo · <b>tags</b> = campo escondido em "Mostrar mais", só o YouTube lê.</span>
@@ -110,6 +110,10 @@
         <div class="field"><label>Nicho</label>
           <select id="nicho"></select>
           <div class="hint">Assunto geral do canal. Ele escolhe os termos que esse público costuma buscar.</div></div>
+        <div class="field"><label>Sub-nichos do seu canal (até 5) <span class="n" id="subCount">0/5</span></label>
+          <input type="text" id="subnicho" placeholder="Ex.: sair das dívidas, guardar dinheiro em casa, orçamento familiar">
+          <div class="hint">Separe por <b>vírgula</b>. São os assuntos exatos do SEU canal — entram nas <b>tags</b>, nas <b>hashtags</b> e nas <b>buscas relacionadas</b> da descrição, na frente dos termos genéricos.</div>
+          <div id="subChips" class="tags" style="margin-top:2px"></div></div>
         <div class="field"><label>Idioma (20 mais usados)</label>
           <select id="lang"></select>
           <div class="hint">Idioma em que o título, a descrição e as tags vão sair. Use o idioma do seu canal.</div></div>
@@ -120,8 +124,12 @@
             <button data-t="urgente">Urgente</button>
             <button data-t="lista">Lista</button>
             <button data-t="emocional">Emocional</button>
+            <button data-t="comparacao">Comparação</button>
+            <button data-t="pergunta">Pergunta</button>
+            <button data-t="howto">Como fazer</button>
+            <button data-t="prova">Testei / Resultado</button>
           </div>
-          <div class="hint">Estilo da chamada. <b>Todos</b> mistura os quatro e te dá mais opções pra escolher.</div></div>
+          <div class="hint">Estilo da chamada. <b>Todos</b> mistura os oito e te dá mais opções pra escolher. <b>Comparação</b> = "o certo x o errado" · <b>Pergunta</b> = "vale a pena?" · <b>Como fazer</b> = passo a passo · <b>Testei</b> = você mostrando o resultado.</div></div>
         <button class="btn" id="gen">✨ Gerar SEO</button>
         <button class="btn ghost" id="regen" style="display:none">🔄 Gerar outras opções</button>
         <div class="tip">Você recebe <b>opções de título</b>, uma <b>descrição pronta</b> e as <b>tags</b> — cada uma com botão de copiar. Roda 100% no seu navegador, <b>custo zero</b>. Não gostou das opções? Clique em <b>Gerar outras opções</b> quantas vezes quiser.</div>
@@ -197,7 +205,8 @@
     ['zh','🇨🇳 中文'],['tr','🇹🇷 Türkçe'],['nl','🇳🇱 Nederlands'],['pl','🇵🇱 Polski'],
     ['vi','🇻🇳 Tiếng Việt'],['th','🇹🇭 ไทย'],['fil','🇵🇭 Filipino'],['uk','🇺🇦 Українська']
   ];
-  const TOM_LABEL={curioso:'Curioso',urgente:'Urgente',lista:'Lista',emocional:'Emocional'};
+  const TOM_LABEL={curioso:'Curioso',urgente:'Urgente',lista:'Lista',emocional:'Emocional',
+    comparacao:'Comparação',pergunta:'Pergunta',howto:'Como fazer',prova:'Testei / Resultado'};
 
   function cap(s){ s=(s||'').trim(); return s? s.charAt(0).toUpperCase()+s.slice(1):s; }
   function low(s){ s=(s||'').trim(); return s? s.charAt(0).toLowerCase()+s.slice(1):s; }
@@ -372,6 +381,92 @@
       tags:['як зробити','поради','покроково','туторіал','2026'] }
   };
 
+  // ---- Tons NOVOS (comparação · pergunta · como fazer · testei/resultado) ----
+  // Entram no mesmo banco de fórmulas de cada idioma. Idioma sem o tom = o botão nem aparece (ver syncToms).
+  const TOM_EXTRA={
+    pt:{ comparacao:[t=>`${cap(t)}: o jeito certo x o jeito errado`,t=>`Comparei 3 formas de ${t} — a melhor surpreende`,t=>`${cap(t)}: antes e depois (a diferença real)`],
+         pergunta:[t=>`${cap(t)} funciona mesmo?`,t=>`Vale a pena ${t}?`,t=>`Por que ninguém fala disso sobre ${t}?`],
+         howto:[t=>`Como ${t} passo a passo (do zero)`,t=>`${cap(t)}: o passo a passo que qualquer um consegue`,t=>`Aprenda ${t} em poucos minutos`],
+         prova:[t=>`Testei ${t} por 30 dias — o resultado`,t=>`Fiz ${t} e olha o que aconteceu`,t=>`${cap(t)}: o resultado real depois de 30 dias`] },
+    en:{ comparacao:[t=>`${cap(t)}: the right way vs the wrong way`,t=>`I compared 3 ways to ${t} — the winner surprised me`,t=>`${cap(t)}: before and after (the real difference)`],
+         pergunta:[t=>`Does ${t} really work?`,t=>`Is ${t} worth it?`,t=>`Why is nobody talking about ${t}?`],
+         howto:[t=>`How to ${t} step by step (from zero)`,t=>`${cap(t)}: the step-by-step anyone can follow`,t=>`Learn ${t} in minutes`],
+         prova:[t=>`I tried ${t} for 30 days — here's the result`,t=>`I did ${t} and this is what happened`,t=>`${cap(t)}: the real result after 30 days`] },
+    es:{ comparacao:[t=>`${cap(t)}: la forma correcta vs la incorrecta`,t=>`Comparé 3 formas de ${t} — la mejor sorprende`,t=>`${cap(t)}: antes y después (la diferencia real)`],
+         pergunta:[t=>`¿${cap(t)} funciona de verdad?`,t=>`¿Vale la pena ${t}?`,t=>`¿Por qué nadie habla de ${t}?`],
+         howto:[t=>`Cómo ${t} paso a paso (desde cero)`,t=>`${cap(t)}: el paso a paso que cualquiera puede seguir`,t=>`Aprende ${t} en pocos minutos`],
+         prova:[t=>`Probé ${t} durante 30 días — el resultado`,t=>`Hice ${t} y esto fue lo que pasó`,t=>`${cap(t)}: el resultado real tras 30 días`] },
+    fr:{ comparacao:[t=>`${cap(t)} : la bonne façon vs la mauvaise`,t=>`J'ai comparé 3 façons de ${t} — la meilleure surprend`,t=>`${cap(t)} : avant et après (la vraie différence)`],
+         pergunta:[t=>`Est-ce que ${t} marche vraiment ?`,t=>`${cap(t)} : ça vaut le coup ?`,t=>`Pourquoi personne ne parle de ${t} ?`],
+         howto:[t=>`Comment ${t} pas à pas (depuis zéro)`,t=>`${cap(t)} : le pas à pas à la portée de tous`,t=>`Apprenez ${t} en quelques minutes`],
+         prova:[t=>`J'ai testé ${t} pendant 30 jours — le résultat`,t=>`J'ai fait ${t} et voilà ce qui s'est passé`,t=>`${cap(t)} : le vrai résultat après 30 jours`] },
+    de:{ comparacao:[t=>`${cap(t)}: richtig vs. falsch`,t=>`Ich habe 3 Wege für ${t} verglichen — der beste überrascht`],
+         pergunta:[t=>`Funktioniert ${t} wirklich?`,t=>`Lohnt sich ${t}?`],
+         howto:[t=>`${cap(t)} Schritt für Schritt (von null)`,t=>`So geht ${t} — einfach erklärt`],
+         prova:[t=>`Ich habe ${t} 30 Tage getestet — das Ergebnis`,t=>`Ich habe ${t} gemacht — das ist passiert`] },
+    it:{ comparacao:[t=>`${cap(t)}: il modo giusto vs quello sbagliato`,t=>`Ho confrontato 3 modi di ${t} — il migliore sorprende`],
+         pergunta:[t=>`${cap(t)} funziona davvero?`,t=>`Vale la pena ${t}?`],
+         howto:[t=>`Come ${t} passo dopo passo (da zero)`,t=>`${cap(t)}: la guida che chiunque può seguire`],
+         prova:[t=>`Ho provato ${t} per 30 giorni — il risultato`,t=>`Ho fatto ${t} ed ecco cos'è successo`] },
+    ru:{ comparacao:[t=>`${cap(t)}: как правильно и как нельзя`,t=>`Сравнил 3 способа ${t} — лучший удивил`],
+         pergunta:[t=>`${cap(t)} действительно работает?`,t=>`Стоит ли ${t}?`],
+         howto:[t=>`Как ${t} шаг за шагом (с нуля)`,t=>`${cap(t)}: пошагово и простыми словами`],
+         prova:[t=>`Пробовал ${t} 30 дней — результат`,t=>`Сделал ${t} — вот что вышло`] },
+    ar:{ comparacao:[t=>`${t}: الطريقة الصحيحة مقابل الخاطئة`,t=>`قارنت 3 طرق لـ ${t} — الأفضل ستفاجئك`],
+         pergunta:[t=>`هل ${t} فعّال حقاً؟`,t=>`هل يستحق ${t} العناء؟`],
+         howto:[t=>`كيف ${t} خطوة بخطوة من الصفر`,t=>`${t}: شرح مبسط خطوة بخطوة`],
+         prova:[t=>`جربت ${t} لمدة 30 يوماً — النتيجة`,t=>`فعلت ${t} وهذا ما حدث`] },
+    hi:{ comparacao:[t=>`${t}: सही तरीका बनाम गलत तरीका`,t=>`${t} के 3 तरीके — सबसे अच्छा कौन सा?`],
+         pergunta:[t=>`क्या ${t} सच में काम करता है?`,t=>`क्या ${t} करना सही रहेगा?`],
+         howto:[t=>`${t} कैसे करें — शुरू से आसान तरीका`,t=>`${t}: स्टेप बाय स्टेप गाइड`],
+         prova:[t=>`30 दिन ${t} किया — नतीजा`,t=>`मैंने ${t} किया और ये हुआ`] },
+    id:{ comparacao:[t=>`${cap(t)}: cara yang benar vs yang salah`,t=>`Saya bandingkan 3 cara ${t} — yang terbaik mengejutkan`],
+         pergunta:[t=>`Apakah ${t} benar-benar berhasil?`,t=>`Apakah ${t} layak dicoba?`],
+         howto:[t=>`Cara ${t} langkah demi langkah dari nol`,t=>`${cap(t)}: panduan mudah untuk pemula`],
+         prova:[t=>`Saya coba ${t} selama 30 hari — hasilnya`,t=>`Saya lakukan ${t} dan ini yang terjadi`] },
+    ja:{ comparacao:[t=>`${t}の正しいやり方と間違ったやり方`,t=>`${t}の3つの方法を比べてみた`],
+         pergunta:[t=>`${t}は本当に効果ある？`,t=>`${t}はやる価値ある？`],
+         howto:[t=>`${t}のやり方をゼロから解説`,t=>`初心者でもできる${t}の手順`],
+         prova:[t=>`${t}を30日間やってみた結果`,t=>`${t}をやってみたらこうなった`] },
+    ko:{ comparacao:[t=>`${t} 제대로 하는 법 vs 잘못하는 법`,t=>`${t} 3가지 방법 비교해봤습니다`],
+         pergunta:[t=>`${t} 정말 효과 있을까요?`,t=>`${t} 할 만한 가치가 있을까?`],
+         howto:[t=>`${t} 하는 법 — 처음부터 차근차근`,t=>`초보도 되는 ${t} 단계별 가이드`],
+         prova:[t=>`${t} 30일 해본 결과`,t=>`${t} 해봤더니 이렇게 됐습니다`] },
+    zh:{ comparacao:[t=>`${t}：正确做法 vs 错误做法`,t=>`我对比了3种${t}的方法`],
+         pergunta:[t=>`${t}真的有用吗？`,t=>`${t}值得做吗？`],
+         howto:[t=>`${t}怎么做——从零开始一步步教`,t=>`新手也能学会的${t}步骤`],
+         prova:[t=>`我坚持${t}30天，结果是这样`,t=>`我试了${t}，结果出乎意料`] },
+    tr:{ comparacao:[t=>`${cap(t)}: doğru yol ve yanlış yol`,t=>`${cap(t)} için 3 yolu karşılaştırdım`],
+         pergunta:[t=>`${cap(t)} gerçekten işe yarıyor mu?`,t=>`${cap(t)} buna değer mi?`],
+         howto:[t=>`${cap(t)} nasıl yapılır — sıfırdan adım adım`,t=>`${cap(t)}: yeni başlayanlar için rehber`],
+         prova:[t=>`30 gün ${t} denedim — sonuç`,t=>`${cap(t)} yaptım ve olanlar`] },
+    nl:{ comparacao:[t=>`${cap(t)}: de juiste manier vs de verkeerde`,t=>`Ik vergeleek 3 manieren van ${t}`],
+         pergunta:[t=>`Werkt ${t} echt?`,t=>`Is ${t} het waard?`],
+         howto:[t=>`Hoe ${t} stap voor stap (vanaf nul)`,t=>`${cap(t)}: simpel uitgelegd voor beginners`],
+         prova:[t=>`Ik probeerde ${t} 30 dagen — het resultaat`,t=>`Ik deed ${t} en dit gebeurde er`] },
+    pl:{ comparacao:[t=>`${cap(t)}: dobry sposób kontra zły`,t=>`Porównałem 3 sposoby na ${t}`],
+         pergunta:[t=>`Czy ${t} naprawdę działa?`,t=>`Czy ${t} się opłaca?`],
+         howto:[t=>`Jak ${t} krok po kroku (od zera)`,t=>`${cap(t)}: prosty poradnik dla początkujących`],
+         prova:[t=>`Testowałem ${t} przez 30 dni — efekt`,t=>`Zrobiłem ${t} i oto co się stało`] },
+    vi:{ comparacao:[t=>`${cap(t)}: cách đúng và cách sai`,t=>`Tôi đã so sánh 3 cách ${t}`],
+         pergunta:[t=>`${cap(t)} có thật sự hiệu quả?`,t=>`Có nên ${t} không?`],
+         howto:[t=>`Cách ${t} từng bước từ số 0`,t=>`${cap(t)}: hướng dẫn dễ cho người mới`],
+         prova:[t=>`Tôi thử ${t} trong 30 ngày — kết quả`,t=>`Tôi đã ${t} và đây là kết quả`] },
+    th:{ comparacao:[t=>`${t}: วิธีที่ถูก กับ วิธีที่ผิด`,t=>`เปรียบเทียบ 3 วิธี ${t}`],
+         pergunta:[t=>`${t} ได้ผลจริงไหม?`,t=>`${t} คุ้มไหม?`],
+         howto:[t=>`วิธี ${t} ทีละขั้นตอน เริ่มจากศูนย์`,t=>`${t}: คู่มือง่ายๆ สำหรับมือใหม่`],
+         prova:[t=>`ลอง ${t} 30 วัน — ผลลัพธ์`,t=>`ลองทำ ${t} แล้วเกิดอะไรขึ้น`] },
+    fil:{ comparacao:[t=>`${cap(t)}: tamang paraan vs maling paraan`,t=>`Inihambing ko ang 3 paraan ng ${t}`],
+         pergunta:[t=>`Totoo bang effective ang ${t}?`,t=>`Sulit ba ang ${t}?`],
+         howto:[t=>`Paano ${t} step by step (mula sa simula)`,t=>`${cap(t)}: madaling gabay para sa baguhan`],
+         prova:[t=>`Sinubukan ko ang ${t} ng 30 araw — ang resulta`,t=>`Ginawa ko ang ${t} at ito ang nangyari`] },
+    uk:{ comparacao:[t=>`${cap(t)}: як правильно і як ні`,t=>`Порівняв 3 способи ${t}`],
+         pergunta:[t=>`Чи справді ${t} працює?`,t=>`Чи варто ${t}?`],
+         howto:[t=>`Як ${t} крок за кроком (з нуля)`,t=>`${cap(t)}: покроково і простими словами`],
+         prova:[t=>`Тестував ${t} 30 днів — результат`,t=>`Зробив ${t} — ось що вийшло`] }
+  };
+  Object.keys(TOM_EXTRA).forEach(lg=>{ if(L[lg]&&L[lg].formulas)Object.assign(L[lg].formulas,TOM_EXTRA[lg]); });
+
   function words(s){ return (s||'').toLowerCase().replace(/[^\p{L}\p{N}\s]+/gu,' ').split(/\s+/).filter(w=>w.length>1); }
   const STOP=new Set(['para','pra','com','uma','uns','umas','que','dos','das','nas','nos','aos','pelo','pela','por','isso','esse','essa','este','esta','num','numa','era','foi','ser','tem','seu','sua','meu','minha','ele','ela','dele','dela','mais','muito','muita','quando','onde','porque','bem','tambem','entao','assim','aqui','ali','cada','todo','toda','todos','todas','the','and','for','with','from','have','has','was','were','will','just','they','them','their','what','when','where','why','are','our','you','your','this','that','como','how','sobre','about','los','las','del','una','uno','pero','sus','eso','ese','muy','cuando','donde','des','les','pour','avec','dans','cette','sont','plus','der','die','und','für','mit']);
   function pick(arr,n){ const a=arr.slice(); const o=[]; while(a.length&&o.length<n)o.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); return o; }
@@ -385,23 +480,41 @@
     if(!p){ const nome=prompt('Nome do projeto pra guardar:', (el('titulo').value.trim()||lastTema).slice(0,60)); if(nome===null)return; p={id:'p'+Date.now(),nome:(nome||lastTema).trim()||'Sem nome',thumb:''}; localStorage.setItem('svia_banco_ativo',p.id); }
     p.titulo=el('titulo').value.trim()||firstTitle; p.descricao=el('desc').textContent||'';
     p.tags=tagsFor(lastTema,lastKw).join(', '); p.hashtags=hashFor(lastTema,lastKw).join(' ');
-    p.roteiro=el('roteiro').value.trim(); p.nicho=NLABEL[nSel.value]; p.idioma=lang;
+    p.roteiro=el('roteiro').value.trim(); p.nicho=NLABEL[nSel.value]; p.subnichos=subTop().join(', '); p.idioma=lang;
     await bancoPut(p); toast('Salvo no Banco: '+p.nome+' ✓'); }
 
   const el=id=>document.getElementById(id);
   const nSel=el('nicho'); NICHES.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;nSel.appendChild(o);});
   const lSel=el('lang'); LANGS.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;lSel.appendChild(o);});
   let lang='pt', tom='all', lastTema='', lastKw='', scriptKW=[], firstTitle='';
-  lSel.onchange=()=>{lang=lSel.value; if(el('res').style.display!=='none')refreshDesc();};
+  lSel.onchange=()=>{lang=lSel.value; syncToms(); if(el('res').style.display!=='none')refreshDesc();};
   nSel.onchange=()=>{ if(el('res').style.display!=='none')refreshDesc(); };
   el('tom').querySelectorAll('button').forEach(b=>b.onclick=()=>{tom=b.dataset.t;el('tom').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));});
+  syncToms();
+
+  // ---- Sub-nichos (até 5): mostra o que entrou, avisa o que sobrou de fora ----
+  function renderSub(){ const todos=subNichos(), usa=todos.slice(0,5), box=el('subChips'), c=el('subCount');
+    if(c){ c.textContent=usa.length+'/5'; c.style.color = todos.length>5?'var(--warn)':(usa.length?'var(--good)':''); }
+    if(!box)return; box.innerHTML='';
+    usa.forEach(s=>{ const sp=document.createElement('span'); sp.className='tag'; sp.dir='auto'; sp.textContent=s; box.appendChild(sp); });
+    if(todos.length>5){ const av=document.createElement('span'); av.className='tag'; av.style.color='var(--warn)';
+      av.textContent='⚠ só os 5 primeiros são usados ('+(todos.length-5)+' de fora)'; box.appendChild(av); } }
+  el('subnicho').oninput=()=>{ renderSub(); if(el('res').style.display!=='none')refreshDesc(); };
+  renderSub();
 
   function toast(m){ const t=el('toast')||(()=>{const d=document.createElement('div');d.id='toast';document.body.appendChild(d);return d;})(); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1800); }
   function copyText(str,btn){ navigator.clipboard.writeText(str).then(()=>{ if(btn){const o=btn.textContent;btn.textContent='✓ Copiado';btn.classList.add('ok');setTimeout(()=>{btn.textContent=o;btn.classList.remove('ok');},1400);} toast('Copiado! 📋'); }).catch(()=>toast('Selecione e copie manual')); }
 
-  function buildTitles(tema){ const F=L[lang].formulas; const toms = tom==='all'?['curioso','urgente','lista','emocional']:[tom];
-    let out=[]; toms.forEach(k=>{ const arr=F[k]||[]; const chosen = tom==='all'? pick(arr,Math.min(2,arr.length)) : arr; chosen.forEach(fn=>out.push({tom:k,t:fn(low(tema))})); });
+  function buildTitles(tema){ const F=L[lang].formulas; const todos=Object.keys(F).filter(k=>(F[k]||[]).length);
+    const toms = tom==='all'? todos : (F[tom]&&F[tom].length? [tom] : todos);
+    const porTom = tom==='all'? (toms.length>5?1:2) : 99;
+    let out=[]; toms.forEach(k=>{ const arr=F[k]||[]; const chosen = tom==='all'? pick(arr,Math.min(porTom,arr.length)) : arr; chosen.forEach(fn=>out.push({tom:k,t:fn(low(tema))})); });
     return out; }
+  // idioma sem um tom → o botão daquele tom some (nunca deixa o usuário clicar num tom que não gera nada)
+  function syncToms(){ const F=(L[lang]||{}).formulas||{}; let atual=null;
+    el('tom').querySelectorAll('button').forEach(b=>{ const t=b.dataset.t; const ok = t==='all' || ((F[t]||[]).length>0);
+      b.style.display = ok?'':'none'; if(!ok&&tom===t){ tom='all'; } if(b.classList.contains('on'))atual=b; });
+    if(tom==='all'&&atual&&atual.dataset.t!=='all'){ el('tom').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.t==='all')); } }
 
   // ---- Lê o ROTEIRO e entende o conteúdo: expressões (2 palavras) e palavras mais repetidas ----
   function extractKW(text){ const w=words(text).filter(x=>!STOP.has(x)&&x.length>2);
@@ -417,13 +530,18 @@
     const lbl=document.createElement('span'); lbl.style.cssText='font-size:11px;color:var(--muted);width:100%;line-height:1.4'; lbl.textContent='🔍 Li o roteiro e achei (clique pra usar como palavra-chave):'; box.appendChild(lbl);
     scriptKW.slice(0,8).forEach(k=>{ const s=document.createElement('span'); s.className='tag'; s.style.cursor='pointer'; s.dir='auto'; s.textContent=k; s.title='Usar como palavra-chave'; s.onclick=()=>{ el('kw').value=k; lastKw=k; if(el('res').style.display!=='none')refreshDesc(); toast('Palavra-chave: '+k); }; box.appendChild(s); }); }
 
+  // Sub-nichos que o usuário digitou (até 5) — são os termos do canal DELE, vêm antes dos genéricos
+  function subNichos(){ return ((el('subnicho')&&el('subnicho').value)||'').split(/[,;\n]/).map(s=>s.trim()).filter(Boolean); }
+  function subTop(){ return subNichos().slice(0,5); }
+
   function relatedFor(tema,kw){ const bank=(NK[lang]&&NK[lang][nSel.value])||L[lang].tags||[];
     const userw=[...words(kw),...words(tema)].filter(w=>!STOP.has(w));
     const out=[]; const push=x=>{ x=(x||'').trim(); if(x&&!out.some(s=>s.toLowerCase()===x.toLowerCase()))out.push(x); };
-    scriptKW.slice(0,3).forEach(push); bank.forEach(push); userw.slice(0,2).forEach(push); return out.slice(0,6); }
+    subTop().forEach(push); scriptKW.slice(0,3).forEach(push); bank.forEach(push); userw.slice(0,2).forEach(push); return out.slice(0,6); }
 
   function tagsFor(tema,kw){ const lg=L[lang]; const set=[]; const push=x=>{ x=(x||'').trim(); if(x&&!set.some(s=>s.toLowerCase()===x.toLowerCase()))set.push(x); };
     const key=(kw||tema).trim(); if(key)push(key);
+    subTop().forEach(push);
     scriptKW.slice(0,6).forEach(push);
     const kws=[...words(kw),...words(tema)].filter(w=>!STOP.has(w)); kws.slice(0,5).forEach(push);
     ((NK[lang]&&NK[lang][nSel.value])||[]).forEach(push);
@@ -431,7 +549,7 @@
     let acc=[],len=0; for(const t of set){ const add=(acc.length?2:0)+t.length; if(len+add>480)break; acc.push(t); len+=add; } return acc; }
 
   function hashFor(tema,kw){ const seed=[...words(kw),...words(tema)].filter(w=>!STOP.has(w)); const bank=(NK[lang]&&NK[lang][nSel.value])||L[lang].tags||[];
-    const pool=[...seed.slice(0,3), ...bank.slice(0,3)].map(w=>'#'+w.replace(/\s+/g,'')); const uniq=[]; pool.forEach(h=>{if(!uniq.includes(h)&&h.length>2)uniq.push(h);}); return uniq.slice(0,6); }
+    const pool=[...subTop().slice(0,3), ...seed.slice(0,3), ...bank.slice(0,3)].map(w=>'#'+w.replace(/\s+/g,'')); const uniq=[]; pool.forEach(h=>{if(!uniq.includes(h)&&h.length>2)uniq.push(h);}); return uniq.slice(0,6); }
 
   // ---- Nota de SEO ao vivo (título + descrição) ----
   function scoreSEO(title,desc,kw){ const items=[]; let pts=0; const kwl=(kw||'').toLowerCase().trim();
