@@ -393,7 +393,7 @@ module.exports = async (req, res) => {
         }
 
         return res.status(r.status).json({
-          error: `DarkPlanner retornou ${r.status}`,
+          error: `O serviço de voz retornou ${r.status}`,
           detail: rawText.substring(0, 300)
         });
       }
@@ -442,7 +442,7 @@ module.exports = async (req, res) => {
         } catch {}
       }
 
-      return res.status(500).json({ error: 'Erro ao contactar DarkPlanner', detail: err.message });
+      return res.status(500).json({ error: 'Erro ao falar com o serviço de voz', detail: err.message });
     }
   }
 

@@ -119,7 +119,7 @@ module.exports = async (req, res) => {
   }
 
   return res.status(502).json({
-    error: 'DarkPlanner API indisponível',
+    error: 'Serviço de vozes indisponível',
     detail: 'Nenhuma URL respondeu com sucesso. Verifique se a DP_API_KEY está correta.'
   });
 };
