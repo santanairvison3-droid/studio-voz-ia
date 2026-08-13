@@ -1847,6 +1847,22 @@ Olá! Bem-vindo ao DarkBlue." oninput="updateCounter()"></textarea>
         <div class="tools-page-sub">Gere prompts visuais do seu roteiro e crie imagens em massa — tudo no Gemini.</div>
       </div>
 
+      <!-- 13/08/2026: quem usa só o site não tinha NENHUM prompt pronto pra virar cenas —
+           só o link de uma IA de fora. Sem a receita certa, a IA inventa um ingrediente
+           que não existe, e a produção do robô para na primeira cena ("sem chip"). -->
+      <div class="card" style="margin-bottom:18px">
+        <div class="head-row" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+          <div class="card-title" style="margin:0">🎬 Roteiro → cenas: o prompt da casa</div>
+          <button id="btn-copiar-prompt-cenas" style="margin-left:auto;padding:9px 16px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#040709;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer">📋 Copiar o prompt</button>
+        </div>
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:10px">
+          Cole este prompt em qualquer IA (Gemini, ChatGPT, Claude) junto com o seu <b>roteiro</b> e o <b>SRT da narração</b>.
+          Ela devolve as cenas já no formato que o robô entende — e, principalmente, <b>sem inventar personagem sem ficha</b>,
+          que é o erro que trava a produção na primeira cena.
+        </div>
+        <pre id="prompt-cenas" style="max-height:230px;overflow:auto;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:11.5px;line-height:1.55;white-space:pre-wrap;margin:0"></pre>
+      </div>
+
       <div class="workflow-hint">
         <span class="wf-step">📝 <span>Seu roteiro</span></span>
         <span class="wf-arrow">→</span>
@@ -3560,6 +3576,7 @@ function goTab(name,el){
   if(name==='dobra')initDobra();
   if(name==='niches')initNf();
   if(name==='thumb')initThumb();
+  if(name==='imagens')initPromptCenas();
   if(name==='seo')initSeo();
   if(name==='banco')bancoRender();
   // close sidebar on mobile
@@ -3567,6 +3584,73 @@ function goTab(name,el){
 }
 let thumbLoaded=false;
 function initThumb(){ if(thumbLoaded)return; thumbLoaded=true; document.getElementById('thumb-frame').src='miniatura.html'; }
+
+/* 🎬 O PROMPT DA CASA (roteiro → cenas) — mesmo texto do app de computador.
+   Nasceu em 13/08/2026: a produção do dono parou na cena 1 porque a IA escreveu
+   [A_TELA] sem nunca ter feito a ficha de A_TELA. O prompt antigo tinha 1.180
+   palavras e mesmo assim não dizia essa regra. Este tem 574 e diz. */
+const PROMPT_CENAS = `Você é um roteirista visual de vídeos gerados por IA.
+
+VOCÊ RECEBE: 1) o ROTEIRO · 2) o SRT da narração (blocos numerados) · 3) a FICHA DE ESTILO em JSON.
+O estilo do JSON vale para TODAS as cenas — é ele que faz o vídeo inteiro ter a mesma cara.
+
+━━━ ETAPA 1 — AS FICHAS (faça primeiro e PARE) ━━━
+Diga em uma linha que material é este (história, ensaio, lista, documentário).
+Depois liste tudo que SE REPETE no vídeo e precisa sair idêntico em toda cena — pessoa, objeto ou lugar — cada um com ficha:
+
+[MARLENE]
+ROSTO: idade, traços, cabelo, olhos, expressão
+CORPO: roupa, porte, acessórios
+
+[O_ANEL]
+OBJETO: material, tamanho, marcas de uso, o detalhe que só ele tem
+
+[A_COZINHA]
+LUGAR: cômodo, móveis, luz da janela, o que está sempre sobre a mesa
+
+Nada se repete? escreva "sem ingrediente — vou direto pras cenas".
+Então PARE e espere meu "OK". Não gere cenas ainda.
+
+━━━ ETAPA 2 — AS CENAS (só depois do OK) ━━━
+Transforme CADA bloco do SRT em UMA linha, na mesma ordem do SRT.
+
+A LINHA É ASSIM — copie a forma:
+  [v] [JOÃO] PROMPT 004- João, 45 anos, camisa xadrez surrada, caminha devagar por uma calçada vazia ao amanhecer; luz lateral fria, paleta da FICHA; câmera tracking-left lenta. Ambient sound only: passos sem pressa no concreto molhado, tráfego distante. no subtitles, no on-screen text, no dialogue.
+
+  · as marcações vêm SEMPRE na frente, antes da palavra PROMPT
+  · escreva "PROMPT 001-" com hífen, numerando na ordem do SRT
+  · tipo: [v] vídeo · [i] imagem parada · [iv] vídeo direto
+  · duração logo depois do tipo: [4], [6] ou [8] — ação longa = [8], transição = [4]
+  · cena COM ingrediente não leva duração: a ferramenta trava em 8s sozinha
+
+🔒 A REGRA QUE MAIS QUEBRA A PRODUÇÃO — LEIA DUAS VEZES:
+Só pode aparecer entre colchetes o que GANHOU FICHA na Etapa 1.
+  · Sem ficha? descreva com palavras, sem colchete. Nunca invente nome novo na hora das cenas.
+  · No máximo 3 por cena.
+  · A mesma pessoa que reaparece leva SEMPRE a mesma tag — é ela que trava o rosto do começo ao fim.
+    "um homem de meia-idade" não é ingrediente; [JOÃO] com ficha é.
+  · [cenário], [ambiente] e [scene] são palavras reservadas e serão ignoradas: dê nome próprio, tipo [A_COZINHA].
+Se você usar um nome sem ficha, a produção PARA na primeira cena e o usuário fica travado.
+
+AS OUTRAS 5 REGRAS:
+1. Uma cena por linha. Nunca junte duas, nunca quebre uma em duas.
+2. ~70% das cenas em VÍDEO (ação e emoção) e ~30% em IMAGEM (ambiente, objeto, contemplação).
+3. Câmera: um movimento por cena, sempre lento — static · push-in · pull-out · pan · tracking · tilt · dolly. Não repita o mesmo em 3 cenas seguidas.
+4. Som: a cena não tem fala, diálogo nem música (a narração entra depois). Termine com "Ambient sound only: <som da ação> + <som do lugar>".
+5. Nada escrito na tela: objeto que teria letra (calendário, carta, placa, tela) vai EM BRANCO, e toda linha termina com "no subtitles, no on-screen text, no dialogue".
+
+Cada prompt nesta ordem: QUEM · ONDE · LUZ · CÂMERA · AÇÃO · SOM. Sem poesia — cada palavra descreve algo que aparece ou se ouve. Escreva no mesmo idioma do roteiro.
+
+ENTREGA: responda SÓ a lista de prompts, nada antes nem depois — pronta pra salvar como .txt e colar na ferramenta.`;
+
+function initPromptCenas(){
+  const cx=document.getElementById('prompt-cenas'); if(!cx||cx.textContent)return;
+  cx.textContent=PROMPT_CENAS;
+  const b=document.getElementById('btn-copiar-prompt-cenas');
+  if(b)b.onclick=()=>{ navigator.clipboard.writeText(PROMPT_CENAS)
+    .then(()=>{ const o=b.textContent; b.textContent='✅ Copiado!'; setTimeout(()=>b.textContent=o,1800); })
+    .catch(()=>{ const r=document.createRange(); r.selectNode(cx); getSelection().removeAllRanges(); getSelection().addRange(r); b.textContent='Selecionei — aperte Ctrl+C'; }); };
+}
 let seoLoaded=false;
 function initSeo(){ if(seoLoaded)return; seoLoaded=true; document.getElementById('seo-frame').src='seo.html'; }
 
