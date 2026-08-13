@@ -219,9 +219,11 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 
 /* ═══ AJUDA NA TELA: caixinha "Como usar" + dica de campo ═══ */
 .howto{
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-left:3px solid var(--accent);
+  /* 13/08 — curadoria: a faixa colorida só do lado esquerdo saiu. Destaque agora
+     vem da caixa inteira (fundo tingido + borda no tom), que lê como bloco de
+     ajuda em vez de "cartão com listra". */
+  background:rgba(0,229,212,.06);
+  border:1px solid rgba(0,229,212,.28);
   border-radius:11px;
   padding:12px 16px;
   margin:0 0 16px;
@@ -878,6 +880,16 @@ select option{background:var(--surface2)}
 }
 .btn-open-img:hover{box-shadow:0 7px 28px rgba(85,153,255,.4)}
 @media(max-width:660px){.tool-cards-grid{grid-template-columns:1fr}}
+
+  /* 13/08 — curadoria: quem navega pelo TECLADO precisa ver onde está.
+     Sem isto o foco some no escuro e a tela fica inutilizável sem mouse. */
+  :where(a,button,input,select,textarea,[tabindex]):focus-visible{
+    outline:2px solid var(--accent,#38bdf8);outline-offset:2px;border-radius:6px}
+  /* quem pediu menos movimento no Windows/celular recebe menos movimento */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+      transition-duration:.01ms !important;scroll-behavior:auto !important}
+  }
 </style>
 </head>
 <body>

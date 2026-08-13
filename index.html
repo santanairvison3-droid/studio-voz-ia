@@ -365,6 +365,16 @@ input::placeholder{color:var(--muted);font-size:14px}
   .features{display:none}
   .right-panel{padding:32px 24px}
 }
+
+  /* 13/08 — curadoria: quem navega pelo TECLADO precisa ver onde está.
+     Sem isto o foco some no escuro e a tela fica inutilizável sem mouse. */
+  :where(a,button,input,select,textarea,[tabindex]):focus-visible{
+    outline:2px solid var(--accent,#38bdf8);outline-offset:2px;border-radius:6px}
+  /* quem pediu menos movimento no Windows/celular recebe menos movimento */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+      transition-duration:.01ms !important;scroll-behavior:auto !important}
+  }
 </style>
 </head>
 <body>
